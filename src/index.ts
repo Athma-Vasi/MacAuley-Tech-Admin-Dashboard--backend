@@ -1,16 +1,21 @@
 import bodyParser from "body-parser";
+import compression from "compression";
 import cors from "cors";
-import dotenv from "dotenv";
 import type { NextFunction, Request, Response } from "express";
 import express from "express";
 import helmet from "helmet";
 import createHttpError from "http-errors";
+import mongoose from "mongoose";
 import morgan from "morgan";
+import { CONFIG } from "./config";
+import { connectDB } from "./config/connectDB";
 
 /** config */
 
-dotenv.config();
 const app = express();
+
+connectDB(CONFIG);
+
 app.use(express.json());
 app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
@@ -18,6 +23,7 @@ app.use(morgan("common"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
+app.use(compression());
 
 /** routes */
 // app.use("/auth", authRouter);
@@ -29,3 +35,16 @@ app.use((_: Request, __: Response, next: NextFunction) => {
 
 /** error handling */
 // app.use(errorHandler)
+
+mongoose.connection.once("open", () => {
+    console.log("Connected to MongoDB");
+
+    const { PORT } = CONFIG;
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+});
+
+mongoose.connection.on("error", (error) => {
+    console.error(error);
+});
