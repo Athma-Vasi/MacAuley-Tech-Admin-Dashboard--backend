@@ -2,15 +2,19 @@ import { Response } from "express";
 import { Model } from "mongoose";
 import {
     createNewResourceService,
+    deleteManyResourcesService,
+    deleteResourceByIdService,
     getQueriedResourcesByUserService,
     getQueriedResourcesService,
     getQueriedTotalResourcesService,
+    getResourceByIdService,
     updateResourceByIdService,
 } from "../services";
 import {
     CreateNewResourceRequest,
     DBRecord,
     GetQueriedResourceRequest,
+    GetResourceByIdRequest,
     HttpResult,
     HttpServerResponse,
     UpdateResourceByIdRequest,
@@ -496,3 +500,13 @@ function deleteManyResourcesHandler<Doc extends DBRecord = DBRecord>(
         }
     };
 }
+
+export {
+    createNewResourceHandler,
+    deleteManyResourcesHandler,
+    deleteResourceByIdHandler,
+    getQueriedResourcesByUserHandler,
+    getQueriedResourcesHandler,
+    getResourceByIdHandler,
+    updateResourceByIdHandler,
+};
