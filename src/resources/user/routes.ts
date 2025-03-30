@@ -8,8 +8,7 @@ import {
   getResourceByIdHandler,
   updateResourceByIdHandler,
 } from "../../handlers";
-import { addUserProjection } from "../../middlewares/addUserProjection";
-import { validateSchemaMiddleware } from "../../middlewares/validateSchema";
+import { addUserProjection, validateSchemaMiddleware } from "../../middlewares";
 import { createNewUserHandler } from "./handlers";
 import { UserModel } from "./model";
 import { createUserJoiSchema, updateUserJoiSchema } from "./validations";
