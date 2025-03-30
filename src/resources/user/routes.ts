@@ -10,7 +10,7 @@ import {
 } from "../../handlers";
 import { addUserProjection } from "../../middlewares/addUserProjection";
 import { validateSchemaMiddleware } from "../../middlewares/validateSchema";
-import { createNewUserHandler } from "./handler";
+import { createNewUserHandler } from "./handlers";
 import { UserModel } from "./model";
 import { createUserJoiSchema, updateUserJoiSchema } from "./validation";
 
