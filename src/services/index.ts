@@ -135,11 +135,39 @@ async function getQueriedTotalResourcesService<
     try {
         const totalQueriedResources = await model.countDocuments(
             filter,
-            options,
+            options as any,
         )
             .lean()
             .exec();
         return new Ok({ data: totalQueriedResources, kind: "success" });
+    } catch (error: unknown) {
+        return new Err({ data: error, kind: "error" });
+    }
+}
+
+async function getQueriedResourcesByUserService<
+    Doc extends DBRecord = DBRecord,
+>({
+    filter = {},
+    model,
+    options = {},
+    projection = null,
+}: QueryObjectParsedWithDefaults & {
+    model: Model<Doc>;
+}): ServiceResult<Doc[]> {
+    try {
+        const resources = await model.find(filter, projection, options)
+            .lean()
+            .exec();
+
+        if (resources.length === 0) {
+            return new Ok({ kind: "notFound" });
+        }
+
+        return new Ok({
+            data: resources,
+            kind: "success",
+        }) as unknown as ServiceResult<Doc[]>;
     } catch (error: unknown) {
         return new Err({ data: error, kind: "error" });
     }
