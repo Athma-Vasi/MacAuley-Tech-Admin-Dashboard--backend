@@ -6,19 +6,25 @@ import { ACCESS_TOKEN_EXPIRY, HASH_SALT_ROUNDS } from "../../constants";
 import {
     createNewResourceService,
     getResourceByFieldService,
+    getResourceByIdService,
+    updateResourceByIdService,
 } from "../../services";
 import {
     CreateNewResourceRequest,
     DBRecord,
+    DecodedToken,
     HttpResult,
     LoginUserRequest,
+    RequestAfterJWTVerification,
 } from "../../types";
 import {
     compareHashedStringWithPlainStringSafe,
     createErrorLogSchema,
     createHttpResultError,
     createHttpResultSuccess,
+    decodeJWTSafe,
     hashStringSafe,
+    verifyJWTSafe,
 } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
 import { UserDocument, UserModel, UserSchema } from "../user";
@@ -298,6 +304,155 @@ function registerUserHandler<
             );
 
             response.status(200).json(createHttpResultError({}));
+        }
+    };
+}
+
+// @desc   Logout user
+// @route  POST /auth/logout
+// @access Private
+function logoutUserHandler<
+    Doc extends DBRecord = DBRecord,
+>(
+    model: Model<Doc>,
+) {
+    return async (
+        request: RequestAfterJWTVerification,
+        response: Response,
+    ) => {
+        try {
+            const { accessToken } = request.body;
+
+            if (!accessToken) {
+                response.status(200).json(
+                    createHttpResultError({ triggerLogout: true }),
+                );
+
+                return;
+            }
+
+            const { ACCESS_TOKEN_SEED } = CONFIG;
+
+            const verifyAccessTokenResult = await verifyJWTSafe({
+                seed: ACCESS_TOKEN_SEED,
+                token: accessToken,
+            });
+
+            if (verifyAccessTokenResult.err) {
+                response.status(200).json(
+                    createHttpResultError({ triggerLogout: true }),
+                );
+
+                return;
+            }
+
+            const accessTokenDecodedResult = await decodeJWTSafe(accessToken);
+
+            if (accessTokenDecodedResult.err) {
+                response.status(200).json(
+                    createHttpResultError({ triggerLogout: true }),
+                );
+
+                return;
+            }
+
+            const accessTokenDecoded = accessTokenDecodedResult.safeUnwrap()
+                .data as
+                    | DecodedToken
+                    | undefined;
+
+            if (accessTokenDecoded === undefined) {
+                response.status(200).json(
+                    createHttpResultError({ triggerLogout: true }),
+                );
+
+                return;
+            }
+
+            const sessionId = accessTokenDecoded.sessionId;
+
+            const getAuthSessionResult = await getResourceByIdService(
+                sessionId.toString(),
+                model,
+            );
+
+            if (getAuthSessionResult.err) {
+                await createNewResourceService(
+                    createErrorLogSchema(
+                        getAuthSessionResult.val,
+                        request.body,
+                    ),
+                    ErrorLogModel,
+                );
+
+                response.status(200).json(
+                    createHttpResultError({ triggerLogout: true }),
+                );
+
+                return;
+            }
+
+            const existingSession = getAuthSessionResult.safeUnwrap().data as
+                | AuthSchema
+                | undefined;
+
+            if (existingSession === undefined) {
+                response.status(200).json(
+                    createHttpResultError({ triggerLogout: true }),
+                );
+
+                return;
+            }
+
+            // check if token has already been invalidated
+
+            if (!existingSession.isValid) {
+                response.status(200).json(
+                    createHttpResultError({ triggerLogout: true }),
+                );
+
+                return;
+            }
+
+            // invalidate session
+            const updateSessionResult = await updateResourceByIdService({
+                fields: { isValid: false },
+                model,
+                resourceId: sessionId.toString(),
+                updateOperator: "$set",
+            });
+
+            if (updateSessionResult.err) {
+                await createNewResourceService(
+                    createErrorLogSchema(updateSessionResult.val, request.body),
+                    ErrorLogModel,
+                );
+
+                response.status(200).json(
+                    createHttpResultError({ triggerLogout: true }),
+                );
+
+                return;
+            }
+
+            response.status(200).json(
+                createHttpResultSuccess({
+                    accessToken: "",
+                    triggerLogout: true,
+                }),
+            );
+        } catch (error: unknown) {
+            await createNewResourceService(
+                createErrorLogSchema(
+                    error,
+                    request.body,
+                ),
+                ErrorLogModel,
+            );
+
+            response.status(200).json(
+                createHttpResultError({ triggerLogout: true }),
+            );
         }
     };
 }
