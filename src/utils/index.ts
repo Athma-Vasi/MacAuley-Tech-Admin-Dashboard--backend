@@ -221,7 +221,7 @@ type FilterFieldsFromObjectInput<
   >,
 > = {
   object: Obj;
-  fieldsToFilter: Array<keyof Obj>;
+  fieldsToFilter: Set<keyof Obj>;
 };
 /**
  * Pure function: Removes specified fields from an object and returns a new object with the remaining fields.
@@ -237,7 +237,7 @@ function filterFieldsFromObject<
   fieldsToFilter,
 }: FilterFieldsFromObjectInput<Obj>): Omit<Obj, Keys> {
   return Object.entries(object).reduce((obj, [key, value]) => {
-    if (fieldsToFilter.includes(key)) {
+    if (fieldsToFilter.has(key)) {
       return obj;
     }
     obj[key] = value;
