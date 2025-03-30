@@ -214,3 +214,24 @@ async function updateResourceByIdService<
         return new Err({ data: error, kind: "error" });
     }
 }
+
+async function deleteResourceByIdService<
+    Doc extends DBRecord = DBRecord,
+>(
+    resourceId: string,
+    model: Model<Doc>,
+): Promise<Result<ServiceOutput<boolean>, ServiceOutput<unknown>>> {
+    try {
+        const { acknowledged, deletedCount } = await model.deleteOne({
+            _id: resourceId,
+        })
+            .lean()
+            .exec();
+
+        return acknowledged && deletedCount === 1
+            ? new Ok({ data: true, kind: "success" })
+            : new Ok({ data: false, kind: "error" });
+    } catch (error: unknown) {
+        return new Err({ data: error, kind: "error" });
+    }
+}
