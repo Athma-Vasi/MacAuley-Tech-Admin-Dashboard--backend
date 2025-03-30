@@ -261,3 +261,16 @@ async function deleteManyResourcesService<
         return new Err({ data: error, kind: "error" });
     }
 }
+
+export {
+    createAndNotReturnResourceService,
+    createNewResourceService,
+    deleteManyResourcesService,
+    deleteResourceByIdService,
+    getQueriedResourcesByUserService,
+    getQueriedResourcesService,
+    getQueriedTotalResourcesService,
+    getResourceByFieldService,
+    getResourceByIdService,
+    updateResourceByIdService,
+};
