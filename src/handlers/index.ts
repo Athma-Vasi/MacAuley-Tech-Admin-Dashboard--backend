@@ -352,3 +352,56 @@ function updateResourceByIdHandler<Doc extends DBRecord = DBRecord>(
         }
     };
 }
+
+function getResourceByIdHandler<Doc extends DBRecord = DBRecord>(
+    model: Model<Doc>,
+) {
+    return async (
+        request: GetResourceByIdRequest,
+        response: HttpServerResponse,
+    ) => {
+        try {
+            const { accessToken } = request.body;
+            const { resourceId } = request.params;
+
+            const getResourceResult = await getResourceByIdService(
+                resourceId,
+                model,
+            );
+
+            if (getResourceResult.err) {
+                await createNewResourceService(
+                    createErrorLogSchema(
+                        getResourceResult.val,
+                        request.body,
+                    ),
+                    ErrorLogModel,
+                );
+
+                response.status(200).json(
+                    createHttpResultError({ status: 404 }),
+                );
+                return;
+            }
+
+            response
+                .status(200)
+                .json(
+                    createHttpResultSuccess({
+                        accessToken,
+                        data: [getResourceResult.safeUnwrap()],
+                    }),
+                );
+        } catch (error: unknown) {
+            await createNewResourceService(
+                createErrorLogSchema(
+                    error,
+                    request.body,
+                ),
+                ErrorLogModel,
+            );
+
+            response.status(200).json(createHttpResultError({}));
+        }
+    };
+}
