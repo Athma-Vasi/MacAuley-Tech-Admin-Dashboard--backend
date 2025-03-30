@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 
 import { CONFIG } from "../config";
 import { ACCESS_TOKEN_EXPIRY, PROPERTY_DESCRIPTOR } from "../constants";
-import { createTokenService } from "../resources/auth/auth.service";
+import { createTokenService } from "../resources/auth/services";
 import { DecodedToken } from "../types";
 import { createHttpResultError, decodeJWTSafe, verifyJWTSafe } from "../utils";
 
@@ -117,8 +117,18 @@ async function verifyJWTMiddleware(
     ...PROPERTY_DESCRIPTOR,
   });
 
-  Object.defineProperty(request.body, "userInfo", {
-    value: decodedAccessToken.userInfo,
+  Object.defineProperty(request.body, "userId", {
+    value: decodedAccessToken.userId,
+    ...PROPERTY_DESCRIPTOR,
+  });
+
+  Object.defineProperty(request.body, "roles", {
+    value: decodedAccessToken.roles,
+    ...PROPERTY_DESCRIPTOR,
+  });
+
+  Object.defineProperty(request.body, "username", {
+    value: decodedAccessToken.username,
     ...PROPERTY_DESCRIPTOR,
   });
 

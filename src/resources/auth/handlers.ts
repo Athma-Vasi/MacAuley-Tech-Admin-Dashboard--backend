@@ -28,6 +28,7 @@ import {
 } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
 import { UserDocument, UserModel, UserSchema } from "../user";
+import { AuthSchema } from "./model";
 
 // @desc   Login user
 // @route  POST /auth/login

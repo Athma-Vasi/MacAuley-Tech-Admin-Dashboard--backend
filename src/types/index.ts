@@ -11,11 +11,9 @@ import { Result } from "ts-results";
 import { UserRoles } from "../resources/user";
 
 type DecodedToken = {
-  userInfo: {
-    userId: Types.ObjectId;
-    username: string;
-    roles: UserRoles;
-  };
+  userId: Types.ObjectId;
+  username: string;
+  roles: UserRoles;
   sessionId: Types.ObjectId;
   iat: number;
   exp: number;
@@ -48,11 +46,9 @@ type RequestAfterJWTVerification = Request & {
   body: {
     accessToken: string;
     sessionId: string;
-    userInfo: {
-      userId: string;
-      username: string;
-      roles: UserRoles;
-    };
+    userId: string;
+    username: string;
+    roles: UserRoles;
   };
 };
 
