@@ -1,7 +1,9 @@
 import { FilterQuery, Model, QueryOptions } from "mongoose";
 import { Err, Ok, Result } from "ts-results";
 import {
+    ArrayOperators,
     DBRecord,
+    FieldOperators,
     QueryObjectParsedWithDefaults,
     ServiceOutput,
     ServiceResult,
@@ -168,6 +170,46 @@ async function getQueriedResourcesByUserService<
             data: resources,
             kind: "success",
         }) as unknown as ServiceResult<Doc[]>;
+    } catch (error: unknown) {
+        return new Err({ data: error, kind: "error" });
+    }
+}
+
+async function updateResourceByIdService<
+    Doc extends DBRecord = DBRecord,
+>({
+    resourceId,
+    fields,
+    updateOperator,
+    model,
+}: {
+    resourceId: string;
+    fields: Record<string, unknown>;
+    model: Model<Doc>;
+    updateOperator: FieldOperators | ArrayOperators;
+}): ServiceResult<Doc> {
+    try {
+        const updateString = `{ "${updateOperator}":  ${
+            JSON.stringify(fields)
+        } }`;
+        const updateObject = JSON.parse(updateString);
+
+        const resource = await model.findByIdAndUpdate(
+            resourceId,
+            updateObject,
+            { new: true },
+        )
+            .lean()
+            .exec();
+
+        if (resource === null || resource === undefined) {
+            return new Ok({ kind: "notFound" });
+        }
+
+        return new Ok({
+            data: resource,
+            kind: "success",
+        }) as unknown as ServiceResult<Doc>;
     } catch (error: unknown) {
         return new Err({ data: error, kind: "error" });
     }
