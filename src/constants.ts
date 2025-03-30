@@ -1,0 +1,7 @@
+const REFRESH_TOKEN_EXPIRY = "12h"; // 12 hours
+
+const ACCESS_TOKEN_EXPIRY = "60s"; // 60 seconds
+
+const HASH_SALT_ROUNDS = 10;
+
+export { ACCESS_TOKEN_EXPIRY, HASH_SALT_ROUNDS, REFRESH_TOKEN_EXPIRY };
