@@ -405,3 +405,51 @@ function getResourceByIdHandler<Doc extends DBRecord = DBRecord>(
         }
     };
 }
+
+function deleteResourceByIdHandler<Doc extends DBRecord = DBRecord>(
+    model: Model<Doc>,
+) {
+    return async (
+        request: GetResourceByIdRequest,
+        response: HttpServerResponse,
+    ) => {
+        try {
+            const { accessToken } = request.body;
+            const { resourceId } = request.params;
+
+            const deletedResult = await deleteResourceByIdService(
+                resourceId,
+                model,
+            );
+
+            if (deletedResult.err) {
+                await createNewResourceService(
+                    createErrorLogSchema(
+                        deletedResult.val,
+                        request.body,
+                    ),
+                    ErrorLogModel,
+                );
+
+                response.status(200).json(
+                    createHttpResultError({ status: 404 }),
+                );
+                return;
+            }
+
+            response.status(200).json(
+                createHttpResultSuccess({ accessToken }),
+            );
+        } catch (error: unknown) {
+            await createNewResourceService(
+                createErrorLogSchema(
+                    error,
+                    request.body,
+                ),
+                ErrorLogModel,
+            );
+
+            response.status(200).json(createHttpResultError({}));
+        }
+    };
+}
