@@ -1,9 +1,9 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 
 import { CONFIG } from "../config";
 import { ACCESS_TOKEN_EXPIRY, PROPERTY_DESCRIPTOR } from "../constants";
 import { createTokenService } from "../resources/auth/services";
-import { DecodedToken } from "../types";
+import type { DecodedToken } from "../types";
 import { createHttpResultError, decodeJWTSafe, verifyJWTSafe } from "../utils";
 
 async function verifyJWTMiddleware(
@@ -42,7 +42,7 @@ async function verifyJWTMiddleware(
     return;
   }
 
-  console.log(`\n`);
+  console.log("\n");
   console.group("verifyJWTMiddleware");
   console.log("decodedAccessTokenResult:", decodedAccessTokenResult);
   console.groupEnd();

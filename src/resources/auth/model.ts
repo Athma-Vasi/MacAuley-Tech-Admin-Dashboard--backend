@@ -1,4 +1,4 @@
-import { model, Schema, Types } from "mongoose";
+import { model, Schema, type Types } from "mongoose";
 
 type AuthSchema = {
   addressIP: string;

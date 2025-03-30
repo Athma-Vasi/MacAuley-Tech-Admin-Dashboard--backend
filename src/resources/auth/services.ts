@@ -1,16 +1,16 @@
-import { Request } from "express";
-import jwt, { SignOptions } from "jsonwebtoken";
-import { Err, Ok, Result } from "ts-results";
+import type { Request } from "express";
+import jwt, { type SignOptions } from "jsonwebtoken";
+import { Err, Ok, type Result } from "ts-results";
 import {
   createNewResourceService,
   deleteManyResourcesService,
   getResourceByIdService,
   updateResourceByIdService,
 } from "../../services";
-import { DecodedToken, ServiceOutput } from "../../types";
+import type { DecodedToken, ServiceOutput } from "../../types";
 import { createErrorLogSchema } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
-import { AuthDocument, AuthModel, AuthSchema } from "./model";
+import { type AuthDocument, AuthModel, type AuthSchema } from "./model";
 
 async function createTokenService(
   {

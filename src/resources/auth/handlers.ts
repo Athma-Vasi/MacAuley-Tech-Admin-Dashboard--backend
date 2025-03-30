@@ -1,6 +1,6 @@
-import { Response } from "express";
+import type { Response } from "express";
 import jwt from "jsonwebtoken";
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 import { CONFIG } from "../../config";
 import { ACCESS_TOKEN_EXPIRY, HASH_SALT_ROUNDS } from "../../constants";
 import {
@@ -9,7 +9,7 @@ import {
     getResourceByIdService,
     updateResourceByIdService,
 } from "../../services";
-import {
+import type {
     CreateNewResourceRequest,
     DBRecord,
     DecodedToken,
@@ -27,8 +27,8 @@ import {
     verifyJWTSafe,
 } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
-import { UserDocument, UserModel, UserSchema } from "../user";
-import { AuthSchema } from "./model";
+import { type UserDocument, UserModel, type UserSchema } from "../user";
+import type { AuthSchema } from "./model";
 
 // @desc   Login user
 // @route  POST /auth/login
