@@ -16,7 +16,7 @@ type UsernameEmailSetDocument = UsernameEmailSetSchema & {
   __v: number;
 };
 
-const usernameEmailSetSchema = new Schema<UsernameEmailSetSchema>(
+const usernameEmailSetSchema = new Schema<UsernameEmailSetDocument>(
   {
     username: {
       type: [String],

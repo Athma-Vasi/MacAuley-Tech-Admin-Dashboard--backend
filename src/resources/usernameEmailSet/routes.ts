@@ -4,9 +4,9 @@ import { validateSchemaMiddleware } from "../../middlewares/validateSchema";
 import {
   checkUsernameOrEmailExistsHandler,
   postUsernameEmailSetHandler,
-} from "./usernameEmailSet.handler";
-import { UsernameEmailSetModel } from "./usernameEmailSet.model";
-import { createUsernameEmailSetJoiSchema } from "./usernameEmailSet.validation";
+} from "./handlers";
+import { UsernameEmailSetModel } from "./model";
+import { createUsernameEmailSetJoiSchema } from "./validations";
 
 const usernameEmailSetRouter = Router();
 

@@ -1,4 +1,5 @@
 import { model, Schema, Types } from "mongoose";
+import { UserDocument } from ".";
 
 type UserRoles = ("Admin" | "Employee" | "Manager")[];
 
@@ -236,7 +237,7 @@ type UserDocument = UserSchema & {
   __v: number;
 };
 
-const userSchema = new Schema<UserSchema>(
+const userSchema = new Schema<UserDocument>(
   {
     username: {
       type: String,
