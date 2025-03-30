@@ -235,3 +235,29 @@ async function deleteResourceByIdService<
         return new Err({ data: error, kind: "error" });
     }
 }
+
+async function deleteManyResourcesService<
+    Doc extends DBRecord = DBRecord,
+>(
+    { filter, model, options }: {
+        filter?: FilterQuery<Doc>;
+        options?: QueryOptions<Doc>;
+        model: Model<Doc>;
+    },
+): Promise<Result<ServiceOutput<boolean>, ServiceOutput<unknown>>> {
+    try {
+        const totalResources = await model.countDocuments(filter, options);
+        const { acknowledged, deletedCount } = await model.deleteMany(
+            filter,
+            options as any,
+        )
+            .lean()
+            .exec();
+
+        return acknowledged && deletedCount === totalResources
+            ? new Ok({ data: true, kind: "success" })
+            : new Ok({ data: false, kind: "error" });
+    } catch (error: unknown) {
+        return new Err({ data: error, kind: "error" });
+    }
+}
