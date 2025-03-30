@@ -453,3 +453,46 @@ function deleteResourceByIdHandler<Doc extends DBRecord = DBRecord>(
         }
     };
 }
+
+function deleteManyResourcesHandler<Doc extends DBRecord = DBRecord>(
+    model: Model<Doc>,
+) {
+    return async (
+        request: GetQueriedResourceRequest,
+        response: HttpServerResponse,
+    ) => {
+        try {
+            const { accessToken } = request.body;
+            const deletedResult = await deleteManyResourcesService({ model });
+
+            if (deletedResult.err) {
+                await createNewResourceService(
+                    createErrorLogSchema(
+                        deletedResult.val,
+                        request.body,
+                    ),
+                    ErrorLogModel,
+                );
+
+                response.status(200).json(
+                    createHttpResultError({ accessToken }),
+                );
+                return;
+            }
+
+            response.status(200).json(
+                createHttpResultSuccess({ accessToken }),
+            );
+        } catch (error: unknown) {
+            await createNewResourceService(
+                createErrorLogSchema(
+                    error,
+                    request.body,
+                ),
+                ErrorLogModel,
+            );
+
+            response.status(200).json(createHttpResultError({}));
+        }
+    };
+}
