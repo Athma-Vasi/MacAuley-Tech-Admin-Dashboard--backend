@@ -456,3 +456,5 @@ function logoutUserHandler<
         }
     };
 }
+
+export { loginUserHandler, logoutUserHandler, registerUserHandler };
