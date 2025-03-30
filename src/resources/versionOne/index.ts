@@ -1,3 +1,3 @@
-import { versionOneRouter } from './versionOne.routes';
+import { versionOneRouter } from "./routes";
 
 export { versionOneRouter };
