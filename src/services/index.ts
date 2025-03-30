@@ -1,6 +1,11 @@
 import { FilterQuery, Model, QueryOptions } from "mongoose";
 import { Err, Ok, Result } from "ts-results";
-import { DBRecord, ServiceOutput, ServiceResult } from "../types";
+import {
+    DBRecord,
+    QueryObjectParsedWithDefaults,
+    ServiceOutput,
+    ServiceResult,
+} from "../types";
 
 async function getResourceByIdService<
     Doc extends DBRecord = DBRecord,
@@ -85,6 +90,34 @@ async function createAndNotReturnResourceService<
     try {
         await model.create(schema);
         return new Ok({ data: true, kind: "success" });
+    } catch (error: unknown) {
+        return new Err({ data: error, kind: "error" });
+    }
+}
+
+async function getQueriedResourcesService<
+    Doc extends DBRecord = DBRecord,
+>({
+    filter = {},
+    model,
+    options,
+    projection,
+}: QueryObjectParsedWithDefaults & {
+    model: Model<Doc>;
+}): ServiceResult<Doc[]> {
+    try {
+        const resources = await model.find(filter, projection, options)
+            .lean()
+            .exec();
+
+        if (resources.length === 0) {
+            return new Ok({ kind: "notFound" });
+        }
+
+        return new Ok({
+            data: resources,
+            kind: "success",
+        }) as unknown as ServiceResult<Doc[]>;
     } catch (error: unknown) {
         return new Err({ data: error, kind: "error" });
     }
