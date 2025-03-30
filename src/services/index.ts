@@ -122,3 +122,25 @@ async function getQueriedResourcesService<
         return new Err({ data: error, kind: "error" });
     }
 }
+
+async function getQueriedTotalResourcesService<
+    Doc extends DBRecord = DBRecord,
+>(
+    { filter, model, options }: {
+        filter: FilterQuery<Doc> | undefined;
+        model: Model<Doc>;
+        options?: QueryOptions<Doc> | undefined;
+    },
+): Promise<Result<ServiceOutput<number>, ServiceOutput<unknown>>> {
+    try {
+        const totalQueriedResources = await model.countDocuments(
+            filter,
+            options,
+        )
+            .lean()
+            .exec();
+        return new Ok({ data: totalQueriedResources, kind: "success" });
+    } catch (error: unknown) {
+        return new Err({ data: error, kind: "error" });
+    }
+}
