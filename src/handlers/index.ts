@@ -2,6 +2,7 @@ import { Response } from "express";
 import { Model } from "mongoose";
 import {
     createNewResourceService,
+    getQueriedResourcesByUserService,
     getQueriedResourcesService,
     getQueriedTotalResourcesService,
 } from "../services";
@@ -181,6 +182,113 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
             response.status(200).json(
                 createHttpResultError({}),
             );
+        }
+    };
+}
+
+function getQueriedResourcesByUserHandler<Doc extends DBRecord = DBRecord>(
+    model: Model<Doc>,
+) {
+    return async (
+        request: GetQueriedResourceRequest,
+        response: HttpServerResponse,
+    ) => {
+        try {
+            const {
+                accessToken,
+                newQueryFlag,
+
+                userInfo: { userId },
+            } = request.body;
+            let { totalDocuments } = request.body;
+
+            const { filter, projection, options } = request.query;
+            const filterWithUserId = { ...filter, userId };
+
+            // only perform a countDocuments scan if a new query is being made
+            if (newQueryFlag) {
+                const totalResult = await getQueriedTotalResourcesService({
+                    filter: filterWithUserId,
+                    model,
+                });
+
+                if (totalResult.err) {
+                    await createNewResourceService(
+                        createErrorLogSchema(
+                            totalResult.val,
+                            request.body,
+                        ),
+                        ErrorLogModel,
+                    );
+
+                    response.status(200).json(
+                        createHttpResultError({ status: 400 }),
+                    );
+                    return;
+                }
+
+                totalDocuments = totalResult.safeUnwrap().data ?? 0;
+            }
+
+            const getResourcesResult = await getQueriedResourcesByUserService({
+                filter,
+                model,
+                options,
+                projection,
+            });
+
+            if (getResourcesResult.err) {
+                await createNewResourceService(
+                    createErrorLogSchema(
+                        getResourcesResult.val,
+                        request.body,
+                    ),
+                    ErrorLogModel,
+                );
+
+                response.status(200).json(
+                    createHttpResultError({ status: 400 }),
+                );
+                return;
+            }
+
+            const unwrappedResult = getResourcesResult.safeUnwrap();
+            if (unwrappedResult === undefined) {
+                response
+                    .status(200)
+                    .json(createHttpResultError({ status: 404 }));
+                return;
+            }
+
+            const { kind, data } = unwrappedResult;
+            if (kind === "notFound" || data === undefined) {
+                response
+                    .status(200)
+                    .json(createHttpResultError({ status: 404 }));
+                return;
+            }
+
+            response.status(200).json(
+                createHttpResultSuccess({
+                    accessToken,
+                    data: getResourcesResult.safeUnwrap().data,
+                    pages: Math.ceil(
+                        totalDocuments / Number(options?.limit ?? 10),
+                    ),
+
+                    totalDocuments,
+                }),
+            );
+        } catch (error: unknown) {
+            await createNewResourceService(
+                createErrorLogSchema(
+                    error,
+                    request.body,
+                ),
+                ErrorLogModel,
+            );
+
+            response.status(200).json(createHttpResultError({}));
         }
     };
 }
