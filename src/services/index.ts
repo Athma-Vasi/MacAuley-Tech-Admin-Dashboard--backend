@@ -56,3 +56,21 @@ async function getResourceByFieldService<
         return new Err({ data: error, kind: "error" });
     }
 }
+
+async function createNewResourceService<
+    Schema extends Record<string, unknown> = Record<string, unknown>,
+    Doc extends DBRecord = DBRecord,
+>(
+    schema: Schema,
+    model: Model<Doc>,
+): ServiceResult<Doc> {
+    try {
+        const resource = await model.create(schema);
+        return new Ok({
+            data: resource,
+            kind: "success",
+        }) as unknown as ServiceResult<Doc>;
+    } catch (error: unknown) {
+        return new Err({ data: error, kind: "error" });
+    }
+}
