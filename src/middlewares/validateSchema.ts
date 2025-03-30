@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import createHttpError from "http-errors";
-import { Schema } from "joi";
+import type { Schema } from "joi";
 
 function validateSchemaMiddleware(
   schema: Schema,

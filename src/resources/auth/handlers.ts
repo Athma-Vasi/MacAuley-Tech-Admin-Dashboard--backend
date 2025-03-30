@@ -156,11 +156,9 @@ function loginUserHandler<
 
             const accessToken = jwt.sign(
                 {
-                    userInfo: {
-                        userId: userDocument._id,
-                        username: userDocument.username,
-                        roles: userDocument.roles,
-                    },
+                    userId: userDocument._id,
+                    username: userDocument.username,
+                    roles: userDocument.roles,
                     sessionId,
                 },
                 ACCESS_TOKEN_SEED,

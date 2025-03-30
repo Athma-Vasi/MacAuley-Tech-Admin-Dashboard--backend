@@ -1,4 +1,4 @@
-import { model, Schema, Types } from "mongoose";
+import { model, Schema, type Types } from "mongoose";
 
 type ErrorLogSchema = {
   expireAt: Date;
@@ -83,4 +83,4 @@ errorLogSchema.index({
 
 const ErrorLogModel = model<ErrorLogDocument>("ErrorLog", errorLogSchema);
 
-export { ErrorLogDocument, ErrorLogModel, ErrorLogSchema };
+export { type ErrorLogDocument, ErrorLogModel, type ErrorLogSchema };

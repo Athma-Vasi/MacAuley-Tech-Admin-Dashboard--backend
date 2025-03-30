@@ -1,6 +1,11 @@
-import { FilterQuery, Model, QueryOptions } from "mongoose";
-import { Err, Ok, Result } from "ts-results";
-import {
+import type {
+    FilterQuery,
+    Model,
+    MongooseBaseQueryOptionKeys,
+    QueryOptions,
+} from "mongoose";
+import { Err, Ok, type Result } from "ts-results";
+import type {
     ArrayOperators,
     DBRecord,
     FieldOperators,
@@ -137,7 +142,10 @@ async function getQueriedTotalResourcesService<
     try {
         const totalQueriedResources = await model.countDocuments(
             filter,
-            options as any,
+            options as unknown as Pick<
+                QueryOptions<Doc>,
+                MongooseBaseQueryOptionKeys
+            >,
         )
             .lean()
             .exec();
@@ -246,10 +254,21 @@ async function deleteManyResourcesService<
     },
 ): Promise<Result<ServiceOutput<boolean>, ServiceOutput<unknown>>> {
     try {
-        const totalResources = await model.countDocuments(filter, options);
+        const totalResources = await model.countDocuments(
+            filter,
+            options as unknown as Pick<
+                QueryOptions<Doc>,
+                MongooseBaseQueryOptionKeys
+            >,
+        )
+            .lean()
+            .exec();
         const { acknowledged, deletedCount } = await model.deleteMany(
             filter,
-            options as any,
+            options as unknown as Pick<
+                QueryOptions<Doc>,
+                MongooseBaseQueryOptionKeys
+            >,
         )
             .lean()
             .exec();

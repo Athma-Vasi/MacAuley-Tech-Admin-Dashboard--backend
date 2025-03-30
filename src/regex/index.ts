@@ -167,6 +167,14 @@ const HUMAN_RESOURCES_REGEX =
   /^(Human Resources Manager|Compensation and Benefits Specialist|Health and Safety Specialist|Training Specialist|Recruiting Specialist)$/;
 
 /**
+ * - /^(Executive Management|Store Administration|Office Administration|Accounting|Human Resources|Sales|Marketing|Information Technology|Repair Technicians|Field Service Technicians|Logistics and Inventory|Customer Service|Maintenance)$/
+ * - matches the following department names: Executive Management, Store Administration, Office Administration, Accounting, Human Resources, Sales, Marketing, Information Technology, Repair Technicians, Field Service Technicians, Logistics and Inventory, Customer Service, Maintenance
+ * - ^ and $ ensure that the entire string matches the regex.
+ */
+const DEPARTMENT_REGEX =
+  /^(Executive Management|Store Administration|Office Administration|Accounting|Human Resources|Sales|Marketing|Information Technology|Repair Technicians|Field Service Technicians|Logistics and Inventory|Customer Service|Maintenance)$/;
+
+/**
  * - /^(Store Manager|Shift Supervisor|Office Manager)$/
  * - matches the following store administration positions: Store Manager, Shift Supervisor, Office Manager
  * - ^ and $ ensure that the entire string matches the regex.

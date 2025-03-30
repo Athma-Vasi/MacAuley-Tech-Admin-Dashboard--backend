@@ -1,13 +1,17 @@
 import type { Response } from "express";
 
-import { UserDocument, UserModel } from "./user.model";
+import { type UserDocument, UserModel } from "./model";
 
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 import {
   createNewResourceService,
   getResourceByFieldService,
 } from "../../services";
-import { CreateNewResourceRequest, DBRecord, HttpResult } from "../../types";
+import type {
+  CreateNewResourceRequest,
+  DBRecord,
+  HttpResult,
+} from "../../types";
 
 import {
   createErrorLogSchema,

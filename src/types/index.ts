@@ -1,14 +1,14 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import type {
   FilterQuery,
   FlattenMaps,
   QueryOptions,
   Require_id,
+  Types,
 } from "mongoose";
-import { Types } from "mongoose";
 import type { ParsedQs } from "qs";
-import { Result } from "ts-results";
-import { UserRoles } from "../resources/user";
+import type { Result } from "ts-results";
+import type { UserRoles } from "../resources/user";
 
 type DecodedToken = {
   userId: Types.ObjectId;
