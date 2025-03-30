@@ -5,6 +5,7 @@ import {
     getQueriedResourcesByUserService,
     getQueriedResourcesService,
     getQueriedTotalResourcesService,
+    updateResourceByIdService,
 } from "../services";
 import {
     CreateNewResourceRequest,
@@ -12,6 +13,7 @@ import {
     GetQueriedResourceRequest,
     HttpResult,
     HttpServerResponse,
+    UpdateResourceByIdRequest,
 } from "../types";
 import {
     createErrorLogSchema,
@@ -279,6 +281,64 @@ function getQueriedResourcesByUserHandler<Doc extends DBRecord = DBRecord>(
                     totalDocuments,
                 }),
             );
+        } catch (error: unknown) {
+            await createNewResourceService(
+                createErrorLogSchema(
+                    error,
+                    request.body,
+                ),
+                ErrorLogModel,
+            );
+
+            response.status(200).json(createHttpResultError({}));
+        }
+    };
+}
+
+function updateResourceByIdHandler<Doc extends DBRecord = DBRecord>(
+    model: Model<Doc>,
+) {
+    return async (
+        request: UpdateResourceByIdRequest,
+        response: HttpServerResponse,
+    ) => {
+        try {
+            const { resourceId } = request.params;
+            const {
+                accessToken,
+                documentUpdate: { fields, updateOperator },
+            } = request.body;
+
+            const updateResourceResult = await updateResourceByIdService({
+                fields,
+                model,
+                resourceId,
+                updateOperator,
+            });
+
+            if (updateResourceResult.err) {
+                await createNewResourceService(
+                    createErrorLogSchema(
+                        updateResourceResult.val,
+                        request.body,
+                    ),
+                    ErrorLogModel,
+                );
+
+                response.status(200).json(
+                    createHttpResultError({ status: 400 }),
+                );
+                return;
+            }
+
+            response
+                .status(200)
+                .json(
+                    createHttpResultSuccess({
+                        accessToken,
+                        data: [updateResourceResult.safeUnwrap().data],
+                    }),
+                );
         } catch (error: unknown) {
             await createNewResourceService(
                 createErrorLogSchema(
