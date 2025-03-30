@@ -9,6 +9,8 @@ import mongoose from "mongoose";
 import morgan from "morgan";
 import { CONFIG } from "./config";
 import { connectDB } from "./config/connectDB";
+import { apiRouter } from "./resources/api";
+import { authRouter } from "./resources/auth";
 
 /** config */
 
@@ -26,8 +28,8 @@ app.use(cors());
 app.use(compression());
 
 /** routes */
-// app.use("/auth", authRouter);
-// app.use("/users", userRouter);
+app.use("/auth", authRouter);
+app.use("/api", apiRouter);
 
 app.use((_: Request, __: Response, next: NextFunction) => {
     return next(new createHttpError.NotFound("This route does not exist"));

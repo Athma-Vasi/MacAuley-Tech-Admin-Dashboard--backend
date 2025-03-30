@@ -1,7 +1,6 @@
-import { UsernameEmailSetModel } from "./usernameEmailSet.model";
-import { createHttpResultError, createHttpResultSuccess } from "../../utils";
 import { Err, Ok } from "ts-results";
-import { ServiceResult } from "../../types";
+import type { ServiceResult } from "../../types";
+import { UsernameEmailSetModel } from "./model";
 
 async function updateUsernameEmailSetWithUsernameService(
   username: string,

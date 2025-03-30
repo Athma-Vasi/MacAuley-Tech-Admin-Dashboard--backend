@@ -8,7 +8,11 @@ import {
   getResourceByIdHandler,
   updateResourceByIdHandler,
 } from "../../handlers";
-import { addUserProjection, validateSchemaMiddleware } from "../../middlewares";
+import {
+  addUserProjection,
+  validateSchemaMiddleware,
+  verifyJWTMiddleware,
+} from "../../middlewares";
 import { createNewUserHandler } from "./handlers";
 import { UserModel } from "./model";
 import { createUserJoiSchema, updateUserJoiSchema } from "./validations";
@@ -21,7 +25,7 @@ userRouter
   // @desc   Get all users
   // @route  GET api/v1/product-category/user
   // @access Private/Admin/Manager
-  .get(getQueriedResourcesHandler(UserModel))
+  .get(verifyJWTMiddleware, getQueriedResourcesHandler(UserModel))
   // @desc   Create a new user
   // @route  POST api/v1/product-category/user
   // @access Private/Admin/Manager
@@ -34,6 +38,7 @@ userRouter
 // @route  DELETE api/v1/product-category/user/delete-many
 // @access Private/Admin/Manager
 userRouter.route("/delete-many").delete(
+  verifyJWTMiddleware,
   deleteManyResourcesHandler(UserModel),
 );
 
@@ -41,6 +46,7 @@ userRouter.route("/delete-many").delete(
 // @route  GET api/v1/product-category/user/user
 // @access Private/Admin/Manager
 userRouter.route("/user").get(
+  verifyJWTMiddleware,
   getQueriedResourcesByUserHandler(UserModel),
 );
 
@@ -49,15 +55,16 @@ userRouter
   // @desc   Get an user by their ID
   // @route  GET api/v1/product-category/user/:resourceId
   // @access Private/Admin/Manager
-  .get(getResourceByIdHandler(UserModel))
+  .get(verifyJWTMiddleware, getResourceByIdHandler(UserModel))
   // @desc   Delete an user by their ID
   // @route  DELETE api/v1/product-category/user/:resourceId
   // @access Private/Admin/Manager
-  .delete(deleteResourceByIdHandler(UserModel))
+  .delete(verifyJWTMiddleware, deleteResourceByIdHandler(UserModel))
   // @desc   Update an user by their ID
   // @route  PATCH api/v1/product-category/user/:resourceId
   // @access Private/Admin/Manager
   .patch(
+    verifyJWTMiddleware,
     validateSchemaMiddleware(updateUserJoiSchema),
     updateResourceByIdHandler(UserModel),
   );

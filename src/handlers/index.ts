@@ -1,5 +1,6 @@
-import { Response } from "express";
-import { Model } from "mongoose";
+import type { Response } from "express";
+import type { Model } from "mongoose";
+import { ErrorLogModel } from "../resources/errorLog";
 import {
     createNewResourceService,
     deleteManyResourcesService,
@@ -10,7 +11,7 @@ import {
     getResourceByIdService,
     updateResourceByIdService,
 } from "../services";
-import {
+import type {
     CreateNewResourceRequest,
     DBRecord,
     GetQueriedResourceRequest,
@@ -102,7 +103,7 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
 
             // only perform a countDocuments scan if a new query is being made
             if (newQueryFlag) {
-                const totalResult = await getQueriedTotalResourcesService({
+                const totalResult = await getQueriedTotalResourcesService<Doc>({
                     filter,
                     model,
                 });
@@ -213,7 +214,7 @@ function getQueriedResourcesByUserHandler<Doc extends DBRecord = DBRecord>(
 
             // only perform a countDocuments scan if a new query is being made
             if (newQueryFlag) {
-                const totalResult = await getQueriedTotalResourcesService({
+                const totalResult = await getQueriedTotalResourcesService<Doc>({
                     filter: filterWithUserId,
                     model,
                 });
