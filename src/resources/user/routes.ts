@@ -12,7 +12,7 @@ import { addUserProjection } from "../../middlewares/addUserProjection";
 import { validateSchemaMiddleware } from "../../middlewares/validateSchema";
 import { createNewUserHandler } from "./handlers";
 import { UserModel } from "./model";
-import { createUserJoiSchema, updateUserJoiSchema } from "./validation";
+import { createUserJoiSchema, updateUserJoiSchema } from "./validations";
 
 const userRouter = Router();
 userRouter.use(addUserProjection);
