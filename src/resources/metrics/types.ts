@@ -56,6 +56,7 @@ type RepairCategory =
   | "Accessory";
 
 type StoreLocation = "Calgary" | "Edmonton" | "Vancouver";
+type AllStoreLocations = "All Locations" | StoreLocation;
 
 type LocationYearSpread = Record<
   StoreLocation,
@@ -235,6 +236,7 @@ type BusinessMetric = {
 };
 
 export type {
+  AllStoreLocations,
   BusinessMetric,
   BusinessMetricStoreLocation,
   CustomerDailyMetric,
