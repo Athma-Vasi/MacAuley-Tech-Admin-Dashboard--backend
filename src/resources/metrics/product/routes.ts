@@ -24,11 +24,11 @@ const productMetricRouter = Router();
 productMetricRouter
   .route("/")
   // @desc   Get all product metrics
-  // @route  GET api/v1/product-metrics
+  // @route  GET api/v1/metrics/product
   // @access Private/Admin/Manager
   .get(verifyJWTMiddleware, getQueriedResourcesHandler(ProductMetricModel))
-  // @desc   Create a new user
-  // @route  POST api/v1/product-category/user
+  // @desc   Create a new product metric
+  // @route  POST api/v1/metrics/product
   // @access Private/Admin/Manager
   .post(
     validateSchemaMiddleware(createProductMetricsJoiSchema, "schema"),
@@ -36,7 +36,7 @@ productMetricRouter
   );
 
 // @desc   Delete many product metrics
-// @route  DELETE api/v1/product-metrics/delete-many
+// @route  DELETE api/v1/metrics/product/delete-many
 // @access Private/Admin/Manager
 productMetricRouter.route("/delete-many").delete(
   verifyJWTMiddleware,
@@ -44,7 +44,7 @@ productMetricRouter.route("/delete-many").delete(
 );
 
 // @desc   Get all product metrics by user
-// @route  GET api/v1/product-metrics/user
+// @route  GET api/v1/metrics/product/user
 // @access Private/Admin/Manager
 productMetricRouter.route("/user").get(
   verifyJWTMiddleware,
@@ -54,15 +54,15 @@ productMetricRouter.route("/user").get(
 productMetricRouter
   .route("/:resourceId")
   // @desc   Get a product metric by its ID
-  // @route  GET api/v1/product-metric/:resourceId
+  // @route  GET api/v1/metric/product/:resourceId
   // @access Private/Admin/Manager
   .get(verifyJWTMiddleware, getResourceByIdHandler(ProductMetricModel))
   // @desc   Delete a product metric by its ID
-  // @route  DELETE api/v1/product-metric/:resourceId
+  // @route  DELETE api/v1/metric/product/:resourceId
   // @access Private/Admin/Manager
   .delete(verifyJWTMiddleware, deleteResourceByIdHandler(ProductMetricModel))
   // @desc   Update a product metric by its ID
-  // @route  PATCH api/v1/product-metric/:resourceId
+  // @route  PATCH api/v1/metric/product/:resourceId
   // @access Private/Admin/Manager
   .patch(
     verifyJWTMiddleware,

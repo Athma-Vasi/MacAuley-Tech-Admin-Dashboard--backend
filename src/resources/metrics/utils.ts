@@ -4230,3 +4230,5 @@ function createRepairCategoryUnitsRepairedRevenueTuple({
 
     return [unitsSold, revenue];
 }
+
+export { createRandomBusinessMetrics };

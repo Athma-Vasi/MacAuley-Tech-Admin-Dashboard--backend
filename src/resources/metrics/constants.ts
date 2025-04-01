@@ -1,4 +1,9 @@
-import type { Month, ProductCategory, RepairCategory } from "./types";
+import type {
+    Month,
+    ProductCategory,
+    RepairCategory,
+    StoreLocation,
+} from "./types";
 
 const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
@@ -45,7 +50,7 @@ const REPAIR_CATEGORIES: RepairCategory[] = [
     "Peripheral",
 ];
 
-const STORE_LOCATIONS = ["Calgary", "Edmonton", "Vancouver"];
+const STORE_LOCATIONS: StoreLocation[] = ["Calgary", "Edmonton", "Vancouver"];
 
 export {
     DAYS_PER_MONTH,

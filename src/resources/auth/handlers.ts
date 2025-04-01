@@ -27,6 +27,16 @@ import {
   verifyJWTSafe,
 } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
+import {
+  DAYS_PER_MONTH,
+  MONTHS,
+  PRODUCT_CATEGORIES,
+  REPAIR_CATEGORIES,
+  STORE_LOCATIONS,
+} from "../metrics/constants";
+import { ProductMetricSchema } from "../metrics/product/model";
+import type { BusinessMetric } from "../metrics/types";
+import { createRandomBusinessMetrics } from "../metrics/utils";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
 import type { AuthSchema } from "./model";
 
@@ -176,6 +186,53 @@ function loginUserHandler<
         },
         Object.create(null),
       );
+
+      // create random business metrics
+      const businesMetrics = await createRandomBusinessMetrics({
+        daysPerMonth: DAYS_PER_MONTH,
+        months: MONTHS,
+        productCategories: PRODUCT_CATEGORIES,
+        repairCategories: REPAIR_CATEGORIES,
+        storeLocations: STORE_LOCATIONS,
+      });
+
+      function createProductMetricsSchemas(
+        businessMetrics: BusinessMetric[],
+        userDocument: UserDocument,
+      ) {
+        const productMetricSchemaTemplate: ProductMetricSchema = {
+          expireAt: new Date(Date.now() + 1000 * 60 * 60 * 12 * 1), // 12 hours
+          name: "All Products",
+          storeLocation: "All Locations",
+          userId: userDocument._id,
+          yearlyMetrics: [],
+        };
+
+        return businessMetrics.reduce((acc, curr) => {
+          const { storeLocation, productMetrics } = curr;
+
+          productMetrics.forEach((productMetric) => {
+            const { name, yearlyMetrics } = productMetric;
+            const productMetricSchema = {
+              ...productMetricSchemaTemplate,
+              name,
+              storeLocation,
+              yearlyMetrics,
+            };
+
+            acc.push(productMetricSchema);
+          });
+
+          return acc;
+        }, [] as ProductMetricSchema[]);
+      }
+
+      const productMetricsSchemas = createProductMetricsSchemas(
+        businesMetrics,
+        userDocument,
+      );
+
+      console.log("productMetricsSchemas", productMetricsSchemas);
 
       response.status(200).json(
         createHttpResultSuccess({
