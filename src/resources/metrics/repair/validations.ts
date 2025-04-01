@@ -7,7 +7,7 @@ import {
     YEARS_REGEX,
 } from "../../../regex";
 
-const createRepairMetricJoiSchema = Joi.object({
+const createRepairMetricsJoiSchema = Joi.object({
     storeLocation: Joi.string().regex(ALL_STORE_LOCATIONS_REGEX).required(),
     repairMetrics: Joi.array()
         .items(
@@ -41,7 +41,7 @@ const createRepairMetricJoiSchema = Joi.object({
         .required(),
 });
 
-const updateRepairMetricJoiSchema = Joi.object({
+const updateRepairMetricsJoiSchema = Joi.object({
     storeLocation: Joi.string().regex(ALL_STORE_LOCATIONS_REGEX).optional(),
     repairMetrics: Joi.array()
         .items(
@@ -74,4 +74,4 @@ const updateRepairMetricJoiSchema = Joi.object({
         ).optional(),
 });
 
-export { createRepairMetricJoiSchema, updateRepairMetricJoiSchema };
+export { createRepairMetricsJoiSchema, updateRepairMetricsJoiSchema };
