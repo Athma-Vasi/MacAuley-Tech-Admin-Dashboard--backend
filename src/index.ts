@@ -32,21 +32,21 @@ app.use("/auth", authRouter);
 app.use("/api", apiRouter);
 
 app.use((_: Request, __: Response, next: NextFunction) => {
-    return next(new createHttpError.NotFound("This route does not exist"));
+  return next(new createHttpError.NotFound("This route does not exist"));
 });
 
 /** error handling */
 // app.use(errorHandler)
 
 mongoose.connection.once("open", () => {
-    console.log("Connected to MongoDB");
+  console.log("Connected to MongoDB");
 
-    const { PORT } = CONFIG;
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-    });
+  const { PORT } = CONFIG;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 });
 
 mongoose.connection.on("error", (error) => {
-    console.error(error);
+  console.error(error);
 });

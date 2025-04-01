@@ -7,9 +7,9 @@ import { authRouter } from "./routes";
  * Imports
  */
 import {
-    loginUserHandler,
-    logoutUserHandler,
-    registerUserHandler,
+  loginUserHandler,
+  logoutUserHandler,
+  registerUserHandler,
 } from "./handlers";
 import { type AuthDocument, AuthModel, type AuthSchema } from "./model";
 import { createTokenService } from "./services";
@@ -17,12 +17,12 @@ import { createTokenService } from "./services";
  * Exports
  */
 export {
-    AuthModel,
-    authRouter,
-    createTokenService,
-    loginUserHandler,
-    logoutUserHandler,
-    registerUserHandler,
+  AuthModel,
+  authRouter,
+  createTokenService,
+  loginUserHandler,
+  logoutUserHandler,
+  registerUserHandler,
 };
 
 export type { AuthDocument, AuthSchema };

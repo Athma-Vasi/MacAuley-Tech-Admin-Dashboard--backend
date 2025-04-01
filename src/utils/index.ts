@@ -246,6 +246,10 @@ function filterFieldsFromObject<
   }, Object.create(null));
 }
 
+function toFixedFloat(num: number, precision = 4): number {
+  return Number(num.toFixed(precision));
+}
+
 export {
   compareHashedStringWithPlainStringSafe,
   createErrorLogSchema,
@@ -256,5 +260,6 @@ export {
   hashStringSafe,
   removeUndefinedAndNullValues,
   returnEmptyFieldsTuple,
+  toFixedFloat,
   verifyJWTSafe,
 };

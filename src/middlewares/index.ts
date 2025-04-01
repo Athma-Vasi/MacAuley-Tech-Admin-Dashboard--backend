@@ -4,8 +4,8 @@ import { validateSchemaMiddleware } from "./validateSchema";
 import { verifyJWTMiddleware } from "./verifyJWT";
 
 export {
-    addUserProjection,
-    createMongoDbQueryObject,
-    validateSchemaMiddleware,
-    verifyJWTMiddleware,
+  addUserProjection,
+  createMongoDbQueryObject,
+  validateSchemaMiddleware,
+  verifyJWTMiddleware,
 };
