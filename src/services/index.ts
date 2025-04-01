@@ -81,13 +81,7 @@ async function createNewResourceService<
   model: Model<Doc>,
 ): ServiceResult<Doc> {
   try {
-    console.group("createNewResourceService");
-    console.log("before model.create");
-
     const resource = await model.create(schema);
-
-    console.log("resource:", resource);
-    console.groupEnd();
 
     return new Ok({
       data: resource,

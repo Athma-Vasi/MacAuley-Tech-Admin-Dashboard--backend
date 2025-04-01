@@ -12,7 +12,7 @@ import {
   validateSchemaMiddleware,
   verifyJWTMiddleware,
 } from "../../../middlewares";
-import { createNewProductMetricHandler } from "./handler";
+import { createNewProductMetricHandler } from "./handlers";
 import { ProductMetricModel } from "./model";
 import {
   createProductMetricsJoiSchema,

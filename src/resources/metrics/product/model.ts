@@ -1,80 +1,37 @@
 import { model, Schema, type Types } from "mongoose";
-import type {
-    AllStoreLocations,
-    ProductCategory,
-    ProductYearlyMetric,
-} from "../types";
+import type { AllStoreLocations, ProductMetric } from "../types";
 
-type ProductMetricSchema = {
-    expireAt: Date;
-    name: ProductCategory | "All Products";
+type ProductMetricsSchema = {
     storeLocation: AllStoreLocations;
-    userId: Types.ObjectId;
-    yearlyMetrics: ProductYearlyMetric[];
+    productMetrics: ProductMetric[];
 };
 
-type ProductMetricDocument = ProductMetricSchema & {
+type ProductMetricsDocument = ProductMetricsSchema & {
     _id: Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
     __v: number;
 };
 
-const productMetricSchema = new Schema(
+const productMetricsSchema = new Schema(
     {
-        expireAt: {
-            type: Date,
-            required: false,
-            default: Date.now,
-            index: { expires: "12h" }, // document will expire in 12 hours
-        },
-        name: {
-            type: String,
-            default: "All Products",
-            required: [true, "Product category is required"],
-        },
         storeLocation: {
             type: String,
             default: "All Locations",
             required: [true, "Store location is required"],
         },
-        userId: {
-            type: Schema.Types.ObjectId,
-            required: [true, "User ID is required"],
-            ref: "User",
-            index: true,
-        },
-        yearlyMetrics: [
+        productMetrics: [
             {
-                year: {
+                name: {
                     type: String,
-                    required: [true, "Year is required"],
+                    required: [true, "Product name is required"],
                 },
-                revenue: {
-                    online: {
-                        type: Number,
-                        default: 0,
-                    },
-                    inStore: {
-                        type: Number,
-                        default: 0,
-                    },
-                },
-                unitsSold: {
-                    online: {
-                        type: Number,
-                        default: 0,
-                    },
-                    inStore: {
-                        type: Number,
-                        default: 0,
-                    },
-                },
-                monthlyMetrics: [
+
+                yearlyMetrics: [
                     {
-                        month: {
-                            type: String, // Month: like "January", "February", etc.
-                            required: [true, "Month is required"],
+                        year: {
+                            type: String,
+                            required: [true, "Year is required"],
                         },
                         revenue: {
                             online: {
@@ -96,11 +53,11 @@ const productMetricSchema = new Schema(
                                 default: 0,
                             },
                         },
-                        dailyMetrics: [
+                        monthlyMetrics: [
                             {
-                                day: {
-                                    type: String,
-                                    required: [true, "Day is required"],
+                                month: {
+                                    type: String, // Month: like "January", "February", etc.
+                                    required: [true, "Month is required"],
                                 },
                                 revenue: {
                                     online: {
@@ -122,6 +79,34 @@ const productMetricSchema = new Schema(
                                         default: 0,
                                     },
                                 },
+                                dailyMetrics: [
+                                    {
+                                        day: {
+                                            type: String,
+                                            required: [true, "Day is required"],
+                                        },
+                                        revenue: {
+                                            online: {
+                                                type: Number,
+                                                default: 0,
+                                            },
+                                            inStore: {
+                                                type: Number,
+                                                default: 0,
+                                            },
+                                        },
+                                        unitsSold: {
+                                            online: {
+                                                type: Number,
+                                                default: 0,
+                                            },
+                                            inStore: {
+                                                type: Number,
+                                                default: 0,
+                                            },
+                                        },
+                                    },
+                                ],
                             },
                         ],
                     },
@@ -132,13 +117,12 @@ const productMetricSchema = new Schema(
     { timestamps: true },
 );
 
-productMetricSchema.index({ storeLocation: "text" });
-productMetricSchema.index({ productMetrics: "text" });
+productMetricsSchema.index({ storeLocation: "text" });
 
-const ProductMetricModel = model<ProductMetricDocument>(
+const ProductMetricModel = model<ProductMetricsDocument>(
     "ProductMetric",
-    productMetricSchema,
+    productMetricsSchema,
 );
 
 export { ProductMetricModel };
-export type { ProductMetricDocument, ProductMetricSchema };
+export type { ProductMetricsDocument, ProductMetricsSchema };

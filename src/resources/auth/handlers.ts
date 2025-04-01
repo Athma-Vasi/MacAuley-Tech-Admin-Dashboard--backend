@@ -34,7 +34,10 @@ import {
   REPAIR_CATEGORIES,
   STORE_LOCATIONS,
 } from "../metrics/constants";
-import { ProductMetricSchema } from "../metrics/product/model";
+import {
+  ProductMetricModel,
+  type ProductMetricsSchema,
+} from "../metrics/product/model";
 import type { BusinessMetric } from "../metrics/types";
 import { createRandomBusinessMetrics } from "../metrics/utils";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
@@ -198,41 +201,46 @@ function loginUserHandler<
 
       function createProductMetricsSchemas(
         businessMetrics: BusinessMetric[],
-        userDocument: UserDocument,
       ) {
-        const productMetricSchemaTemplate: ProductMetricSchema = {
-          expireAt: new Date(Date.now() + 1000 * 60 * 60 * 12 * 1), // 12 hours
-          name: "All Products",
+        const productMetricsSchemaTemplate: ProductMetricsSchema = {
           storeLocation: "All Locations",
-          userId: userDocument._id,
-          yearlyMetrics: [],
+          productMetrics: [],
         };
 
         return businessMetrics.reduce((acc, curr) => {
           const { storeLocation, productMetrics } = curr;
 
-          productMetrics.forEach((productMetric) => {
-            const { name, yearlyMetrics } = productMetric;
-            const productMetricSchema = {
-              ...productMetricSchemaTemplate,
-              name,
-              storeLocation,
-              yearlyMetrics,
-            };
+          const productMetricsSchema = {
+            ...productMetricsSchemaTemplate,
+            storeLocation,
+            productMetrics,
+          };
 
-            acc.push(productMetricSchema);
-          });
+          acc.push(productMetricsSchema);
 
           return acc;
-        }, [] as ProductMetricSchema[]);
+        }, [] as ProductMetricsSchema[]);
       }
 
       const productMetricsSchemas = createProductMetricsSchemas(
         businesMetrics,
-        userDocument,
       );
 
-      console.log("productMetricsSchemas", productMetricsSchemas);
+      console.time("productMetricsDocument");
+
+      const productMetricsDocument = await Promise.all(
+        productMetricsSchemas.map(
+          async (productMetricsSchema) =>
+            await createNewResourceService(
+              productMetricsSchema,
+              ProductMetricModel,
+            ),
+        ),
+      );
+
+      console.log("productMetricsDocument", productMetricsDocument);
+
+      console.timeEnd("productMetricsDocument");
 
       response.status(200).json(
         createHttpResultSuccess({
