@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, type Types } from "mongoose";
 import type {
     AllStoreLocations,
     ProductCategory,
@@ -9,12 +9,12 @@ type ProductMetricSchema = {
     expireAt: Date;
     name: ProductCategory | "All Products";
     storeLocation: AllStoreLocations;
-    userId: string;
+    userId: Types.ObjectId;
     yearlyMetrics: ProductYearlyMetric[];
 };
 
 type ProductMetricDocument = ProductMetricSchema & {
-    _id: string;
+    _id: Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
     __v: number;
@@ -39,7 +39,7 @@ const productMetricSchema = new Schema(
             required: [true, "Store location is required"],
         },
         userId: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: [true, "User ID is required"],
             ref: "User",
             index: true,
