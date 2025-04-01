@@ -6,8 +6,10 @@ import type {
 } from "../types";
 
 type ProductMetricSchema = {
-    storeLocation: AllStoreLocations;
+    expireAt: Date;
     name: ProductCategory | "All Products";
+    storeLocation: AllStoreLocations;
+    userId: string;
     yearlyMetrics: ProductYearlyMetric[];
 };
 
@@ -20,15 +22,27 @@ type ProductMetricDocument = ProductMetricSchema & {
 
 const productMetricSchema = new Schema(
     {
-        storeLocation: {
-            type: String,
-            default: "All Locations",
-            required: [true, "Store location is required"],
+        expireAt: {
+            type: Date,
+            required: false,
+            default: Date.now,
+            index: { expires: "12h" }, // document will expire in 12 hours
         },
         name: {
             type: String,
             default: "All Products",
             required: [true, "Product category is required"],
+        },
+        storeLocation: {
+            type: String,
+            default: "All Locations",
+            required: [true, "Store location is required"],
+        },
+        userId: {
+            type: String,
+            required: [true, "User ID is required"],
+            ref: "User",
+            index: true,
         },
         yearlyMetrics: [
             {
@@ -117,6 +131,7 @@ const productMetricSchema = new Schema(
     },
     { timestamps: true },
 );
+
 productMetricSchema.index({ storeLocation: "text" });
 productMetricSchema.index({ productMetrics: "text" });
 
