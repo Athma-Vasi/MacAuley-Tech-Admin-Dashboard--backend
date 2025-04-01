@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { productMetricRouter } from "./product/routes";
+import { productMetricsRouter } from "./product/routes";
+import { repairMetricsRouter } from "./repair/routes";
 
 const metricsRouter = Router();
 
-metricsRouter.use("/product", productMetricRouter);
+metricsRouter.use("/product", productMetricsRouter);
+metricsRouter.use("/repair", repairMetricsRouter);
 
 export { metricsRouter };

@@ -3,7 +3,6 @@ import { Router } from "express";
 import {
   deleteManyResourcesHandler,
   deleteResourceByIdHandler,
-  getQueriedResourcesByUserHandler,
   getQueriedResourcesHandler,
   getResourceByIdHandler,
   updateResourceByIdHandler,
@@ -19,9 +18,9 @@ import {
   updateProductMetricsJoiSchema,
 } from "./validations";
 
-const productMetricRouter = Router();
+const productMetricsRouter = Router();
 
-productMetricRouter
+productMetricsRouter
   .route("/")
   // @desc   Get all product metrics
   // @route  GET api/v1/metrics/product
@@ -38,12 +37,12 @@ productMetricRouter
 // @desc   Delete many product metrics
 // @route  DELETE api/v1/metrics/product/delete-many
 // @access Private/Admin/Manager
-productMetricRouter.route("/delete-many").delete(
+productMetricsRouter.route("/delete-many").delete(
   verifyJWTMiddleware,
   deleteManyResourcesHandler(ProductMetricModel),
 );
 
-productMetricRouter
+productMetricsRouter
   .route("/:resourceId")
   // @desc   Get a product metric by its ID
   // @route  GET api/v1/metric/product/:resourceId
@@ -62,4 +61,4 @@ productMetricRouter
     updateResourceByIdHandler(ProductMetricModel),
   );
 
-export { productMetricRouter };
+export { productMetricsRouter };

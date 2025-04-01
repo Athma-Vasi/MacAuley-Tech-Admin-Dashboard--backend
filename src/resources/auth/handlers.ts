@@ -34,10 +34,11 @@ import {
   REPAIR_CATEGORIES,
   STORE_LOCATIONS,
 } from "../metrics/constants";
+import { ProductMetricModel } from "../metrics/product/model";
 import {
-  ProductMetricModel,
-  type ProductMetricsSchema,
-} from "../metrics/product/model";
+  RepairMetricsModel,
+  type RepairMetricsSchema,
+} from "../metrics/repair/model";
 import type { BusinessMetric } from "../metrics/types";
 import { createRandomBusinessMetrics } from "../metrics/utils";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
@@ -199,48 +200,70 @@ function loginUserHandler<
         storeLocations: STORE_LOCATIONS,
       });
 
-      function createProductMetricsSchemas(
-        businessMetrics: BusinessMetric[],
-      ) {
-        const productMetricsSchemaTemplate: ProductMetricsSchema = {
+      // function createProductMetricsSchemas(
+      //   businessMetrics: BusinessMetric[],
+      // ) {
+      //   const productMetricsSchemaTemplate: ProductMetricsSchema = {
+      //     storeLocation: "All Locations",
+      //     productMetrics: [],
+      //   };
+
+      //   return businessMetrics.reduce((acc, curr) => {
+      //     const { storeLocation, productMetrics } = curr;
+
+      //     const productMetricsSchema = {
+      //       ...productMetricsSchemaTemplate,
+      //       storeLocation,
+      //       productMetrics,
+      //     };
+
+      //     acc.push(productMetricsSchema);
+
+      //     return acc;
+      //   }, [] as ProductMetricsSchema[]);
+      // }
+
+      // const productMetricsSchemas = createProductMetricsSchemas(
+      //   businesMetrics,
+      // );
+
+      function createRepairMetricsSchemas(businesMetrics: BusinessMetric[]) {
+        const repairMetricsSchemaTemplate: RepairMetricsSchema = {
           storeLocation: "All Locations",
-          productMetrics: [],
+          repairMetrics: [],
         };
 
-        return businessMetrics.reduce((acc, curr) => {
-          const { storeLocation, productMetrics } = curr;
+        return businesMetrics.reduce((acc, curr) => {
+          const { storeLocation, repairMetrics } = curr;
 
-          const productMetricsSchema = {
-            ...productMetricsSchemaTemplate,
+          const repairMetricsSchema = {
+            ...repairMetricsSchemaTemplate,
             storeLocation,
-            productMetrics,
+            repairMetrics,
           };
 
-          acc.push(productMetricsSchema);
+          acc.push(repairMetricsSchema);
 
           return acc;
-        }, [] as ProductMetricsSchema[]);
+        }, [] as RepairMetricsSchema[]);
       }
 
-      const productMetricsSchemas = createProductMetricsSchemas(
-        businesMetrics,
-      );
+      const repairMetricsSchemas = createRepairMetricsSchemas(businesMetrics);
+      console.time("repairMetricsDocument");
 
-      console.time("productMetricsDocument");
-
-      const productMetricsDocument = await Promise.all(
-        productMetricsSchemas.map(
-          async (productMetricsSchema) =>
+      const repairMetricsDocument = await Promise.all(
+        repairMetricsSchemas.map(
+          async (repairMetricsSchema) =>
             await createNewResourceService(
-              productMetricsSchema,
-              ProductMetricModel,
+              repairMetricsSchema,
+              RepairMetricsModel,
             ),
         ),
       );
 
-      console.log("productMetricsDocument", productMetricsDocument);
+      console.log("repairMetricsDocument", repairMetricsDocument);
 
-      console.timeEnd("productMetricsDocument");
+      console.timeEnd("repairMetricsDocument");
 
       response.status(200).json(
         createHttpResultSuccess({
