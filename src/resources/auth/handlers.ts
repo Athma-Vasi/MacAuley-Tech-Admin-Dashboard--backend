@@ -254,6 +254,8 @@ function registerUserHandler<
                     ErrorLogModel,
                 );
 
+                console.log("hashPasswordResult", hashPasswordResult);
+
                 response.status(200).json(
                     createHttpResultError({
                         message: "Unable to register. Please try again.",
@@ -268,6 +270,10 @@ function registerUserHandler<
                 password: hashedPassword,
             };
 
+            console.group("registerUserHandler");
+            console.log("userSchema", userSchema);
+            console.groupEnd();
+
             const createUserResult = await createNewResourceService(
                 userSchema,
                 model,
@@ -278,6 +284,8 @@ function registerUserHandler<
                     createErrorLogSchema(createUserResult.val, request.body),
                     ErrorLogModel,
                 );
+
+                console.log("createUserResult", createUserResult);
 
                 response.status(200).json(
                     createHttpResultError({

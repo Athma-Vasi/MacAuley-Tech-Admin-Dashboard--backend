@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { verifyJWTMiddleware } from "../../middlewares";
 import { validateSchemaMiddleware } from "../../middlewares/validateSchema";
+import { UserModel } from "../user";
 import {
   loginUserHandler,
   logoutUserHandler,
@@ -28,7 +29,7 @@ authRouter.route("/login").post(
 // @access Public
 authRouter.route("/register").post(
   validateSchemaMiddleware(createAuthSessionJoiSchema, "schema"),
-  registerUserHandler(AuthModel),
+  registerUserHandler(UserModel),
 );
 
 // @see https://stackoverflow.com/questions/3521290/logging-out-get-or-post

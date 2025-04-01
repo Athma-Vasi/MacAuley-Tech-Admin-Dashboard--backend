@@ -56,6 +56,10 @@ async function getResourceByFieldService<
             .lean()
             .exec();
 
+        console.group("getResourceByFieldService");
+        console.log("resourceBox:", resourceBox);
+        console.groupEnd();
+
         if (resourceBox.length === 0 || resourceBox.length > 1) {
             return new Ok({ kind: "notFound" });
         }
@@ -77,7 +81,14 @@ async function createNewResourceService<
     model: Model<Doc>,
 ): ServiceResult<Doc> {
     try {
+        console.group("createNewResourceService");
+        console.log("before model.create");
+
         const resource = await model.create(schema);
+
+        console.log("resource:", resource);
+        console.groupEnd();
+
         return new Ok({
             data: resource,
             kind: "success",
