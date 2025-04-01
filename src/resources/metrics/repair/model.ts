@@ -1,12 +1,12 @@
 import { model, Schema, type Types } from "mongoose";
 import type { AllStoreLocations, RepairMetric } from "../types";
 
-type RepairMetricSchema = {
+type RepairMetricsSchema = {
     storeLocation: AllStoreLocations;
     repairMetrics: RepairMetric[];
 };
 
-type RepairMetricDocument = RepairMetricSchema & {
+type RepairMetricsDocument = RepairMetricsSchema & {
     _id: Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
@@ -84,10 +84,10 @@ repairMetricsSchema.index({
     storeLocation: "text",
 });
 
-const RepairMetricsModel = model<RepairMetricDocument>(
+const RepairMetricsModel = model<RepairMetricsDocument>(
     "RepairMetrics",
     repairMetricsSchema,
 );
 
 export { RepairMetricsModel };
-export type { RepairMetricDocument, RepairMetricSchema };
+export type { RepairMetricsDocument, RepairMetricsSchema };
