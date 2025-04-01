@@ -27,25 +27,8 @@ import {
   verifyJWTSafe,
 } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
-import {
-  DAYS_PER_MONTH,
-  MONTHS,
-  PRODUCT_CATEGORIES,
-  REPAIR_CATEGORIES,
-  STORE_LOCATIONS,
-} from "../metrics/constants";
-import {
-  RepairMetricsModel,
-  type RepairMetricsSchema,
-} from "../metrics/repair/model";
-import type { BusinessMetric } from "../metrics/types";
-import { createRandomBusinessMetrics } from "../metrics/utils";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
 import type { AuthSchema } from "./model";
-import {
-  FinancialMetricsModel,
-  type FinancialMetricsSchema,
-} from "../metrics/financial/model";
 
 // @desc   Login user
 // @route  POST /auth/login
@@ -195,13 +178,13 @@ function loginUserHandler<
       );
 
       // create random business metrics
-      const businesMetrics = await createRandomBusinessMetrics({
-        daysPerMonth: DAYS_PER_MONTH,
-        months: MONTHS,
-        productCategories: PRODUCT_CATEGORIES,
-        repairCategories: REPAIR_CATEGORIES,
-        storeLocations: STORE_LOCATIONS,
-      });
+      // const businesMetrics = await createRandomBusinessMetrics({
+      //   daysPerMonth: DAYS_PER_MONTH,
+      //   months: MONTHS,
+      //   productCategories: PRODUCT_CATEGORIES,
+      //   repairCategories: REPAIR_CATEGORIES,
+      //   storeLocations: STORE_LOCATIONS,
+      // });
 
       // function createProductMetricsSchemas(
       //   businessMetrics: BusinessMetric[],
@@ -251,45 +234,66 @@ function loginUserHandler<
       //   }, [] as RepairMetricsSchema[]);
       // }
 
-      function createFinancialMetricsSchemas(businesMetrics: BusinessMetric[]) {
-        const financialMetricsSchemaTemplate: FinancialMetricsSchema = {
-          storeLocation: "All Locations",
-          financialMetrics: [],
-        };
+      // function createFinancialMetricsSchemas(businesMetrics: BusinessMetric[]) {
+      //   const financialMetricsSchemaTemplate: FinancialMetricsSchema = {
+      //     storeLocation: "All Locations",
+      //     financialMetrics: [],
+      //   };
 
-        return businesMetrics.reduce((acc, curr) => {
-          const { storeLocation, financialMetrics } = curr;
+      //   return businesMetrics.reduce((acc, curr) => {
+      //     const { storeLocation, financialMetrics } = curr;
 
-          const financialMetricsSchema = {
-            ...financialMetricsSchemaTemplate,
-            storeLocation,
-            financialMetrics,
-          };
+      //     const financialMetricsSchema = {
+      //       ...financialMetricsSchemaTemplate,
+      //       storeLocation,
+      //       financialMetrics,
+      //     };
 
-          acc.push(financialMetricsSchema);
+      //     acc.push(financialMetricsSchema);
 
-          return acc;
-        }, [] as FinancialMetricsSchema[]);
-      }
+      //     return acc;
+      //   }, [] as FinancialMetricsSchema[]);
+      // }
 
-      const financialMetricsSchemas = createFinancialMetricsSchemas(
-        businesMetrics,
-      );
-      console.time("financialMetricsDocument");
+      // function createCustomerMetricsSchemas(businessMetric: BusinessMetric[]) {
+      //   const customerMetricsSchemaTemplate: CustomerMetricsSchema = {
+      //     storeLocation: "All Locations",
+      //     customerMetrics: [],
+      //   };
 
-      const financialMetricsDocument = await Promise.all(
-        financialMetricsSchemas.map(
-          async (financialMetricsSchema) =>
-            await createNewResourceService(
-              financialMetricsSchema,
-              FinancialMetricsModel,
-            ),
-        ),
-      );
+      //   return businessMetric.reduce((acc, curr) => {
+      //     const { storeLocation, customerMetrics } = curr;
 
-      console.log("financialMetricsDocument", financialMetricsDocument);
+      //     const customerMetricsSchema = {
+      //       ...customerMetricsSchemaTemplate,
+      //       storeLocation,
+      //       customerMetrics,
+      //     };
 
-      console.timeEnd("financialMetricsDocument");
+      //     acc.push(customerMetricsSchema as any);
+
+      //     return acc;
+      //   }, [] as CustomerMetricsSchema[]);
+      // }
+
+      // const customerMetricsSchemas = createCustomerMetricsSchemas(
+      //   businesMetrics,
+      // );
+      // console.time("customerMetricsDocument");
+
+      // const customerMetricsDocument = await Promise.all(
+      //   customerMetricsSchemas.map(
+      //     async (customerMetricsSchema) =>
+      //       await createNewResourceService(
+      //         customerMetricsSchema,
+      //         CustomerMetricsModel,
+      //       ),
+      //   ),
+      // );
+
+      // console.log("customerMetricsDocument", customerMetricsDocument);
+
+      // console.timeEnd("customerMetricsDocument");
 
       response.status(200).json(
         createHttpResultSuccess({
