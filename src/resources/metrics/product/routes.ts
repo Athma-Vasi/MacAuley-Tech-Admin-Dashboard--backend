@@ -43,14 +43,6 @@ productMetricRouter.route("/delete-many").delete(
   deleteManyResourcesHandler(ProductMetricModel),
 );
 
-// @desc   Get all product metrics by user
-// @route  GET api/v1/metrics/product/user
-// @access Private/Admin/Manager
-productMetricRouter.route("/user").get(
-  verifyJWTMiddleware,
-  getQueriedResourcesByUserHandler(ProductMetricModel),
-);
-
 productMetricRouter
   .route("/:resourceId")
   // @desc   Get a product metric by its ID
