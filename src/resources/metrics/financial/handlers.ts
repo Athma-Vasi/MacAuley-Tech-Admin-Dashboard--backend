@@ -1,0 +1,71 @@
+import type { Response } from "express";
+import type { Model } from "mongoose";
+import { createNewResourceService } from "../../../services";
+import type { CreateNewResourceRequest, DBRecord } from "../../../types";
+import {
+    createErrorLogSchema,
+    createHttpResultError,
+    createHttpResultSuccess,
+} from "../../../utils";
+import { ErrorLogModel } from "../../errorLog";
+import type { FinancialMetricsSchema } from "./model";
+
+// @desc   Create new Financial Metric
+// @route  POST /api/v1/metrics/financial
+// @access Private/Admin/Manager
+function createNewFinancialMetricHandler<
+    Doc extends DBRecord = DBRecord,
+>(
+    model: Model<Doc>,
+) {
+    return async (
+        request: CreateNewResourceRequest<FinancialMetricsSchema>,
+        response: Response,
+    ) => {
+        try {
+            const { schema } = request.body;
+
+            const createFinancialMetricResult = await createNewResourceService(
+                schema,
+                model,
+            );
+
+            if (createFinancialMetricResult.err) {
+                await createNewResourceService(
+                    createErrorLogSchema(
+                        createFinancialMetricResult.val,
+                        request.body,
+                    ),
+                    ErrorLogModel,
+                );
+
+                response.status(200).json(
+                    createHttpResultError({
+                        message:
+                            "Unable to create financial metric. Please try again.",
+                    }),
+                );
+                return;
+            }
+
+            response.status(200).json(
+                createHttpResultSuccess({
+                    accessToken: "",
+                    message: "Financial Metric created successfully",
+                }),
+            );
+        } catch (error: unknown) {
+            await createNewResourceService(
+                createErrorLogSchema(
+                    error,
+                    request.body,
+                ),
+                ErrorLogModel,
+            );
+
+            response.status(200).json(createHttpResultError({}));
+        }
+    };
+}
+
+export { createNewFinancialMetricHandler };
