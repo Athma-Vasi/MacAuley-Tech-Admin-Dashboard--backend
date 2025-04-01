@@ -265,10 +265,66 @@ const MAINTENANCE_REGEX =
 const JOB_POSITION_REGEX =
   /^(Chief Executive Officer|Chief Operations Officer|Chief Financial Officer|Chief Technology Officer|Chief Marketing Officer|Chief Sales Officer|Chief Human Resources Officer|Human Resources Manager|Compensation and Benefits Specialist|Health and Safety Specialist|Training Specialist|Recruiting Specialist|Store Manager|Shift Supervisor|Office Manager|Office Administrator|Receptionist|Data Entry Specialist|Accounting Manager|Accounts Payable Clerk|Accounts Receivable Clerk|Financial Analyst|Sales Manager|Sales Representative|Business Development Specialist|Sales Support Specialist|Sales Operations Analyst|Marketing Manager|Digital Marketing Specialist|Graphic Designer|Public Relations Specialist|Marketing Analyst|IT Manager|Systems Administrator|IT Support Specialist|Database Administrator|Web Developer|Software Developer|Software Engineer|Repair Technicians Supervisor|Electronics Technician|Computer Technician|Smartphone Technician|Tablet Technician|Audio\/Video Equipment Technician|Field Service Supervisor|On-Site Technician|Warehouse Supervisor|Inventory Clerk|Delivery Driver|Parts and Materials Handler|Shipper\/Receiver|Customer Service Supervisor|Customer Service Representative|Technical Support Specialist|Maintenance Supervisor|Maintenance Worker|Custodian)$/;
 
+/**
+ * -  /^(Accessory|Central Processing Unit \(CPU\)|Computer Case|Desktop Computer|Display|Graphics Processing Unit \(GPU\)|Headphone|Keyboard|Laptop|Memory \(RAM\)|Microphone|Motherboard|Mouse|Power Supply Unit \(PSU\)|Smartphone|Speaker|Storage|Tablet|Webcam)$/
+ * - matches the following product categories: Accessory, Central Processing Unit (CPU), Computer Case, Desktop Computer, Display, Graphics Processing Unit (GPU), Headphone, Keyboard, Laptop, Memory (RAM), Microphone, Motherboard, Mouse, Power Supply Unit (PSU), Smartphone, Speaker, Storage, Tablet, Webcam
+ * - ^ and $ ensure that the entire string matches the regex.
+ */
+const PRODUCT_CATEGORY_REGEX =
+  /^(Accessory|Central Processing Unit \(CPU\)|Computer Case|Desktop Computer|Display|Graphics Processing Unit \(GPU\)|Headphone|Keyboard|Laptop|Memory \(RAM\)|Microphone|Motherboard|Mouse|Power Supply Unit \(PSU\)|Smartphone|Speaker|Storage|Tablet|Webcam)$/;
+
+/**
+ * - /^(Accessory|Computer Component|Peripheral|Electronic Device|Mobile Device|Audio\/Video)$/
+ * - matches the following repair categories: Accessory, Computer Component, Peripheral, Electronic Device, Mobile Device, Audio/Video
+ * - ^ and $ ensure that the entire string matches the regex.
+ */
+const REPAIR_CATEGORY_REGEX =
+  /^(Accessory|Computer Component|Peripheral|Electronic Device|Mobile Device|Audio\/Video)$/;
+
+/**
+ * - /^(All Locations|Calgary|Edmonton|Vancouver)$/
+ * - matches the following store locations: All Locations, Calgary, Edmonton, Vancouver
+ * - ^ and $ ensure that the entire string matches the regex.
+ * - ex: All Locations
+ */
+const ALL_STORE_LOCATIONS_REGEX =
+  /^(All Locations|Calgary|Edmonton|Vancouver)$/;
+
+/**
+ * - /^(January|February|March|April|May|June|July|August|September|October|November|December)$/
+ * - matches the following months: January, February, March, April, May, June, July, August, September, October, November, December
+ * - ^ and $ ensure that the entire string matches the regex.
+ * - ex: January
+ * - Note: This regex is used to validate month names in the product metrics.
+ */
+const MONTHS_REGEX =
+  /^(January|February|March|April|May|June|July|August|September|October|November|December)$/;
+
+/**
+ * - /^(2013|2014|2015|2016|2017|2018|2019|2020|2021|2022|2023|2024|2025)$/
+ * - matches the following years: 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025
+ * - ^ and $ ensure that the entire string matches the regex.
+ * - ex: 2023
+ * - Note: This regex is used to validate years in the product metrics.
+ */
+const YEARS_REGEX =
+  /^(2013|2014|2015|2016|2017|2018|2019|2020|2021|2022|2023|2024|2025)$/;
+
+/**
+ * - /^(0[1-9]|[12][0-9]|3[01])$/
+ * - matches the following days: 01, 02, 03, ..., 31
+ * - ^ and $ ensure that the entire string matches the regex.
+ * - ex: 01
+ * - Note: This regex is used to validate days in the product metrics.
+ */
+const DAYS_REGEX = /^(0[1-9]|[12][0-9]|3[01])$/;
+
 export {
   ACCOUNTING_REGEX,
+  ALL_STORE_LOCATIONS_REGEX,
   CITY_REGEX,
   CUSTOMER_SERVICE_REGEX,
+  DAYS_REGEX,
   EMAIL_REGEX,
   EXECUTIVE_MANAGEMENT_REGEX,
   FIELD_SERVICE_TECHNICIANS_REGEX,
@@ -283,10 +339,13 @@ export {
   MAINTENANCE_REGEX,
   MARKETING_REGEX,
   MEDIUM_INTEGER_REGEX,
+  MONTHS_REGEX,
   NAME_REGEX,
   OBJECT_KEY_REGEX,
   OFFICE_ADMINISTRATION_REGEX,
   PASSWORD_REGEX,
+  PRODUCT_CATEGORY_REGEX,
+  REPAIR_CATEGORY_REGEX,
   REPAIR_TECHNICIANS_REGEX,
   SALES_REGEX,
   SMALL_INTEGER_REGEX,
@@ -295,4 +354,5 @@ export {
   URL_REGEX,
   USER_ROLES_REGEX,
   USERNAME_REGEX,
+  YEARS_REGEX,
 };

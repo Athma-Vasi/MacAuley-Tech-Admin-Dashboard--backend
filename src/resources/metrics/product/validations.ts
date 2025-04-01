@@ -1,11 +1,14 @@
-import { model, Schema } from "mongoose";
-import type {
-    AllStoreLocations,
-    ProductCategory,
-    ProductYearlyMetric,
-} from "../types";
+import Joi from "joi";
+import {
+    ALL_STORE_LOCATIONS_REGEX,
+    DAYS_REGEX,
+    MONTHS_REGEX,
+    PRODUCT_CATEGORY_REGEX,
+    YEARS_REGEX,
+} from "../../../regex";
 
-type ProductMetricSchema = {
+/**
+ * type ProductMetricSchema = {
     expireAt: Date;
     name: ProductCategory | "All Products";
     storeLocation: AllStoreLocations;
@@ -47,7 +50,7 @@ const productMetricSchema = new Schema(
         yearlyMetrics: [
             {
                 year: {
-                    type: String,
+                    type: Number,
                     required: [true, "Year is required"],
                 },
                 revenue: {
@@ -131,14 +134,52 @@ const productMetricSchema = new Schema(
     },
     { timestamps: true },
 );
+ */
 
-productMetricSchema.index({ storeLocation: "text" });
-productMetricSchema.index({ productMetrics: "text" });
+const createProductMetricsJoiSchema = Joi.object({
+    expireAt: Joi.date().optional(),
+    name: Joi.string().regex(PRODUCT_CATEGORY_REGEX).required(),
+    storeLocation: Joi.string().regex(ALL_STORE_LOCATIONS_REGEX).required(),
+    userId: Joi.string().required(),
+    yearlyMetrics: Joi.array().items(
+        Joi.object({
+            year: Joi.string().regex(YEARS_REGEX).required(),
+            revenue: Joi.object({
+                online: Joi.number().default(0),
+                inStore: Joi.number().default(0),
+            }).required(),
+            unitsSold: Joi.object({
+                online: Joi.number().default(0),
+                inStore: Joi.number().default(0),
+            }).required(),
+            monthlyMetrics: Joi.array().items(
+                Joi.object({
+                    month: Joi.string().regex(MONTHS_REGEX).required(),
+                    revenue: Joi.object({
+                        online: Joi.number().default(0),
+                        inStore: Joi.number().default(0),
+                    }).required(),
+                    unitsSold: Joi.object({
+                        online: Joi.number().default(0),
+                        inStore: Joi.number().default(0),
+                    }).required(),
+                    dailyMetrics: Joi.array().items(
+                        Joi.object({
+                            day: Joi.string().regex(DAYS_REGEX).required(),
+                            revenue: Joi.object({
+                                online: Joi.number().default(0),
+                                inStore: Joi.number().default(0),
+                            }).required(),
+                            unitsSold: Joi.object({
+                                online: Joi.number().default(0),
+                                inStore: Joi.number().default(0),
+                            }).required(),
+                        }),
+                    ).optional(),
+                }),
+            ).optional(),
+        }),
+    ).optional(),
+});
 
-const ProductMetricModel = model<ProductMetricDocument>(
-    "ProductMetric",
-    productMetricSchema,
-);
-
-export { ProductMetricModel };
-export type { ProductMetricDocument, ProductMetricSchema };
+export { createProductMetricsJoiSchema };
