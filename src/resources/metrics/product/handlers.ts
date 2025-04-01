@@ -3,9 +3,9 @@ import type { Model } from "mongoose";
 import { createNewResourceService } from "../../../services";
 import type { CreateNewResourceRequest, DBRecord } from "../../../types";
 import {
-    createErrorLogSchema,
-    createHttpResultError,
-    createHttpResultSuccess,
+  createErrorLogSchema,
+  createHttpResultError,
+  createHttpResultSuccess,
 } from "../../../utils";
 import { ErrorLogModel } from "../../errorLog";
 import type { ProductMetricsSchema } from "./model";
@@ -14,58 +14,57 @@ import type { ProductMetricsSchema } from "./model";
 // @route  POST /api/v1/metrics/product
 // @access Private/Admin/Manager
 function createNewProductMetricHandler<
-    Doc extends DBRecord = DBRecord,
+  Doc extends DBRecord = DBRecord,
 >(
-    model: Model<Doc>,
+  model: Model<Doc>,
 ) {
-    return async (
-        request: CreateNewResourceRequest<ProductMetricsSchema>,
-        response: Response,
-    ) => {
-        try {
-            const { schema } = request.body;
+  return async (
+    request: CreateNewResourceRequest<ProductMetricsSchema>,
+    response: Response,
+  ) => {
+    try {
+      const { schema } = request.body;
 
-            const createProductMetricResult = await createNewResourceService(
-                schema,
-                model,
-            );
+      const createProductMetricResult = await createNewResourceService(
+        schema,
+        model,
+      );
 
-            if (createProductMetricResult.err) {
-                await createNewResourceService(
-                    createErrorLogSchema(
-                        createProductMetricResult.val,
-                        request.body,
-                    ),
-                    ErrorLogModel,
-                );
+      if (createProductMetricResult.err) {
+        await createNewResourceService(
+          createErrorLogSchema(
+            createProductMetricResult.val,
+            request.body,
+          ),
+          ErrorLogModel,
+        );
 
-                response.status(200).json(
-                    createHttpResultError({
-                        message:
-                            "Unable to create product metric. Please try again.",
-                    }),
-                );
-                return;
-            }
+        response.status(200).json(
+          createHttpResultError({
+            message: "Unable to create product metric. Please try again.",
+          }),
+        );
+        return;
+      }
 
-            response.status(200).json(
-                createHttpResultSuccess({
-                    accessToken: "",
-                    message: "Product Metric created successfully",
-                }),
-            );
-        } catch (error: unknown) {
-            await createNewResourceService(
-                createErrorLogSchema(
-                    error,
-                    request.body,
-                ),
-                ErrorLogModel,
-            );
+      response.status(200).json(
+        createHttpResultSuccess({
+          accessToken: "",
+          message: "Product Metric created successfully",
+        }),
+      );
+    } catch (error: unknown) {
+      await createNewResourceService(
+        createErrorLogSchema(
+          error,
+          request.body,
+        ),
+        ErrorLogModel,
+      );
 
-            response.status(200).json(createHttpResultError({}));
-        }
-    };
+      response.status(200).json(createHttpResultError({}));
+    }
+  };
 }
 
 export { createNewProductMetricHandler };
