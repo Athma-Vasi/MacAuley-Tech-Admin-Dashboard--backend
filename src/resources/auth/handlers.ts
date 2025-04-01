@@ -34,7 +34,6 @@ import {
   REPAIR_CATEGORIES,
   STORE_LOCATIONS,
 } from "../metrics/constants";
-import { ProductMetricModel } from "../metrics/product/model";
 import {
   RepairMetricsModel,
   type RepairMetricsSchema,

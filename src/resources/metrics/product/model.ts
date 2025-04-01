@@ -119,10 +119,10 @@ const productMetricsSchema = new Schema(
 
 productMetricsSchema.index({ storeLocation: "text" });
 
-const ProductMetricModel = model<ProductMetricsDocument>(
+const ProductMetricsModel = model<ProductMetricsDocument>(
     "ProductMetric",
     productMetricsSchema,
 );
 
-export { ProductMetricModel };
+export { ProductMetricsModel };
 export type { ProductMetricsDocument, ProductMetricsSchema };
