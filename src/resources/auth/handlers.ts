@@ -42,6 +42,10 @@ import type { BusinessMetric } from "../metrics/types";
 import { createRandomBusinessMetrics } from "../metrics/utils";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
 import type { AuthSchema } from "./model";
+import {
+  FinancialMetricsModel,
+  type FinancialMetricsSchema,
+} from "../metrics/financial/model";
 
 // @desc   Login user
 // @route  POST /auth/login
@@ -226,43 +230,66 @@ function loginUserHandler<
       //   businesMetrics,
       // );
 
-      function createRepairMetricsSchemas(businesMetrics: BusinessMetric[]) {
-        const repairMetricsSchemaTemplate: RepairMetricsSchema = {
+      // function createRepairMetricsSchemas(businesMetrics: BusinessMetric[]) {
+      //   const repairMetricsSchemaTemplate: RepairMetricsSchema = {
+      //     storeLocation: "All Locations",
+      //     repairMetrics: [],
+      //   };
+
+      //   return businesMetrics.reduce((acc, curr) => {
+      //     const { storeLocation, repairMetrics } = curr;
+
+      //     const repairMetricsSchema = {
+      //       ...repairMetricsSchemaTemplate,
+      //       storeLocation,
+      //       repairMetrics,
+      //     };
+
+      //     acc.push(repairMetricsSchema);
+
+      //     return acc;
+      //   }, [] as RepairMetricsSchema[]);
+      // }
+
+      function createFinancialMetricsSchemas(businesMetrics: BusinessMetric[]) {
+        const financialMetricsSchemaTemplate: FinancialMetricsSchema = {
           storeLocation: "All Locations",
-          repairMetrics: [],
+          financialMetrics: [],
         };
 
         return businesMetrics.reduce((acc, curr) => {
-          const { storeLocation, repairMetrics } = curr;
+          const { storeLocation, financialMetrics } = curr;
 
-          const repairMetricsSchema = {
-            ...repairMetricsSchemaTemplate,
+          const financialMetricsSchema = {
+            ...financialMetricsSchemaTemplate,
             storeLocation,
-            repairMetrics,
+            financialMetrics,
           };
 
-          acc.push(repairMetricsSchema);
+          acc.push(financialMetricsSchema);
 
           return acc;
-        }, [] as RepairMetricsSchema[]);
+        }, [] as FinancialMetricsSchema[]);
       }
 
-      const repairMetricsSchemas = createRepairMetricsSchemas(businesMetrics);
-      console.time("repairMetricsDocument");
+      const financialMetricsSchemas = createFinancialMetricsSchemas(
+        businesMetrics,
+      );
+      console.time("financialMetricsDocument");
 
-      const repairMetricsDocument = await Promise.all(
-        repairMetricsSchemas.map(
-          async (repairMetricsSchema) =>
+      const financialMetricsDocument = await Promise.all(
+        financialMetricsSchemas.map(
+          async (financialMetricsSchema) =>
             await createNewResourceService(
-              repairMetricsSchema,
-              RepairMetricsModel,
+              financialMetricsSchema,
+              FinancialMetricsModel,
             ),
         ),
       );
 
-      console.log("repairMetricsDocument", repairMetricsDocument);
+      console.log("financialMetricsDocument", financialMetricsDocument);
 
-      console.timeEnd("repairMetricsDocument");
+      console.timeEnd("financialMetricsDocument");
 
       response.status(200).json(
         createHttpResultSuccess({
