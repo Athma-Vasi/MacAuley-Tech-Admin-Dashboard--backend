@@ -32,7 +32,10 @@ import {
   REPAIR_CATEGORIES,
   STORE_LOCATIONS,
 } from "../metrics/constants";
-import { type FinancialMetricsDocument } from "../metrics/financial/model";
+import {
+  type FinancialMetricsDocument,
+  FinancialMetricsModel,
+} from "../metrics/financial/model";
 import { createRandomBusinessMetrics } from "../metrics/utils";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
 import { AuthModel, type AuthSchema } from "./model";
@@ -364,39 +367,39 @@ function loginUserHandler<
 
       // console.timeEnd("repairMetricsDocument");
 
-      // const financialMetricsDocumentResult = await getResourceByFieldService({
-      //   filter: { storeLocation: "All Locations" },
-      //   model: FinancialMetricsModel,
-      // });
+      const financialMetricsDocumentResult = await getResourceByFieldService({
+        filter: { storeLocation: "All Locations", year: "2025" },
+        model: FinancialMetricsModel,
+      });
 
-      // if (financialMetricsDocumentResult.err) {
-      //   await createNewResourceService(
-      //     createErrorLogSchema(
-      //       financialMetricsDocumentResult.val,
-      //       request.body,
-      //     ),
-      //     ErrorLogModel,
-      //   );
+      if (financialMetricsDocumentResult.err) {
+        await createNewResourceService(
+          createErrorLogSchema(
+            financialMetricsDocumentResult.val,
+            request.body,
+          ),
+          ErrorLogModel,
+        );
 
-      //   response.status(200).json(
-      //     createHttpResultError({
-      //       message: "Unable to get financial metrics document",
-      //     }),
-      //   );
-      //   return;
-      // }
+        response.status(200).json(
+          createHttpResultError({
+            message: "Unable to get financial metrics document",
+          }),
+        );
+        return;
+      }
 
-      // const financialMetricsDocumentUnwrapped = financialMetricsDocumentResult
-      //   .safeUnwrap().data;
+      const financialMetricsDocumentUnwrapped = financialMetricsDocumentResult
+        .safeUnwrap().data;
 
-      // if (financialMetricsDocumentUnwrapped.length === 0) {
-      //   response.status(200).json(
-      //     createHttpResultError({
-      //       message: "Unable to get financial metrics document",
-      //     }),
-      //   );
-      //   return;
-      // }
+      if (financialMetricsDocumentUnwrapped.length === 0) {
+        response.status(200).json(
+          createHttpResultError({
+            message: "Unable to get financial metrics document",
+          }),
+        );
+        return;
+      }
 
       response.status(200).json(
         createHttpResultSuccess({

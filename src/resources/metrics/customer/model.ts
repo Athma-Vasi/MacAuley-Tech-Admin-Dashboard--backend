@@ -1,10 +1,9 @@
 import { model, Schema, type Types } from "mongoose";
-import type { AllStoreLocations, CustomerYearlyMetric, Year } from "../types";
+import type { AllStoreLocations, CustomerMetrics } from "../types";
 
 type CustomerMetricsSchema = {
     storeLocation: AllStoreLocations;
-    year: Year;
-    yearlyMetrics: CustomerYearlyMetric;
+    customerMetrics: CustomerMetrics;
 };
 
 type CustomerMetricsDocument = CustomerMetricsSchema & {
@@ -63,33 +62,41 @@ const customerMetricsSchema = new Schema(
             default: "All Locations",
             required: [true, "Store location is required"],
         },
-        year: {
-            type: String,
-            required: [true, "Year is required"],
-        },
-
-        yearlyMetrics: {
-            year: {
-                type: String, // Year: like "2023", "2024", etc.
-                required: [true, "Year is required"],
+        customerMetrics: {
+            lifetimeValue: {
+                type: Number,
+                default: 0,
             },
-            customers: customersSchema,
+            totalCustomers: {
+                type: Number,
+                default: 0,
+            },
 
-            monthlyMetrics: [
+            yearlyMetrics: [
                 {
-                    month: {
-                        type: String, // Month: like "January", "February", etc.
-                        required: [true, "Month is required"],
+                    year: {
+                        type: String, // Year: like "2023", "2024", etc.
+                        required: [true, "Year is required"],
                     },
                     customers: customersSchema,
 
-                    dailyMetrics: [
+                    monthlyMetrics: [
                         {
-                            day: {
-                                type: String, // Day: like "01", "02", etc.
-                                required: [true, "Day is required"],
+                            month: {
+                                type: String, // Month: like "January", "February", etc.
+                                required: [true, "Month is required"],
                             },
                             customers: customersSchema,
+
+                            dailyMetrics: [
+                                {
+                                    day: {
+                                        type: String, // Day: like "01", "02", etc.
+                                        required: [true, "Day is required"],
+                                    },
+                                    customers: customersSchema,
+                                },
+                            ],
                         },
                     ],
                 },

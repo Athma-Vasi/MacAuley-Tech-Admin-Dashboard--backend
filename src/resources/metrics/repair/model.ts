@@ -1,16 +1,9 @@
 import { model, Schema, type Types } from "mongoose";
-import type {
-  AllStoreLocations,
-  RepairCategory,
-  RepairYearlyMetric,
-  Year,
-} from "../types";
+import type { AllStoreLocations, RepairMetric } from "../types";
 
 type RepairMetricsSchema = {
-  metricCategory: RepairCategory | "All Repairs";
   storeLocation: AllStoreLocations;
-  year: Year;
-  yearlyMetrics: RepairYearlyMetric;
+  repairMetrics: RepairMetric[];
 };
 
 type RepairMetricsDocument = RepairMetricsSchema & {
@@ -27,62 +20,62 @@ const repairMetricsSchema = new Schema(
       default: "All Locations",
       required: [true, "Store location is required"],
     },
-    metricCategory: {
-      type: String,
-      default: "All Repairs",
-      required: [true, "Metric category is required"],
-    },
-    year: {
-      type: String,
-      required: [true, "Year is required"],
-    },
-
-    yearlyMetrics: {
-      year: {
-        type: String,
-        required: [true, "Year is required"],
-      },
-      revenue: {
-        type: Number,
-        default: 0,
-      },
-      unitsRepaired: {
-        type: Number,
-        default: 0,
-      },
-      monthlyMetrics: [
-        {
-          month: {
-            type: String, // Month: like "January", "February", etc.
-            required: [true, "Month is required"],
-          },
-          revenue: {
-            type: Number,
-            default: 0,
-          },
-          unitsRepaired: {
-            type: Number,
-            default: 0,
-          },
-          dailyMetrics: [
-            {
-              day: {
-                type: String, // Day: like "01", "02", etc.
-                required: [true, "Day is required"],
-              },
-              revenue: {
-                type: Number,
-                default: 0,
-              },
-              unitsRepaired: {
-                type: Number,
-                default: 0,
-              },
-            },
-          ],
+    repairMetrics: [
+      {
+        name: {
+          type: String,
+          required: [true, "Repair name is required"],
         },
-      ],
-    },
+        yearlyMetrics: [
+          {
+            year: {
+              type: String,
+              required: [true, "Year is required"],
+            },
+            revenue: {
+              type: Number,
+              default: 0,
+            },
+            unitsRepaired: {
+              type: Number,
+              default: 0,
+            },
+            monthlyMetrics: [
+              {
+                month: {
+                  type: String, // Month: like "January", "February", etc.
+                  required: [true, "Month is required"],
+                },
+                revenue: {
+                  type: Number,
+                  default: 0,
+                },
+                unitsRepaired: {
+                  type: Number,
+                  default: 0,
+                },
+                dailyMetrics: [
+                  {
+                    day: {
+                      type: String, // Day: like "01", "02", etc.
+                      required: [true, "Day is required"],
+                    },
+                    revenue: {
+                      type: Number,
+                      default: 0,
+                    },
+                    unitsRepaired: {
+                      type: Number,
+                      default: 0,
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   { timestamps: true },
 );
