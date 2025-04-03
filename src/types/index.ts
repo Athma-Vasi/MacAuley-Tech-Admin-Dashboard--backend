@@ -145,7 +145,6 @@ type Success<Data = unknown> = {
 };
 
 type NotSuccess = {
-  data: unknown;
   message: string;
 };
 

@@ -1,16 +1,16 @@
 import type { Request } from "express";
 import jwt, { type SignOptions } from "jsonwebtoken";
-import { Err, Ok, type Result } from "ts-results";
+import { Err, Ok } from "ts-results";
 import {
   createNewResourceService,
   deleteManyResourcesService,
   deleteResourceByIdService,
   getResourceByIdService,
 } from "../../services";
-import type { DecodedToken, ServiceOutput } from "../../types";
+import type { DecodedToken, ServiceResult } from "../../types";
 import { createErrorLogSchema } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
-import { type AuthDocument, AuthModel, type AuthSchema } from "./model";
+import { AuthModel, type AuthSchema } from "./model";
 
 // this is a service that creates a new token for the user
 // it is used when the user wants to refresh their token
@@ -30,7 +30,7 @@ async function createTokenService(
     request: Request;
     seed: string;
   },
-): Promise<Result<ServiceOutput<string>, ServiceOutput>> {
+): ServiceResult<string> {
   try {
     const {
       userId,
@@ -63,14 +63,12 @@ async function createTokenService(
         );
       }
 
-      return new Err({ kind: "error", message: "Error getting session" });
+      return new Err({ message: "Error getting session" });
     }
 
-    const existingSession = getSessionResult.safeUnwrap().data as
-      | AuthDocument
-      | undefined;
+    const existingSessionUnwrapped = getSessionResult.safeUnwrap().data;
 
-    if (existingSession === undefined) {
+    if (existingSessionUnwrapped.length === 0) {
       // invalidate all sessions for this user
       const deleteManyResult = await deleteManyResourcesService({
         filter: { userId },
@@ -87,8 +85,10 @@ async function createTokenService(
         );
       }
 
-      return new Err({ kind: "error", message: "Session not found" });
+      return new Err({ message: "Session not found" });
     }
+
+    const [existingSession] = existingSessionUnwrapped;
 
     console.log("createTokenService");
     console.log("existing session", existingSession);
@@ -110,7 +110,6 @@ async function createTokenService(
       );
 
       return new Err({
-        kind: "error",
         message: "Error deleting previous session",
       });
     }
@@ -136,23 +135,30 @@ async function createTokenService(
         ErrorLogModel,
       );
 
-      return new Err({ kind: "error", message: "Error creating session" });
+      return new Err({ message: "Error creating session" });
     }
 
-    const newSessionId = createAuthSessionResult.safeUnwrap().data?._id;
+    const createAuthSessionUnwrapped =
+      createAuthSessionResult.safeUnwrap().data;
+    if (createAuthSessionUnwrapped.length === 0) {
+      await createNewResourceService(
+        createErrorLogSchema(createAuthSessionResult.val, request.body),
+        ErrorLogModel,
+      );
 
-    if (!newSessionId) {
-      return new Err({ kind: "error", message: "No session ID" });
+      return new Err({ message: "Error creating session" });
     }
+
+    const [newAuthSession] = createAuthSessionUnwrapped;
 
     // and use its ID to sign new token
     const newAccessToken = jwt.sign(
-      { userId, username, roles, sessionId: newSessionId },
+      { userId, username, roles, sessionId: newAuthSession._id },
       seed,
       { expiresIn },
     );
 
-    return new Ok({ data: newAccessToken, kind: "success" });
+    return new Ok({ data: [newAccessToken], kind: "success" });
   } catch (error: unknown) {
     await createNewResourceService(
       createErrorLogSchema(
@@ -162,7 +168,7 @@ async function createTokenService(
       ErrorLogModel,
     );
 
-    return new Err({ kind: "error" });
+    return new Err({ message: "Error creating token" });
   }
 }
 
