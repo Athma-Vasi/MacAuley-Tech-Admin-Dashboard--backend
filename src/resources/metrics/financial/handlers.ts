@@ -23,7 +23,7 @@ function createNewFinancialMetricHandler<
     response: Response,
   ) => {
     try {
-      const { schema } = request.body;
+      const { accessToken, schema } = request.body;
 
       const createFinancialMetricResult = await createNewResourceService(
         schema,
@@ -47,9 +47,22 @@ function createNewFinancialMetricHandler<
         return;
       }
 
+      const financialMetricUnwrapped =
+        createFinancialMetricResult.safeUnwrap().data;
+
+      if (financialMetricUnwrapped.length === 0) {
+        response.status(200).json(
+          createHttpResultError({
+            message: "Unable to create financial metric. Please try again.",
+          }),
+        );
+        return;
+      }
+
       response.status(200).json(
         createHttpResultSuccess({
-          accessToken: "",
+          accessToken,
+          data: financialMetricUnwrapped,
           message: "Financial Metric created successfully",
         }),
       );

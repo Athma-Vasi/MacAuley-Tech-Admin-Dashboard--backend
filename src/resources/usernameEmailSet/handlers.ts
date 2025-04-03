@@ -123,7 +123,7 @@ function checkUsernameOrEmailExistsHandler<
       }
 
       response.status(200).json(
-        createHttpResultSuccess({ accessToken: "" }),
+        createHttpResultSuccess({ data: [true], accessToken: "" }),
       );
     } catch (error: unknown) {
       await createNewResourceService(

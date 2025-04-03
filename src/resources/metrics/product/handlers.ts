@@ -23,7 +23,7 @@ function createNewProductMetricHandler<
     response: Response,
   ) => {
     try {
-      const { schema } = request.body;
+      const { accessToken, schema } = request.body;
 
       const createProductMetricResult = await createNewResourceService(
         schema,
@@ -47,9 +47,22 @@ function createNewProductMetricHandler<
         return;
       }
 
+      const productMetricUnwrapped =
+        createProductMetricResult.safeUnwrap().data;
+
+      if (productMetricUnwrapped.length === 0) {
+        response.status(200).json(
+          createHttpResultError({
+            message: "Unable to create product metric. Please try again.",
+          }),
+        );
+        return;
+      }
+
       response.status(200).json(
         createHttpResultSuccess({
-          accessToken: "",
+          accessToken,
+          data: productMetricUnwrapped,
           message: "Product Metric created successfully",
         }),
       );

@@ -23,7 +23,7 @@ function createNewRepairMetricHandler<
     response: Response,
   ) => {
     try {
-      const { schema } = request.body;
+      const { accessToken, schema } = request.body;
 
       const createRepairMetricResult = await createNewResourceService(
         schema,
@@ -47,9 +47,21 @@ function createNewRepairMetricHandler<
         return;
       }
 
+      const repairMetricUnwrapped = createRepairMetricResult.safeUnwrap().data;
+
+      if (repairMetricUnwrapped.length === 0) {
+        response.status(200).json(
+          createHttpResultError({
+            message: "Unable to create repair metric. Please try again.",
+          }),
+        );
+        return;
+      }
+
       response.status(200).json(
         createHttpResultSuccess({
-          accessToken: "",
+          accessToken,
+          data: repairMetricUnwrapped,
           message: "Repair Metric created successfully",
         }),
       );
