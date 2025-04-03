@@ -132,7 +132,10 @@ function createNewUserHandler<
       }
 
       response.status(200).json(
-        createHttpResultSuccess({ accessToken: "" }),
+        createHttpResultSuccess({
+          data: userCreationResult.safeUnwrap().data,
+          accessToken: "",
+        }),
       );
     } catch (error: unknown) {
       await createNewResourceService(

@@ -50,7 +50,7 @@ async function verifyJWTMiddleware(
   // token is now valid but expired
   // a token expiry throws error and data is not returned
   // so it is instead decoded now to get the data
-  if (verifiedAccessTokenUnwrapped.kind === "error") {
+  if (verifiedAccessTokenUnwrapped.kind === "mildError") {
     const decodedAccessTokenResult = await decodeJWTSafe(accessToken);
 
     if (decodedAccessTokenResult.err) {
@@ -67,7 +67,7 @@ async function verifyJWTMiddleware(
     const decodedAccessTokenUnwrapped =
       decodedAccessTokenResult.safeUnwrap().data;
 
-    if (decodedAccessTokenUnwrapped === undefined) {
+    if (decodedAccessTokenUnwrapped.length === 0) {
       response.status(200).json(
         createHttpResultError({
           message: "Error decoding access token",
@@ -78,11 +78,11 @@ async function verifyJWTMiddleware(
       return;
     }
 
-    decodedAccessToken = decodedAccessTokenUnwrapped;
+    decodedAccessToken = decodedAccessTokenUnwrapped[0];
   }
 
   // verified token is now valid
-  decodedAccessToken = verifiedAccessTokenUnwrapped.data;
+  decodedAccessToken = verifiedAccessTokenUnwrapped.data[0];
 
   // if decodedAccessToken is still undefined, it means token is invalid
   if (decodedAccessToken === undefined) {
@@ -114,9 +114,9 @@ async function verifyJWTMiddleware(
     return;
   }
 
-  const newAccessToken = tokenCreationResult.safeUnwrap().data;
+  const tokenCreationResultUnwrapped = tokenCreationResult.safeUnwrap().data;
 
-  if (newAccessToken === undefined) {
+  if (tokenCreationResultUnwrapped.length === 0) {
     response.status(200).json(
       createHttpResultError({
         message: "Error creating access token",
@@ -126,6 +126,8 @@ async function verifyJWTMiddleware(
 
     return;
   }
+
+  const [newAccessToken] = tokenCreationResultUnwrapped;
 
   Object.defineProperty(request.body, "accessToken", {
     value: newAccessToken,
