@@ -1,4 +1,4 @@
-import type { Response } from "express";
+import { type Response } from "express";
 import jwt from "jsonwebtoken";
 import type { Model } from "mongoose";
 import { CONFIG } from "../../config";
@@ -32,12 +32,9 @@ import {
   REPAIR_CATEGORIES,
   STORE_LOCATIONS,
 } from "../metrics/constants";
-import { CustomerMetricsModel } from "../metrics/customer/model";
-import {
-  type FinancialMetricsDocument,
-  FinancialMetricsSchema,
-} from "../metrics/financial/model";
-import { BusinessMetric } from "../metrics/types";
+import { type FinancialMetricsDocument } from "../metrics/financial/model";
+import { ProductMetricsSchema } from "../metrics/product/model";
+import { BusinessMetric, ProductYearlyMetric } from "../metrics/types";
 import { createRandomBusinessMetrics } from "../metrics/utils";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
 import { AuthModel, type AuthSchema } from "./model";
@@ -208,26 +205,38 @@ function loginUserHandler<
       // ) {
       //   const productMetricsSchemaTemplate: ProductMetricsSchema = {
       //     storeLocation: "All Locations",
-      //     productMetrics: [],
+      //     metricCategory: "All Products",
+      //     year: "2023",
+      //     yearlyMetrics: {} as ProductYearlyMetric,
       //   };
 
       //   return businessMetrics.reduce((acc, curr) => {
       //     const { storeLocation, productMetrics } = curr;
 
-      //     const productMetricsSchema = {
-      //       ...productMetricsSchemaTemplate,
-      //       storeLocation,
-      //       productMetrics,
-      //     };
+      //     productMetrics.forEach((productMetric) => {
+      //       const { name, yearlyMetrics } = productMetric;
 
-      //     acc.push(productMetricsSchema);
+      //       yearlyMetrics.forEach((yearlyMetric) => {
+      //         const { year } = yearlyMetric;
+
+      //         const productMetricsSchema = {
+      //           ...productMetricsSchemaTemplate,
+      //           storeLocation,
+      //           metricCategory: name,
+      //           year,
+      //           yearlyMetrics: yearlyMetric,
+      //         };
+
+      //         acc.push(productMetricsSchema);
+      //       });
+      //     });
 
       //     return acc;
       //   }, [] as ProductMetricsSchema[]);
       // }
 
       // const productMetricsSchemas = createProductMetricsSchemas(
-      //   businesMetrics,
+      //   businessMetrics,
       // );
 
       // function createRepairMetricsSchemas(businesMetrics: BusinessMetric[]) {
@@ -251,28 +260,43 @@ function loginUserHandler<
       //   }, [] as RepairMetricsSchema[]);
       // }
 
-      function createFinancialMetricsSchemas(
-        businessMetrics: BusinessMetric[],
-      ) {
-        const financialMetricsSchemaTemplate: FinancialMetricsSchema = {
-          storeLocation: "All Locations",
-          financialMetrics: [],
-        };
+      // function createFinancialMetricsSchemas(
+      //   businessMetrics: BusinessMetric[],
+      // ) {
+      //   const financialMetricsSchemaTemplate: FinancialMetricsSchema = {
+      //     storeLocation: "All Locations",
+      //     year: "2023",
+      //     yearlyMetrics: {} as YearlyFinancialMetric,
+      //   };
 
-        return businesMetrics.reduce((acc, curr) => {
-          const { storeLocation, financialMetrics } = curr;
+      //   return businessMetrics.reduce((acc, curr) => {
+      //     const { storeLocation, financialMetrics } = curr;
 
-          const financialMetricsSchema = {
-            ...financialMetricsSchemaTemplate,
-            storeLocation,
-            financialMetrics,
-          };
+      //     const years = financialMetrics.map((yearlyMetric) => {
+      //       const { year } = yearlyMetric;
+      //       return year;
+      //     });
 
-          acc.push(financialMetricsSchema);
+      //     years.forEach((year) => {
+      //       const yearlyMetrics = financialMetrics.find(
+      //         (yearlyMetric) => yearlyMetric.year === year,
+      //       );
 
-          return acc;
-        }, [] as FinancialMetricsSchema[]);
-      }
+      //       if (yearlyMetrics) {
+      //         const financialMetricsSchema = {
+      //           ...financialMetricsSchemaTemplate,
+      //           storeLocation,
+      //           year,
+      //           yearlyMetrics,
+      //         };
+
+      //         acc.push(financialMetricsSchema);
+      //       }
+      //     });
+
+      //     return acc;
+      //   }, [] as FinancialMetricsSchema[]);
+      // }
 
       // function createCustomerMetricsSchemas(businessMetric: BusinessMetric[]) {
       //   const customerMetricsSchemaTemplate: CustomerMetricsSchema = {
@@ -310,25 +334,25 @@ function loginUserHandler<
       //   }, [] as CustomerMetricsSchema[]);
       // }
 
-      // const customerMetricsSchemas = createCustomerMetricsSchemas(
+      // const financialMetricsSchemas = createFinancialMetricsSchemas(
       //   businessMetrics,
       // );
 
-      console.time("customerMetricsDocument");
+      // console.time("productMetricsDocument");
 
-      const customerMetricsDocument = await Promise.all(
-        customerMetricsSchemas.map(
-          async (customerMetricsSchema) =>
-            await createNewResourceService(
-              customerMetricsSchema,
-              CustomerMetricsModel,
-            ),
-        ),
-      );
+      // const productMetricsDocument = await Promise.all(
+      //   productMetricsSchemas.map(
+      //     async (productMetricsSchema) =>
+      //       await createNewResourceService(
+      //         productMetricsSchema,
+      //         ProductMetricsModel,
+      //       ),
+      //   ),
+      // );
 
-      console.log("customerMetricsDocument", customerMetricsDocument);
+      // console.log("productMetricsDocument", productMetricsDocument);
 
-      console.timeEnd("customerMetricsDocument");
+      // console.timeEnd("productMetricsDocument");
 
       // const financialMetricsDocumentResult = await getResourceByFieldService({
       //   filter: { storeLocation: "All Locations" },
