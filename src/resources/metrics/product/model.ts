@@ -1,9 +1,14 @@
 import { model, Schema, type Types } from "mongoose";
-import type { AllStoreLocations, ProductMetric } from "../types";
+import type {
+    AllStoreLocations,
+    ProductCategory,
+    ProductYearlyMetric,
+} from "../types";
 
 type ProductMetricsSchema = {
+    metricCategory: ProductCategory | "All Products";
     storeLocation: AllStoreLocations;
-    productMetrics: ProductMetric[];
+    yearlyMetrics: ProductYearlyMetric[];
 };
 
 type ProductMetricsDocument = ProductMetricsSchema & {
@@ -35,50 +40,44 @@ const productMetricsSchema = new Schema(
             default: "All Locations",
             required: [true, "Store location is required"],
         },
-        productMetrics: [
-            {
-                name: {
-                    type: String,
-                    required: [true, "Product name is required"],
-                },
-
-                yearlyMetrics: [
-                    {
-                        year: {
-                            type: String,
-                            required: [true, "Year is required"],
-                        },
-                        revenue: rusSchema,
-                        unitsSold: rusSchema,
-                        monthlyMetrics: [
-                            {
-                                month: {
-                                    type: String, // Month: like "January", "February", etc.
-                                    required: [true, "Month is required"],
-                                },
-                                revenue: rusSchema,
-                                unitsSold: rusSchema,
-                                dailyMetrics: [
-                                    {
-                                        day: {
-                                            type: String,
-                                            required: [true, "Day is required"],
-                                        },
-                                        revenue: rusSchema,
-                                        unitsSold: rusSchema,
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                ],
+        metricCategory: {
+            type: String,
+            default: "All Products",
+            required: [true, "Metric category is required"],
+        },
+        yearlyMetrics: [{
+            year: {
+                type: String,
+                required: [true, "Year is required"],
             },
-        ],
+            revenue: rusSchema,
+            unitsSold: rusSchema,
+            monthlyMetrics: [
+                {
+                    month: {
+                        type: String, // Month: like "January", "February", etc.
+                        required: [true, "Month is required"],
+                    },
+                    revenue: rusSchema,
+                    unitsSold: rusSchema,
+                    dailyMetrics: [
+                        {
+                            day: {
+                                type: String,
+                                required: [true, "Day is required"],
+                            },
+                            revenue: rusSchema,
+                            unitsSold: rusSchema,
+                        },
+                    ],
+                },
+            ],
+        }],
     },
     { timestamps: true },
 );
 
-productMetricsSchema.index({ storeLocation: "text" });
+productMetricsSchema.index({ storeLocation: "text", metricCategory: "text" });
 
 const ProductMetricsModel = model<ProductMetricsDocument>(
     "ProductMetric",

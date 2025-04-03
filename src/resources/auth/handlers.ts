@@ -32,10 +32,12 @@ import {
   REPAIR_CATEGORIES,
   STORE_LOCATIONS,
 } from "../metrics/constants";
+import { type FinancialMetricsDocument } from "../metrics/financial/model";
 import {
-  type FinancialMetricsDocument,
-  FinancialMetricsModel,
-} from "../metrics/financial/model";
+  RepairMetricsModel,
+  RepairMetricsSchema,
+} from "../metrics/repair/model";
+import { BusinessMetric } from "../metrics/types";
 import { createRandomBusinessMetrics } from "../metrics/utils";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
 import { AuthModel, type AuthSchema } from "./model";
@@ -207,8 +209,7 @@ function loginUserHandler<
       //   const productMetricsSchemaTemplate: ProductMetricsSchema = {
       //     storeLocation: "All Locations",
       //     metricCategory: "All Products",
-      //     year: "2023",
-      //     yearlyMetrics: {} as ProductYearlyMetric,
+      //     yearlyMetrics: [],
       //   };
 
       //   return businessMetrics.reduce((acc, curr) => {
@@ -217,19 +218,14 @@ function loginUserHandler<
       //     productMetrics.forEach((productMetric) => {
       //       const { name, yearlyMetrics } = productMetric;
 
-      //       yearlyMetrics.forEach((yearlyMetric) => {
-      //         const { year } = yearlyMetric;
+      //       const productMetricsSchema = {
+      //         ...productMetricsSchemaTemplate,
+      //         storeLocation,
+      //         metricCategory: name,
+      //         yearlyMetrics,
+      //       };
 
-      //         const productMetricsSchema = {
-      //           ...productMetricsSchemaTemplate,
-      //           storeLocation,
-      //           metricCategory: name,
-      //           year,
-      //           yearlyMetrics: yearlyMetric,
-      //         };
-
-      //         acc.push(productMetricsSchema);
-      //       });
+      //       acc.push(productMetricsSchema);
       //     });
 
       //     return acc;
@@ -240,38 +236,36 @@ function loginUserHandler<
       //   businessMetrics,
       // );
 
-      // function createRepairMetricsSchemas(businessMetrics: BusinessMetric[]) {
-      //   const repairMetricsSchemaTemplate: RepairMetricsSchema = {
-      //     storeLocation: "All Locations",
-      //     metricCategory: "All Repairs",
-      //     year: "2023",
-      //     yearlyMetrics: {} as RepairYearlyMetric,
-      //   };
+      function createRepairMetricsSchemas(businessMetrics: BusinessMetric[]) {
+        const repairMetricsSchemaTemplate: RepairMetricsSchema = {
+          storeLocation: "All Locations",
+          metricCategory: "All Repairs",
+          yearlyMetrics: [],
+        };
 
-      //   return businessMetrics.reduce((acc, curr) => {
-      //     const { storeLocation, repairMetrics } = curr;
+        return businessMetrics.reduce((acc, curr) => {
+          const { storeLocation, repairMetrics } = curr;
 
-      //     repairMetrics.forEach((repairMetric) => {
-      //       const { name, yearlyMetrics } = repairMetric;
+          repairMetrics.forEach((repairMetric) => {
+            const { name, yearlyMetrics } = repairMetric;
 
-      //       yearlyMetrics.forEach((yearlyMetric) => {
-      //         const { year } = yearlyMetric;
+            const repairMetricsSchema = {
+              ...repairMetricsSchemaTemplate,
+              storeLocation,
+              metricCategory: name,
+              yearlyMetrics,
+            };
 
-      //         const repairMetricsSchema = {
-      //           ...repairMetricsSchemaTemplate,
-      //           storeLocation,
-      //           metricCategory: name,
-      //           year,
-      //           yearlyMetrics: yearlyMetric,
-      //         };
+            acc.push(repairMetricsSchema);
+          });
 
-      //         acc.push(repairMetricsSchema);
-      //       });
-      //     });
+          return acc;
+        }, [] as RepairMetricsSchema[]);
+      }
 
-      //     return acc;
-      //   }, [] as RepairMetricsSchema[]);
-      // }
+      const repairMetricsSchemas = createRepairMetricsSchemas(
+        businessMetrics,
+      );
 
       // function createFinancialMetricsSchemas(
       //   businessMetrics: BusinessMetric[],
@@ -347,59 +341,55 @@ function loginUserHandler<
       //   }, [] as CustomerMetricsSchema[]);
       // }
 
-      // const repairMetricsSchemas = createRepairMetricsSchemas(
-      //   businessMetrics,
-      // );
+      console.time("repairMetricsDocument");
 
-      // console.time("repairMetricsDocument");
+      const repairMetricsDocument = await Promise.all(
+        repairMetricsSchemas.map(
+          async (repairMetricsSchema) =>
+            await createNewResourceService(
+              repairMetricsSchema,
+              RepairMetricsModel,
+            ),
+        ),
+      );
 
-      // const repairMetricsDocument = await Promise.all(
-      //   repairMetricsSchemas.map(
-      //     async (repairMetricsSchema) =>
-      //       await createNewResourceService(
-      //         repairMetricsSchema,
-      //         RepairMetricsModel,
-      //       ),
-      //   ),
-      // );
+      console.log("repairMetricsDocument", repairMetricsDocument);
 
-      // console.log("repairMetricsDocument", repairMetricsDocument);
+      console.timeEnd("repairMetricsDocument");
 
-      // console.timeEnd("repairMetricsDocument");
+      // const financialMetricsDocumentResult = await getResourceByFieldService({
+      //   filter: { storeLocation: "All Locations", year: "2025" },
+      //   model: FinancialMetricsModel,
+      // });
 
-      const financialMetricsDocumentResult = await getResourceByFieldService({
-        filter: { storeLocation: "All Locations", year: "2025" },
-        model: FinancialMetricsModel,
-      });
+      // if (financialMetricsDocumentResult.err) {
+      //   await createNewResourceService(
+      //     createErrorLogSchema(
+      //       financialMetricsDocumentResult.val,
+      //       request.body,
+      //     ),
+      //     ErrorLogModel,
+      //   );
 
-      if (financialMetricsDocumentResult.err) {
-        await createNewResourceService(
-          createErrorLogSchema(
-            financialMetricsDocumentResult.val,
-            request.body,
-          ),
-          ErrorLogModel,
-        );
+      //   response.status(200).json(
+      //     createHttpResultError({
+      //       message: "Unable to get financial metrics document",
+      //     }),
+      //   );
+      //   return;
+      // }
 
-        response.status(200).json(
-          createHttpResultError({
-            message: "Unable to get financial metrics document",
-          }),
-        );
-        return;
-      }
+      // const financialMetricsDocumentUnwrapped = financialMetricsDocumentResult
+      //   .safeUnwrap().data;
 
-      const financialMetricsDocumentUnwrapped = financialMetricsDocumentResult
-        .safeUnwrap().data;
-
-      if (financialMetricsDocumentUnwrapped.length === 0) {
-        response.status(200).json(
-          createHttpResultError({
-            message: "Unable to get financial metrics document",
-          }),
-        );
-        return;
-      }
+      // if (financialMetricsDocumentUnwrapped.length === 0) {
+      //   response.status(200).json(
+      //     createHttpResultError({
+      //       message: "Unable to get financial metrics document",
+      //     }),
+      //   );
+      //   return;
+      // }
 
       response.status(200).json(
         createHttpResultSuccess({
