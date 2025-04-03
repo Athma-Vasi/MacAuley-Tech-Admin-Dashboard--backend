@@ -1,9 +1,10 @@
 import { model, Schema, type Types } from "mongoose";
-import type { AllStoreLocations, YearlyFinancialMetric } from "../types";
+import type { AllStoreLocations, Year, YearlyFinancialMetric } from "../types";
 
 type FinancialMetricsSchema = {
   storeLocation: AllStoreLocations;
-  financialMetrics: YearlyFinancialMetric[];
+  year: Year;
+  yearlyMetrics: YearlyFinancialMetric;
 };
 
 type FinancialMetricsDocument = FinancialMetricsSchema & {
@@ -45,78 +46,80 @@ const financialMetricsSchema = new Schema(
       default: "All Locations",
       required: [true, "Store location is required"],
     },
-    financialMetrics: [
-      {
-        year: {
-          type: String,
-          required: [true, "Year is required"],
-        },
-        averageOrderValue: {
-          type: Number,
-          default: 0,
-        },
-        conversionRate: {
-          type: Number,
-          default: 0,
-        },
-        netProfitMargin: {
-          type: Number,
-          default: 0,
-        },
-        expenses: pertSchema,
-        profit: pertSchema,
-        revenue: pertSchema,
-        transactions: pertSchema,
-        monthlyMetrics: [
-          {
-            month: {
-              type: String, // Month: like "January", "February", etc.
-              required: [true, "Month is required"],
-            },
-            averageOrderValue: {
-              type: Number,
-              default: 0,
-            },
-            conversionRate: {
-              type: Number,
-              default: 0,
-            },
-            netProfitMargin: {
-              type: Number,
-              default: 0,
-            },
-            expenses: pertSchema,
-            profit: pertSchema,
-            revenue: pertSchema,
-            transactions: pertSchema,
-            dailyMetrics: [
-              {
-                day: {
-                  type: String, // Day: like "01", "02", etc.
-                  required: [true, "Day is required"],
-                },
-                averageOrderValue: {
-                  type: Number,
-                  default: 0,
-                },
-                conversionRate: {
-                  type: Number,
-                  default: 0,
-                },
-                netProfitMargin: {
-                  type: Number,
-                  default: 0,
-                },
-                expenses: pertSchema,
-                profit: pertSchema,
-                revenue: pertSchema,
-                transactions: pertSchema,
-              },
-            ],
-          },
-        ],
+    year: {
+      type: String,
+      required: [true, "Year is required"],
+    },
+    yearlyMetrics: {
+      year: {
+        type: String,
+        required: [true, "Year is required"],
       },
-    ],
+      averageOrderValue: {
+        type: Number,
+        default: 0,
+      },
+      conversionRate: {
+        type: Number,
+        default: 0,
+      },
+      netProfitMargin: {
+        type: Number,
+        default: 0,
+      },
+      expenses: pertSchema,
+      profit: pertSchema,
+      revenue: pertSchema,
+      transactions: pertSchema,
+      monthlyMetrics: [
+        {
+          month: {
+            type: String, // Month: like "January", "February", etc.
+            required: [true, "Month is required"],
+          },
+          averageOrderValue: {
+            type: Number,
+            default: 0,
+          },
+          conversionRate: {
+            type: Number,
+            default: 0,
+          },
+          netProfitMargin: {
+            type: Number,
+            default: 0,
+          },
+          expenses: pertSchema,
+          profit: pertSchema,
+          revenue: pertSchema,
+          transactions: pertSchema,
+          dailyMetrics: [
+            {
+              day: {
+                type: String, // Day: like "01", "02", etc.
+                required: [true, "Day is required"],
+              },
+              averageOrderValue: {
+                type: Number,
+                default: 0,
+              },
+              conversionRate: {
+                type: Number,
+                default: 0,
+              },
+              netProfitMargin: {
+                type: Number,
+                default: 0,
+              },
+              expenses: pertSchema,
+              profit: pertSchema,
+              revenue: pertSchema,
+              transactions: pertSchema,
+            },
+          ],
+        },
+      ],
+    },
   },
   { timestamps: true },
 );

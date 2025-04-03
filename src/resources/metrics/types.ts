@@ -132,6 +132,7 @@ type CustomerYearlyMetric = {
   monthlyMetrics: CustomerMonthlyMetric[];
 };
 
+type CustomerMetricsCategory = "new" | "returning" | "churn";
 type CustomerMetricCategory = {
   total: number;
   sales: {
@@ -242,6 +243,7 @@ export type {
   CustomerDailyMetric,
   CustomerMetricCategory,
   CustomerMetrics,
+  CustomerMetricsCategory,
   CustomerMonthlyMetric,
   CustomerYearlyMetric,
   DailyFinancialMetric,

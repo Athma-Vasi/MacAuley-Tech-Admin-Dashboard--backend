@@ -45,6 +45,8 @@ async function verifyJWTMiddleware(
   // token is valid and expired
   const verifiedAccessTokenUnwrapped = verifiedAccessTokenResult.safeUnwrap();
 
+  console.log("verifiedAccessTokenUnwrapped", verifiedAccessTokenUnwrapped);
+
   let decodedAccessToken: DecodedToken | undefined = void 0;
 
   // token is now valid but expired
@@ -66,6 +68,8 @@ async function verifyJWTMiddleware(
 
     const decodedAccessTokenUnwrapped =
       decodedAccessTokenResult.safeUnwrap().data;
+
+    console.log("decodedAccessTokenUnwrapped", decodedAccessTokenUnwrapped);
 
     if (decodedAccessTokenUnwrapped.length === 0) {
       response.status(200).json(
@@ -95,6 +99,8 @@ async function verifyJWTMiddleware(
 
     return;
   }
+
+  console.log("decodedAccessToken", decodedAccessToken);
 
   const tokenCreationResult = await createTokenService({
     decodedOldToken: decodedAccessToken,
@@ -126,6 +132,8 @@ async function verifyJWTMiddleware(
 
     return;
   }
+
+  console.log("tokenCreationResultUnwrapped", tokenCreationResultUnwrapped);
 
   const [newAccessToken] = tokenCreationResultUnwrapped;
 
