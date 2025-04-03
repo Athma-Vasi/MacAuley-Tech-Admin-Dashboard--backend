@@ -33,8 +33,6 @@ import {
   STORE_LOCATIONS,
 } from "../metrics/constants";
 import { type FinancialMetricsDocument } from "../metrics/financial/model";
-import { ProductMetricsSchema } from "../metrics/product/model";
-import { BusinessMetric, ProductYearlyMetric } from "../metrics/types";
 import { createRandomBusinessMetrics } from "../metrics/utils";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
 import { AuthModel, type AuthSchema } from "./model";
@@ -239,22 +237,34 @@ function loginUserHandler<
       //   businessMetrics,
       // );
 
-      // function createRepairMetricsSchemas(businesMetrics: BusinessMetric[]) {
+      // function createRepairMetricsSchemas(businessMetrics: BusinessMetric[]) {
       //   const repairMetricsSchemaTemplate: RepairMetricsSchema = {
       //     storeLocation: "All Locations",
-      //     repairMetrics: [],
+      //     metricCategory: "All Repairs",
+      //     year: "2023",
+      //     yearlyMetrics: {} as RepairYearlyMetric,
       //   };
 
-      //   return businesMetrics.reduce((acc, curr) => {
+      //   return businessMetrics.reduce((acc, curr) => {
       //     const { storeLocation, repairMetrics } = curr;
 
-      //     const repairMetricsSchema = {
-      //       ...repairMetricsSchemaTemplate,
-      //       storeLocation,
-      //       repairMetrics,
-      //     };
+      //     repairMetrics.forEach((repairMetric) => {
+      //       const { name, yearlyMetrics } = repairMetric;
 
-      //     acc.push(repairMetricsSchema);
+      //       yearlyMetrics.forEach((yearlyMetric) => {
+      //         const { year } = yearlyMetric;
+
+      //         const repairMetricsSchema = {
+      //           ...repairMetricsSchemaTemplate,
+      //           storeLocation,
+      //           metricCategory: name,
+      //           year,
+      //           yearlyMetrics: yearlyMetric,
+      //         };
+
+      //         acc.push(repairMetricsSchema);
+      //       });
+      //     });
 
       //     return acc;
       //   }, [] as RepairMetricsSchema[]);
@@ -334,25 +344,25 @@ function loginUserHandler<
       //   }, [] as CustomerMetricsSchema[]);
       // }
 
-      // const financialMetricsSchemas = createFinancialMetricsSchemas(
+      // const repairMetricsSchemas = createRepairMetricsSchemas(
       //   businessMetrics,
       // );
 
-      // console.time("productMetricsDocument");
+      // console.time("repairMetricsDocument");
 
-      // const productMetricsDocument = await Promise.all(
-      //   productMetricsSchemas.map(
-      //     async (productMetricsSchema) =>
+      // const repairMetricsDocument = await Promise.all(
+      //   repairMetricsSchemas.map(
+      //     async (repairMetricsSchema) =>
       //       await createNewResourceService(
-      //         productMetricsSchema,
-      //         ProductMetricsModel,
+      //         repairMetricsSchema,
+      //         RepairMetricsModel,
       //       ),
       //   ),
       // );
 
-      // console.log("productMetricsDocument", productMetricsDocument);
+      // console.log("repairMetricsDocument", repairMetricsDocument);
 
-      // console.timeEnd("productMetricsDocument");
+      // console.timeEnd("repairMetricsDocument");
 
       // const financialMetricsDocumentResult = await getResourceByFieldService({
       //   filter: { storeLocation: "All Locations" },
