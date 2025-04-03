@@ -4,25 +4,29 @@ import { Err, Ok, type Result } from "ts-results";
 import {
   createNewResourceService,
   deleteManyResourcesService,
+  deleteResourceByIdService,
   getResourceByIdService,
-  updateResourceByIdService,
 } from "../../services";
 import type { DecodedToken, ServiceOutput } from "../../types";
 import { createErrorLogSchema } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
 import { type AuthDocument, AuthModel, type AuthSchema } from "./model";
 
+// this is a service that creates a new token for the user
+// it is used when the user wants to refresh their token
+// it takes the decoded old token and creates a new token with the same payload
+// but with a new session ID
+// it also deletes the old session from the database
+// and creates a new session with the new session ID
 async function createTokenService(
   {
     decodedOldToken,
     expiresIn,
-    invalidateOldToken = false,
     request,
     seed,
   }: {
     decodedOldToken: DecodedToken;
     expiresIn: SignOptions["expiresIn"];
-    invalidateOldToken?: boolean;
     request: Request;
     seed: string;
   },
@@ -41,26 +45,8 @@ async function createTokenService(
     );
 
     if (getSessionResult.err) {
-      await createNewResourceService(
-        createErrorLogSchema(
-          getSessionResult.val,
-          request.body,
-        ),
-        ErrorLogModel,
-      );
+      console.log("get session result is error");
 
-      return new Err({ kind: "error", message: "Error getting session" });
-    }
-
-    const existingSession = getSessionResult.safeUnwrap().data as
-      | AuthDocument
-      | undefined;
-
-    if (existingSession === undefined) {
-      return new Err({ kind: "error", message: "Session not found" });
-    }
-
-    if (!existingSession.isValid) {
       // invalidate all sessions for this user
       const deleteManyResult = await deleteManyResourcesService({
         filter: { userId },
@@ -77,37 +63,63 @@ async function createTokenService(
         );
       }
 
-      return new Err({ kind: "error", message: "Session invalid" });
+      return new Err({ kind: "error", message: "Error getting session" });
     }
 
-    // if token is being refreshed, revoke validity of existing session
-    if (invalidateOldToken) {
-      const updateSessionResult = await updateResourceByIdService({
-        resourceId: sessionId.toString(),
-        fields: { isValid: false },
+    const existingSession = getSessionResult.safeUnwrap().data as
+      | AuthDocument
+      | undefined;
+
+    if (existingSession === undefined) {
+      // invalidate all sessions for this user
+      const deleteManyResult = await deleteManyResourcesService({
+        filter: { userId },
         model: AuthModel,
-        updateOperator: "$set",
       });
 
-      if (updateSessionResult.err) {
+      if (deleteManyResult.err) {
         await createNewResourceService(
           createErrorLogSchema(
-            updateSessionResult.val,
+            deleteManyResult.val,
             request.body,
           ),
           ErrorLogModel,
         );
-
-        return new Err({ kind: "error", message: "Error updating session" });
       }
+
+      return new Err({ kind: "error", message: "Session not found" });
     }
 
-    // create new session and use its ID to sign new token
+    console.log("createTokenService");
+    console.log("existing session", existingSession);
+
+    // delete old session from database
+
+    const deleteSessionResult = await deleteResourceByIdService(
+      existingSession._id.toString(),
+      AuthModel,
+    );
+
+    if (deleteSessionResult.err) {
+      await createNewResourceService(
+        createErrorLogSchema(
+          deleteSessionResult.val,
+          request.body,
+        ),
+        ErrorLogModel,
+      );
+
+      return new Err({
+        kind: "error",
+        message: "Error deleting previous session",
+      });
+    }
+
+    // create new session
     const authSessionSchema: AuthSchema = {
       addressIP: request.ip ?? "",
-      // user will be required to log in their session again after 1 day
-      expireAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 1),
-      isValid: true,
+      // user will be required to log in their session again after 12 hours - back up measure
+      expireAt: new Date(Date.now() + 1000 * 60 * 60 * 12 * 1),
       userAgent: request.get("User-Agent") ?? "",
       userId,
       username,
@@ -133,6 +145,7 @@ async function createTokenService(
       return new Err({ kind: "error", message: "No session ID" });
     }
 
+    // and use its ID to sign new token
     const newAccessToken = jwt.sign(
       { userId, username, roles, sessionId: newSessionId },
       seed,

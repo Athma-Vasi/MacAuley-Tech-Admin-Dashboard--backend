@@ -1,11 +1,5 @@
 import type { Request, Response } from "express";
-import type {
-  FilterQuery,
-  FlattenMaps,
-  QueryOptions,
-  Require_id,
-  Types,
-} from "mongoose";
+import type { FilterQuery, QueryOptions, Types } from "mongoose";
 import type { ParsedQs } from "qs";
 import type { Result } from "ts-results";
 import type { UserRoles } from "../resources/user";
@@ -139,13 +133,24 @@ type DBRecord = Record<string, unknown> & {
 /**
  * -
  */
-type ServiceOutput<Data = unknown> = {
-  data?: Data;
-  kind: "error" | "notFound" | "success";
+type Success<Data = unknown> = {
+  data: [Data];
+  kind: "success";
+} | {
+  data: [];
+  kind: "notFound";
+} | {
+  data: [];
+  kind: "mildError";
+};
+
+type NotSuccess = {
+  data: unknown;
+  message: string;
 };
 
 type ServiceResult<Data = unknown> = Promise<
-  Result<ServiceOutput<Require_id<FlattenMaps<Data>>>, ServiceOutput>
+  Result<Success<Data>, NotSuccess>
 >;
 
 type HttpServerResponse<Data = unknown> = Response<
@@ -235,7 +240,7 @@ export type {
   QueryObjectParsedWithDefaults,
   RequestAfterJWTVerification,
   RequestAfterQueryParsing,
-  ServiceOutput,
   ServiceResult,
+  Success,
   UpdateResourceByIdRequest,
 };

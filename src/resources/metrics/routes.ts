@@ -6,9 +6,9 @@ import { repairMetricsRouter } from "./repair/routes";
 
 const metricsRouter = Router();
 
-metricsRouter.use("/customer", customerMetricsRouter);
-metricsRouter.use("/financial", financialMetricsRouter);
-metricsRouter.use("/product", productMetricsRouter);
-metricsRouter.use("/repair", repairMetricsRouter);
+metricsRouter.use("/customers", customerMetricsRouter);
+metricsRouter.use("/financials", financialMetricsRouter);
+metricsRouter.use("/products", productMetricsRouter);
+metricsRouter.use("/repairs", repairMetricsRouter);
 
 export { metricsRouter };

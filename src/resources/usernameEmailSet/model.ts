@@ -1,4 +1,4 @@
-import { model, Schema, Types } from "mongoose";
+import { model, Schema, type Types } from "mongoose";
 
 /**
  * - Used for determining uniqueness of username or email (upon registration)

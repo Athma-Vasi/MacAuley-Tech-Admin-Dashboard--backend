@@ -3,7 +3,7 @@ import type { AllStoreLocations, CustomerMetrics } from "../types";
 
 type CustomerMetricsSchema = {
     storeLocation: AllStoreLocations;
-    customerMetrics: CustomerMetrics[];
+    customerMetrics: CustomerMetrics;
 };
 
 type CustomerMetricsDocument = CustomerMetricsSchema & {
@@ -14,6 +14,10 @@ type CustomerMetricsDocument = CustomerMetricsSchema & {
 };
 
 const newReturningSchema = {
+    total: {
+        type: Number,
+        default: 0,
+    },
     repair: {
         type: Number,
         default: 0,
@@ -58,48 +62,46 @@ const customerMetricsSchema = new Schema(
             default: "All Locations",
             required: [true, "Store location is required"],
         },
-        customerMetrics: [
-            {
-                lifetimeValue: {
-                    type: Number,
-                    default: 0,
-                },
-                totalCustomers: {
-                    type: Number,
-                    default: 0,
-                },
-
-                yearlyMetrics: [
-                    {
-                        year: {
-                            type: String, // Year: like "2023", "2024", etc.
-                            required: [true, "Year is required"],
-                        },
-                        customers: customersSchema,
-
-                        monthlyMetrics: [
-                            {
-                                month: {
-                                    type: String, // Month: like "January", "February", etc.
-                                    required: [true, "Month is required"],
-                                },
-                                customers: customersSchema,
-
-                                dailyMetrics: [
-                                    {
-                                        day: {
-                                            type: String, // Day: like "01", "02", etc.
-                                            required: [true, "Day is required"],
-                                        },
-                                        customers: customersSchema,
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                ],
+        customerMetrics: {
+            lifetimeValue: {
+                type: Number,
+                default: 0,
             },
-        ],
+            totalCustomers: {
+                type: Number,
+                default: 0,
+            },
+
+            yearlyMetrics: [
+                {
+                    year: {
+                        type: String, // Year: like "2023", "2024", etc.
+                        required: [true, "Year is required"],
+                    },
+                    customers: customersSchema,
+
+                    monthlyMetrics: [
+                        {
+                            month: {
+                                type: String, // Month: like "January", "February", etc.
+                                required: [true, "Month is required"],
+                            },
+                            customers: customersSchema,
+
+                            dailyMetrics: [
+                                {
+                                    day: {
+                                        type: String, // Day: like "01", "02", etc.
+                                        required: [true, "Day is required"],
+                                    },
+                                    customers: customersSchema,
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
     },
     {
         timestamps: true,

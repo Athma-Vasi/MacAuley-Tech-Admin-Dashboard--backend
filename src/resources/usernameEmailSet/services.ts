@@ -15,12 +15,12 @@ async function updateUsernameEmailSetWithUsernameService(
       .exec();
 
     if (usernameEmailSet === null || usernameEmailSet === undefined) {
-      return new Ok({ kind: "notFound" });
+      return new Ok({ data: [], kind: "notFound" });
     }
 
-    return new Ok({ data: usernameEmailSet, kind: "success" });
+    return new Ok({ data: [usernameEmailSet], kind: "success" });
   } catch (error: unknown) {
-    return new Err({ data: error, kind: "error" });
+    return new Err({ data: error, message: "Error updating username" });
   }
 }
 
@@ -37,12 +37,12 @@ async function updateUsernameEmailSetWithEmailService(
       .exec();
 
     if (usernameEmailSet === null || usernameEmailSet === undefined) {
-      return new Ok({ kind: "notFound" });
+      return new Ok({ data: [], kind: "notFound" });
     }
 
-    return new Ok({ data: usernameEmailSet, kind: "success" });
+    return new Ok({ data: [usernameEmailSet], kind: "success" });
   } catch (error: unknown) {
-    return new Err({ data: error, kind: "error" });
+    return new Err({ data: error, message: "Error updating email" });
   }
 }
 

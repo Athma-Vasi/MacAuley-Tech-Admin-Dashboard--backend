@@ -2,8 +2,7 @@ import { model, Schema, type Types } from "mongoose";
 
 type AuthSchema = {
   addressIP: string;
-  expireAt: Date; // user will be required to log in their session again after 1 day - back up measure
-  isValid: boolean;
+  expireAt?: Date; // user will be required to log in their session again after 12 hours - back up measure
   userAgent: string;
   userId: Types.ObjectId;
   username: string;
@@ -24,12 +23,8 @@ const authSchema = new Schema(
     },
     expireAt: {
       type: Date,
-      default: Date.now,
-      index: { expires: "1d" }, // 1 day
-    },
-    isValid: {
-      type: Boolean,
-      default: true,
+      default: () => new Date(Date.now() + 1000 * 60 * 60 * 12), // 12 hours
+      index: { expires: "12h" }, // 12 hours
     },
     userAgent: {
       type: String,

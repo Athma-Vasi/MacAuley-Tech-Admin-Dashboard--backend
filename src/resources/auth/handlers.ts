@@ -5,9 +5,8 @@ import { CONFIG } from "../../config";
 import { ACCESS_TOKEN_EXPIRY, HASH_SALT_ROUNDS } from "../../constants";
 import {
   createNewResourceService,
+  deleteResourceByIdService,
   getResourceByFieldService,
-  getResourceByIdService,
-  updateResourceByIdService,
 } from "../../services";
 import type {
   CreateNewResourceRequest,
@@ -27,8 +26,12 @@ import {
   verifyJWTSafe,
 } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
+import {
+  type FinancialMetricsDocument,
+  FinancialMetricsModel,
+} from "../metrics/financial/model";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
-import type { AuthSchema } from "./model";
+import { AuthModel, type AuthSchema } from "./model";
 
 // @desc   Login user
 // @route  POST /auth/login
@@ -41,7 +44,12 @@ function loginUserHandler<
   return async (
     request: LoginUserRequest,
     response: Response<
-      HttpResult<{ userDocument: UserDocument; accessToken: string }>
+      HttpResult<
+        {
+          userDocument: UserDocument;
+          financialMetricsDocument: FinancialMetricsDocument;
+        }
+      >
     >,
   ) => {
     try {
@@ -114,8 +122,7 @@ function loginUserHandler<
       const authSessionSchema: AuthSchema = {
         addressIP: request.ip ?? "",
         // user will be required to log in their session again after 1 day
-        expireAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 1),
-        isValid: true,
+        // expireAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 1),
         userAgent: request.get("User-Agent") ?? "",
         userId: userDocument._id,
         username: userDocument.username,
@@ -258,7 +265,7 @@ function loginUserHandler<
       // function createCustomerMetricsSchemas(businessMetric: BusinessMetric[]) {
       //   const customerMetricsSchemaTemplate: CustomerMetricsSchema = {
       //     storeLocation: "All Locations",
-      //     customerMetrics: [],
+      //     customerMetrics: {} as CustomerMetrics,
       //   };
 
       //   return businessMetric.reduce((acc, curr) => {
@@ -279,26 +286,63 @@ function loginUserHandler<
       // const customerMetricsSchemas = createCustomerMetricsSchemas(
       //   businesMetrics,
       // );
-      // console.time("customerMetricsDocument");
 
-      // const customerMetricsDocument = await Promise.all(
-      //   customerMetricsSchemas.map(
-      //     async (customerMetricsSchema) =>
+      // console.time("productMetricsDocument");
+
+      // const productMetricsDocument = await Promise.all(
+      //   productMetricsSchemas.map(
+      //     async (productMetricsSchema) =>
       //       await createNewResourceService(
-      //         customerMetricsSchema,
-      //         CustomerMetricsModel,
+      //         productMetricsSchema,
+      //         ProductMetricsModel,
       //       ),
       //   ),
       // );
 
-      // console.log("customerMetricsDocument", customerMetricsDocument);
+      // console.log("productMetricsDocument", productMetricsDocument);
 
-      // console.timeEnd("customerMetricsDocument");
+      // console.timeEnd("productMetricsDocument");
+
+      const financialMetricsDocumentResult = await getResourceByFieldService({
+        filter: { storeLocation: "All Locations" },
+        model: FinancialMetricsModel,
+      });
+
+      if (financialMetricsDocumentResult.err) {
+        await createNewResourceService(
+          createErrorLogSchema(
+            financialMetricsDocumentResult.val,
+            request.body,
+          ),
+          ErrorLogModel,
+        );
+
+        response.status(200).json(
+          createHttpResultError({
+            message: "Unable to get financial metrics document",
+          }),
+        );
+        return;
+      }
+
+      const financialMetricsDocument = financialMetricsDocumentResult
+        .safeUnwrap().data as
+          | FinancialMetricsDocument
+          | undefined;
+
+      if (financialMetricsDocument === undefined) {
+        response.status(200).json(
+          createHttpResultError({
+            message: "Unable to get financial metrics document",
+          }),
+        );
+        return;
+      }
 
       response.status(200).json(
         createHttpResultSuccess({
           accessToken,
-          data: [userDocPartial],
+          data: [{ userDocument: userDocPartial, financialMetricsDocument }],
         }),
       );
     } catch (error: unknown) {
@@ -496,60 +540,17 @@ function logoutUserHandler<
 
       const sessionId = accessTokenDecoded.sessionId;
 
-      const getAuthSessionResult = await getResourceByIdService(
+      const deleteSessionResult = await deleteResourceByIdService(
         sessionId.toString(),
-        model,
+        AuthModel,
       );
 
-      if (getAuthSessionResult.err) {
+      if (deleteSessionResult.err) {
         await createNewResourceService(
           createErrorLogSchema(
-            getAuthSessionResult.val,
+            deleteSessionResult.val,
             request.body,
           ),
-          ErrorLogModel,
-        );
-
-        response.status(200).json(
-          createHttpResultError({ triggerLogout: true }),
-        );
-
-        return;
-      }
-
-      const existingSession = getAuthSessionResult.safeUnwrap().data as
-        | AuthSchema
-        | undefined;
-
-      if (existingSession === undefined) {
-        response.status(200).json(
-          createHttpResultError({ triggerLogout: true }),
-        );
-
-        return;
-      }
-
-      // check if token has already been invalidated
-
-      if (!existingSession.isValid) {
-        response.status(200).json(
-          createHttpResultError({ triggerLogout: true }),
-        );
-
-        return;
-      }
-
-      // invalidate session
-      const updateSessionResult = await updateResourceByIdService({
-        fields: { isValid: false },
-        model,
-        resourceId: sessionId.toString(),
-        updateOperator: "$set",
-      });
-
-      if (updateSessionResult.err) {
-        await createNewResourceService(
-          createErrorLogSchema(updateSessionResult.val, request.body),
           ErrorLogModel,
         );
 

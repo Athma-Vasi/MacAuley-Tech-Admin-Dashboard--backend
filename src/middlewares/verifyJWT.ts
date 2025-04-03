@@ -25,13 +25,13 @@ async function verifyJWTMiddleware(
     return;
   }
 
-  const decodedAccessTokenResult = await verifyJWTSafe({
+  const verifiedAccessTokenResult = await verifyJWTSafe({
     seed: ACCESS_TOKEN_SEED,
     token: accessToken,
   });
 
   // token is invalid (except for expired)
-  if (decodedAccessTokenResult.err) {
+  if (verifiedAccessTokenResult.err) {
     response.status(200).json(
       createHttpResultError({
         message: "Access token invalid",
@@ -42,30 +42,49 @@ async function verifyJWTMiddleware(
     return;
   }
 
-  console.log("\n");
-  console.group("verifyJWTMiddleware");
-  console.log("decodedAccessTokenResult:", decodedAccessTokenResult);
-  console.groupEnd();
+  // token is valid and expired
+  const verifiedAccessTokenUnwrapped = verifiedAccessTokenResult.safeUnwrap();
 
-  // token is now valid and maybe expired
-  // as verification throws error if invalid, token is (now safely) decoded
-  const safeDecodedResult = await decodeJWTSafe(accessToken);
+  let decodedAccessToken: DecodedToken | undefined = void 0;
 
-  if (safeDecodedResult.err) {
-    response.status(200).json(
-      createHttpResultError({
-        message: "Error decoding access token",
-        triggerLogout: true,
-      }),
-    );
+  // token is now valid but expired
+  // a token expiry throws error and data is not returned
+  // so it is instead decoded now to get the data
+  if (verifiedAccessTokenUnwrapped.kind === "error") {
+    const decodedAccessTokenResult = await decodeJWTSafe(accessToken);
 
-    return;
+    if (decodedAccessTokenResult.err) {
+      response.status(200).json(
+        createHttpResultError({
+          message: "Error decoding access token",
+          triggerLogout: true,
+        }),
+      );
+
+      return;
+    }
+
+    const decodedAccessTokenUnwrapped =
+      decodedAccessTokenResult.safeUnwrap().data;
+
+    if (decodedAccessTokenUnwrapped === undefined) {
+      response.status(200).json(
+        createHttpResultError({
+          message: "Error decoding access token",
+          triggerLogout: true,
+        }),
+      );
+
+      return;
+    }
+
+    decodedAccessToken = decodedAccessTokenUnwrapped;
   }
 
-  const decodedAccessToken = safeDecodedResult.safeUnwrap().data as
-    | DecodedToken
-    | undefined;
+  // verified token is now valid
+  decodedAccessToken = verifiedAccessTokenUnwrapped.data;
 
+  // if decodedAccessToken is still undefined, it means token is invalid
   if (decodedAccessToken === undefined) {
     response.status(200).json(
       createHttpResultError({
@@ -77,13 +96,9 @@ async function verifyJWTMiddleware(
     return;
   }
 
-  // regardless of expiry, create new access token
-  // and invalidate the old one
-
   const tokenCreationResult = await createTokenService({
     decodedOldToken: decodedAccessToken,
     expiresIn: ACCESS_TOKEN_EXPIRY,
-    invalidateOldToken: true,
     request,
     seed: ACCESS_TOKEN_SEED,
   });

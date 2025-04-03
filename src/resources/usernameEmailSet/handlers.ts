@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
 
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 import {
   createAndNotReturnResourceService,
   createNewResourceService,
   getResourceByFieldService,
 } from "../../services";
-import { DBRecord, HttpResult } from "../../types";
+import type { DBRecord, HttpResult } from "../../types";
 import {
   createErrorLogSchema,
   createHttpResultError,

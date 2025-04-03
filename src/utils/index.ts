@@ -1,12 +1,12 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { Err, Ok, type Result } from "ts-results";
+import { Err, Ok } from "ts-results";
 import type { ErrorLogSchema } from "../resources/errorLog";
 import type {
   DecodedToken,
   HttpResult,
   RequestAfterJWTVerification,
-  ServiceOutput,
+  ServiceResult,
 } from "../types";
 
 function createHttpResultError<Data = unknown>({
@@ -148,40 +148,40 @@ async function compareHashedStringWithPlainStringSafe({
 }: {
   hashedString: string;
   plainString: string;
-}): Promise<Result<ServiceOutput<boolean>, ServiceOutput>> {
+}): ServiceResult<boolean> {
   try {
     const isMatch = await bcrypt.compare(plainString, hashedString);
-    return new Ok({ data: isMatch, kind: "success" });
+    return new Ok({ data: [isMatch], kind: "success" });
   } catch (error: unknown) {
-    return new Err({ data: error, kind: "error" });
+    return new Err({ data: error, message: "Error comparing strings" });
   }
 }
 
 async function hashStringSafe({ saltRounds, stringToHash }: {
   saltRounds: number;
   stringToHash: string;
-}): Promise<Result<ServiceOutput<string>, ServiceOutput>> {
+}): ServiceResult<string> {
   try {
     const hashedString = await bcrypt.hash(stringToHash, saltRounds);
-    return new Ok({ data: hashedString, kind: "success" });
+    return new Ok({ data: [hashedString], kind: "success" });
   } catch (error: unknown) {
-    return new Err({ data: error, kind: "error" });
+    return new Err({ data: error, message: "Error hashing string" });
   }
 }
 
 async function decodeJWTSafe(
   token: string,
-): Promise<Result<ServiceOutput<DecodedToken>, ServiceOutput>> {
+): ServiceResult<DecodedToken> {
   try {
     const decoded = jwt.decode(token, { json: true }) as DecodedToken | null;
 
     if (decoded === null) {
-      return new Ok({ kind: "error" });
+      return new Ok({ data: [], kind: "mildError" });
     }
 
-    return new Ok({ data: decoded, kind: "success" });
+    return new Ok({ data: [decoded], kind: "success" });
   } catch (error: unknown) {
-    return new Err({ data: error, kind: "error" });
+    return new Err({ data: error, message: "Error decoding JWT" });
   }
 }
 
@@ -190,15 +190,15 @@ async function verifyJWTSafe(
     seed: string;
     token: string;
   },
-): Promise<Result<ServiceOutput<DecodedToken>, ServiceOutput>> {
+): ServiceResult<DecodedToken> {
   try {
     const decoded = jwt.verify(token, seed) as DecodedToken;
 
-    return new Ok({ data: decoded, kind: "success" });
+    return new Ok({ data: [decoded], kind: "success" });
   } catch (error: unknown) {
     return error instanceof Error && error?.name === "TokenExpiredError"
-      ? new Ok({ kind: "error" })
-      : new Err({ data: error, kind: "error" });
+      ? new Ok({ data: [], kind: "mildError" })
+      : new Err({ data: error, message: "Error verifying JWT" });
   }
 }
 

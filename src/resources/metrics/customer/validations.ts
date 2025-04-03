@@ -32,78 +32,70 @@ const createCustomerMetricsJoiSchema = Joi.object({
     storeLocation: Joi.string().regex(STORE_LOCATION_REGEX).default(
         "All Locations",
     ),
-    customerMetrics: Joi.array()
-        .items(
-            Joi.object({
-                lifetimeValue: Joi.number().default(0),
-                totalCustomers: Joi.number().default(0),
-                yearlyMetrics: Joi.array()
-                    .items(
-                        Joi.object({
-                            year: Joi.string().regex(YEARS_REGEX).required(),
-                            customers: customersJoiSchema,
-                            monthlyMetrics: Joi.array()
-                                .items(
-                                    Joi.object({
-                                        month: Joi.string().regex(MONTHS_REGEX)
-                                            .required(),
-                                        customers: customersJoiSchema,
-                                        dailyMetrics: Joi.array()
-                                            .items(
-                                                Joi.object({
-                                                    day: Joi.string().regex(
-                                                        DAYS_REGEX,
-                                                    )
-                                                        .required(),
-                                                    customers:
-                                                        customersJoiSchema,
-                                                }),
-                                            ).required(),
-                                    }),
-                                ).required(),
-                        }),
-                    ).required(),
-            }),
-        ).required(),
+    customerMetrics: Joi.object({
+        lifetimeValue: Joi.number().default(0),
+        totalCustomers: Joi.number().default(0),
+        yearlyMetrics: Joi.array()
+            .items(
+                Joi.object({
+                    year: Joi.string().regex(YEARS_REGEX).required(),
+                    customers: customersJoiSchema,
+                    monthlyMetrics: Joi.array()
+                        .items(
+                            Joi.object({
+                                month: Joi.string().regex(MONTHS_REGEX)
+                                    .required(),
+                                customers: customersJoiSchema,
+                                dailyMetrics: Joi.array()
+                                    .items(
+                                        Joi.object({
+                                            day: Joi.string().regex(
+                                                DAYS_REGEX,
+                                            )
+                                                .required(),
+                                            customers: customersJoiSchema,
+                                        }),
+                                    ).required(),
+                            }),
+                        ).required(),
+                }),
+            ).required(),
+    }),
 });
 
 const updateCustomerMetricsJoiSchema = Joi.object({
     storeLocation: Joi.string().regex(STORE_LOCATION_REGEX).default(
         "All Locations",
     ),
-    customerMetrics: Joi.array()
-        .items(
-            Joi.object({
-                lifetimeValue: Joi.number().default(0),
-                totalCustomers: Joi.number().default(0),
-                yearlyMetrics: Joi.array()
-                    .items(
-                        Joi.object({
-                            year: Joi.string().regex(YEARS_REGEX).optional(),
-                            customers: customersJoiSchema,
-                            monthlyMetrics: Joi.array()
-                                .items(
-                                    Joi.object({
-                                        month: Joi.string().regex(MONTHS_REGEX)
-                                            .optional(),
-                                        customers: customersJoiSchema,
-                                        dailyMetrics: Joi.array()
-                                            .items(
-                                                Joi.object({
-                                                    day: Joi.string().regex(
-                                                        DAYS_REGEX,
-                                                    )
-                                                        .optional(),
-                                                    customers:
-                                                        customersJoiSchema,
-                                                }),
-                                            ).optional(),
-                                    }),
-                                ).optional(),
-                        }),
-                    ).optional(),
-            }),
-        ).optional(),
+    customerMetrics: Joi.object({
+        lifetimeValue: Joi.number().default(0),
+        totalCustomers: Joi.number().default(0),
+        yearlyMetrics: Joi.array()
+            .items(
+                Joi.object({
+                    year: Joi.string().regex(YEARS_REGEX).optional(),
+                    customers: customersJoiSchema,
+                    monthlyMetrics: Joi.array()
+                        .items(
+                            Joi.object({
+                                month: Joi.string().regex(MONTHS_REGEX)
+                                    .optional(),
+                                customers: customersJoiSchema,
+                                dailyMetrics: Joi.array()
+                                    .items(
+                                        Joi.object({
+                                            day: Joi.string().regex(
+                                                DAYS_REGEX,
+                                            )
+                                                .optional(),
+                                            customers: customersJoiSchema,
+                                        }),
+                                    ).optional(),
+                            }),
+                        ).optional(),
+                }),
+            ).optional(),
+    }),
 });
 
 export { createCustomerMetricsJoiSchema, updateCustomerMetricsJoiSchema };
