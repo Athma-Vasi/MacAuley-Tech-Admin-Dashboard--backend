@@ -443,7 +443,7 @@ function deleteResourceByIdHandler<Doc extends DBRecord = DBRecord>(
       }
 
       response.status(200).json(
-        createHttpResultSuccess({ accessToken }),
+        createHttpResultSuccess({ data: [], accessToken }),
       );
     } catch (error: unknown) {
       await createNewResourceService(
@@ -486,7 +486,7 @@ function deleteManyResourcesHandler<Doc extends DBRecord = DBRecord>(
       }
 
       response.status(200).json(
-        createHttpResultSuccess({ accessToken }),
+        createHttpResultSuccess({ data: [], accessToken }),
       );
     } catch (error: unknown) {
       await createNewResourceService(

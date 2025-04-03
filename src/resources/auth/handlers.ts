@@ -11,7 +11,6 @@ import {
 import type {
   CreateNewResourceRequest,
   DBRecord,
-  DecodedToken,
   HttpResult,
   LoginUserRequest,
   RequestAfterJWTVerification,
@@ -79,9 +78,7 @@ function loginUserHandler<
         return;
       }
 
-      const userDocument = getUserResult.safeUnwrap().data as
-        | UserDocument
-        | undefined;
+      const [userDocument] = getUserResult.safeUnwrap().data;
 
       if (userDocument === undefined || userDocument === null) {
         response.status(200).json(
@@ -150,9 +147,10 @@ function loginUserHandler<
         return;
       }
 
-      const sessionId = createAuthSessionResult.safeUnwrap().data?._id;
+      const createAuthSessionUnwrapped = createAuthSessionResult.safeUnwrap()
+        ?.data;
 
-      if (!sessionId) {
+      if (createAuthSessionUnwrapped.length === 0) {
         response.status(200).json(
           createHttpResultError({
             message: "Unable to create session. Please try again!",
@@ -161,12 +159,14 @@ function loginUserHandler<
         return;
       }
 
+      const [authSession] = createAuthSessionUnwrapped;
+
       const accessToken = jwt.sign(
         {
           userId: userDocument._id,
           username: userDocument.username,
           roles: userDocument.roles,
-          sessionId,
+          sessionId: authSession._id,
         },
         ACCESS_TOKEN_SEED,
         { expiresIn: ACCESS_TOKEN_EXPIRY },
@@ -325,12 +325,10 @@ function loginUserHandler<
         return;
       }
 
-      const financialMetricsDocument = financialMetricsDocumentResult
-        .safeUnwrap().data as
-          | FinancialMetricsDocument
-          | undefined;
+      const financialMetricsDocumentUnwrapped = financialMetricsDocumentResult
+        .safeUnwrap().data;
 
-      if (financialMetricsDocument === undefined) {
+      if (financialMetricsDocumentUnwrapped.length === 0) {
         response.status(200).json(
           createHttpResultError({
             message: "Unable to get financial metrics document",
@@ -342,7 +340,10 @@ function loginUserHandler<
       response.status(200).json(
         createHttpResultSuccess({
           accessToken,
-          data: [{ userDocument: userDocPartial, financialMetricsDocument }],
+          data: [{
+            userDocument: userDocPartial,
+            financialMetricsDocument: financialMetricsDocumentUnwrapped[0],
+          }],
         }),
       );
     } catch (error: unknown) {
@@ -460,6 +461,7 @@ function registerUserHandler<
       response.status(200).json(
         createHttpResultSuccess({
           accessToken: "",
+          data: [],
           message: "User registered successfully",
         }),
       );
@@ -525,12 +527,10 @@ function logoutUserHandler<
         return;
       }
 
-      const accessTokenDecoded = accessTokenDecodedResult.safeUnwrap()
-        .data as
-          | DecodedToken
-          | undefined;
+      const accessTokenDecodedUnwrapped = accessTokenDecodedResult.safeUnwrap()
+        .data;
 
-      if (accessTokenDecoded === undefined) {
+      if (accessTokenDecodedUnwrapped.length === 0) {
         response.status(200).json(
           createHttpResultError({ triggerLogout: true }),
         );
@@ -538,6 +538,7 @@ function logoutUserHandler<
         return;
       }
 
+      const [accessTokenDecoded] = accessTokenDecodedUnwrapped;
       const sessionId = accessTokenDecoded.sessionId;
 
       const deleteSessionResult = await deleteResourceByIdService(
@@ -564,6 +565,7 @@ function logoutUserHandler<
       response.status(200).json(
         createHttpResultSuccess({
           accessToken: "",
+          data: [],
           triggerLogout: true,
         }),
       );

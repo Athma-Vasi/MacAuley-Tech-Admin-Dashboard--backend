@@ -20,7 +20,7 @@ function createHttpResultError<Data = unknown>({
   triggerLogout = false,
 }: {
   accessToken?: string;
-  data?: Array<Data>;
+  data?: [];
   kind?: "error" | "success";
   message?: string;
   pages?: number;
@@ -90,7 +90,7 @@ function createHttpResultSuccess<
   triggerLogout = false,
 }: {
   accessToken: string;
-  data?: Array<Data>;
+  data: Array<Data>;
   kind?: "error" | "success";
   message?: string;
   pages?: number;
