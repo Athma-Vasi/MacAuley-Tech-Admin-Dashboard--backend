@@ -117,8 +117,8 @@ async function createTokenService(
     // create new session
     const authSessionSchema: AuthSchema = {
       addressIP: request.ip ?? "",
-      // user will be required to log in their session again after 12 hours - back up measure
-      expireAt: new Date(Date.now() + 1000 * 60 * 60 * 12 * 1),
+      // user will be required to log in their session again after 1 hour - back up measure
+      expireAt: new Date(Date.now() + 1000 * 60 * 60 * 1 * 1),
       userAgent: request.get("User-Agent") ?? "",
       userId,
       username,
@@ -140,6 +140,7 @@ async function createTokenService(
 
     const createAuthSessionUnwrapped =
       createAuthSessionResult.safeUnwrap().data;
+
     if (createAuthSessionUnwrapped.length === 0) {
       await createNewResourceService(
         createErrorLogSchema(createAuthSessionResult.val, request.body),

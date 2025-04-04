@@ -1,6 +1,6 @@
 const REFRESH_TOKEN_EXPIRY = "12h"; // 12 hours
 
-const ACCESS_TOKEN_EXPIRY = "60s"; // 60 seconds
+const ACCESS_TOKEN_EXPIRY = "5s"; // 5 seconds
 
 const HASH_SALT_ROUNDS = 10;
 

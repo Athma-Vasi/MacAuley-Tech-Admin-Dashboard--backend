@@ -34,6 +34,11 @@ function createMongoDbQueryObject(
     value: { ...request.body, newQueryFlag: false, totalDocuments: 0 },
   });
 
+  console.log(
+    "createMongoDbQueryObject: query: ",
+    JSON.stringify(query, null, 2),
+  );
+
   next();
   return;
 }
@@ -62,7 +67,7 @@ function createMongoDbQueryObject(
         }
   */
 
-// function createMongoDbQueryObject(
+// function createMongoDbQueryObject1(
 //   request: Request,
 //   _response: Response,
 //   next: NextFunction,

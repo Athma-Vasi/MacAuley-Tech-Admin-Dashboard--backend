@@ -1,4 +1,4 @@
-import { type Response } from "express";
+import type { Response } from "express";
 import jwt from "jsonwebtoken";
 import type { Model } from "mongoose";
 import { CONFIG } from "../../config";
@@ -26,17 +26,9 @@ import {
 } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
 import {
-  DAYS_PER_MONTH,
-  MONTHS,
-  PRODUCT_CATEGORIES,
-  REPAIR_CATEGORIES,
-  STORE_LOCATIONS,
-} from "../metrics/constants";
-import {
   type FinancialMetricsDocument,
   FinancialMetricsModel,
 } from "../metrics/financial/model";
-import { createRandomBusinessMetrics } from "../metrics/utils";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
 import { AuthModel, type AuthSchema } from "./model";
 
@@ -192,148 +184,8 @@ function loginUserHandler<
         Object.create(null),
       );
 
-      // create random business metrics
-      const businessMetrics = await createRandomBusinessMetrics({
-        daysPerMonth: DAYS_PER_MONTH,
-        months: MONTHS,
-        productCategories: PRODUCT_CATEGORIES,
-        repairCategories: REPAIR_CATEGORIES,
-        storeLocations: STORE_LOCATIONS,
-      });
-
-      // function createProductMetricsSchemas(
-      //   businessMetrics: BusinessMetric[],
-      // ) {
-      //   const productMetricsSchemaTemplate: ProductMetricsSchema = {
-      //     storeLocation: "All Locations",
-      //     metricCategory: "All Products",
-      //     yearlyMetrics: [],
-      //   };
-
-      //   return businessMetrics.reduce((acc, curr) => {
-      //     const { storeLocation, productMetrics } = curr;
-
-      //     productMetrics.forEach((productMetric) => {
-      //       const { name, yearlyMetrics } = productMetric;
-
-      //       const productMetricsSchema = {
-      //         ...productMetricsSchemaTemplate,
-      //         storeLocation,
-      //         metricCategory: name,
-      //         yearlyMetrics,
-      //       };
-
-      //       acc.push(productMetricsSchema);
-      //     });
-
-      //     return acc;
-      //   }, [] as ProductMetricsSchema[]);
-      // }
-
-      // const productMetricsSchemas = createProductMetricsSchemas(
-      //   businessMetrics,
-      // );
-
-      // function createRepairMetricsSchemas(businessMetrics: BusinessMetric[]) {
-      //   const repairMetricsSchemaTemplate: RepairMetricsSchema = {
-      //     storeLocation: "All Locations",
-      //     metricCategory: "All Repairs",
-      //     yearlyMetrics: [],
-      //   };
-
-      //   return businessMetrics.reduce((acc, curr) => {
-      //     const { storeLocation, repairMetrics } = curr;
-
-      //     repairMetrics.forEach((repairMetric) => {
-      //       const { name, yearlyMetrics } = repairMetric;
-
-      //       const repairMetricsSchema = {
-      //         ...repairMetricsSchemaTemplate,
-      //         storeLocation,
-      //         metricCategory: name,
-      //         yearlyMetrics,
-      //       };
-
-      //       acc.push(repairMetricsSchema);
-      //     });
-
-      //     return acc;
-      //   }, [] as RepairMetricsSchema[]);
-      // }
-
-      // const repairMetricsSchemas = createRepairMetricsSchemas(
-      //   businessMetrics,
-      // );
-
-      // function createFinancialMetricsSchemas(
-      //   businessMetrics: BusinessMetric[],
-      // ) {
-      //   const financialMetricsSchemaTemplate: FinancialMetricsSchema = {
-      //     storeLocation: "All Locations",
-      //     financialMetrics: [],
-      //   };
-
-      //   return businessMetrics.reduce((acc, curr) => {
-      //     const { storeLocation, financialMetrics } = curr;
-
-      //     const financialMetricsSchema = {
-      //       ...financialMetricsSchemaTemplate,
-      //       storeLocation,
-      //       financialMetrics,
-      //     };
-
-      //     acc.push(financialMetricsSchema);
-
-      //     return acc;
-      //   }, [] as FinancialMetricsSchema[]);
-      // }
-
-      // const financialMetricsSchemas = createFinancialMetricsSchemas(
-      //   businessMetrics,
-      // );
-
-      // function createCustomerMetricsSchemas(businessMetric: BusinessMetric[]) {
-      //   const customerMetricsSchemaTemplate: CustomerMetricsSchema = {
-      //     storeLocation: "All Locations",
-      //     customerMetrics: {} as CustomerMetrics,
-      //   };
-
-      //   return businessMetric.reduce((acc, curr) => {
-      //     const { storeLocation, customerMetrics } = curr;
-
-      //     const customerMetricsSchema = {
-      //       ...customerMetricsSchemaTemplate,
-      //       storeLocation,
-      //       customerMetrics,
-      //     };
-      //     acc.push(customerMetricsSchema);
-
-      //     return acc;
-      //   }, [] as CustomerMetricsSchema[]);
-      // }
-
-      // const customerMetricsSchemas = createCustomerMetricsSchemas(
-      //   businessMetrics,
-      // );
-
-      // console.time("customerMetricsDocument");
-
-      // const customerMetricsDocument = await Promise.all(
-      //   customerMetricsSchemas.map(
-      //     async (customerMetricsSchema) =>
-      //       await createNewResourceService(
-      //         customerMetricsSchema,
-      //         CustomerMetricsModel,
-      //       ),
-      //   ),
-      // );
-
-      // console.log("customerMetricsDocument", customerMetricsDocument);
-
-      // console.timeEnd("customerMetricsDocument");
-
       const financialMetricsDocumentResult = await getResourceByFieldService({
-        filter: { storeLocation: "All Locations", year: "2025" },
+        filter: { storeLocation: "All Locations" },
         model: FinancialMetricsModel,
       });
 
@@ -617,3 +469,143 @@ function logoutUserHandler<
 }
 
 export { loginUserHandler, logoutUserHandler, registerUserHandler };
+
+// create random business metrics
+// const businessMetrics = await createRandomBusinessMetrics({
+//   daysPerMonth: DAYS_PER_MONTH,
+//   months: MONTHS,
+//   productCategories: PRODUCT_CATEGORIES,
+//   repairCategories: REPAIR_CATEGORIES,
+//   storeLocations: STORE_LOCATIONS,
+// });
+
+// function createProductMetricsSchemas(
+//   businessMetrics: BusinessMetric[],
+// ) {
+//   const productMetricsSchemaTemplate: ProductMetricsSchema = {
+//     storeLocation: "All Locations",
+//     metricCategory: "All Products",
+//     yearlyMetrics: [],
+//   };
+
+//   return businessMetrics.reduce((acc, curr) => {
+//     const { storeLocation, productMetrics } = curr;
+
+//     productMetrics.forEach((productMetric) => {
+//       const { name, yearlyMetrics } = productMetric;
+
+//       const productMetricsSchema = {
+//         ...productMetricsSchemaTemplate,
+//         storeLocation,
+//         metricCategory: name,
+//         yearlyMetrics,
+//       };
+
+//       acc.push(productMetricsSchema);
+//     });
+
+//     return acc;
+//   }, [] as ProductMetricsSchema[]);
+// }
+
+// const productMetricsSchemas = createProductMetricsSchemas(
+//   businessMetrics,
+// );
+
+// function createRepairMetricsSchemas(businessMetrics: BusinessMetric[]) {
+//   const repairMetricsSchemaTemplate: RepairMetricsSchema = {
+//     storeLocation: "All Locations",
+//     metricCategory: "All Repairs",
+//     yearlyMetrics: [],
+//   };
+
+//   return businessMetrics.reduce((acc, curr) => {
+//     const { storeLocation, repairMetrics } = curr;
+
+//     repairMetrics.forEach((repairMetric) => {
+//       const { name, yearlyMetrics } = repairMetric;
+
+//       const repairMetricsSchema = {
+//         ...repairMetricsSchemaTemplate,
+//         storeLocation,
+//         metricCategory: name,
+//         yearlyMetrics,
+//       };
+
+//       acc.push(repairMetricsSchema);
+//     });
+
+//     return acc;
+//   }, [] as RepairMetricsSchema[]);
+// }
+
+// const repairMetricsSchemas = createRepairMetricsSchemas(
+//   businessMetrics,
+// );
+
+// function createFinancialMetricsSchemas(
+//   businessMetrics: BusinessMetric[],
+// ) {
+//   const financialMetricsSchemaTemplate: FinancialMetricsSchema = {
+//     storeLocation: "All Locations",
+//     financialMetrics: [],
+//   };
+
+//   return businessMetrics.reduce((acc, curr) => {
+//     const { storeLocation, financialMetrics } = curr;
+
+//     const financialMetricsSchema = {
+//       ...financialMetricsSchemaTemplate,
+//       storeLocation,
+//       financialMetrics,
+//     };
+
+//     acc.push(financialMetricsSchema);
+
+//     return acc;
+//   }, [] as FinancialMetricsSchema[]);
+// }
+
+// const financialMetricsSchemas = createFinancialMetricsSchemas(
+//   businessMetrics,
+// );
+
+// function createCustomerMetricsSchemas(businessMetric: BusinessMetric[]) {
+//   const customerMetricsSchemaTemplate: CustomerMetricsSchema = {
+//     storeLocation: "All Locations",
+//     customerMetrics: {} as CustomerMetrics,
+//   };
+
+//   return businessMetric.reduce((acc, curr) => {
+//     const { storeLocation, customerMetrics } = curr;
+
+//     const customerMetricsSchema = {
+//       ...customerMetricsSchemaTemplate,
+//       storeLocation,
+//       customerMetrics,
+//     };
+//     acc.push(customerMetricsSchema);
+
+//     return acc;
+//   }, [] as CustomerMetricsSchema[]);
+// }
+
+// const customerMetricsSchemas = createCustomerMetricsSchemas(
+//   businessMetrics,
+// );
+
+// console.time("customerMetricsDocument");
+
+// const customerMetricsDocument = await Promise.all(
+//   customerMetricsSchemas.map(
+//     async (customerMetricsSchema) =>
+//       await createNewResourceService(
+//         customerMetricsSchema,
+//         CustomerMetricsModel,
+//       ),
+//   ),
+// );
+
+// console.log("customerMetricsDocument", customerMetricsDocument);
+
+// console.timeEnd("customerMetricsDocument");

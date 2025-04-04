@@ -23,8 +23,8 @@ const authSchema = new Schema(
     },
     expireAt: {
       type: Date,
-      default: () => new Date(Date.now() + 1000 * 60 * 60 * 12), // 12 hours
-      index: { expires: "12h" }, // 12 hours
+      default: () => new Date(Date.now() + 1000 * 60 * 60 * 1), // 1 hour
+      index: { expires: "1h" }, // 1 hour
     },
     userAgent: {
       type: String,

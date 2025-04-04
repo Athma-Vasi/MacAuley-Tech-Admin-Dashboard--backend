@@ -3,7 +3,6 @@ import type { NextFunction, Request, Response } from "express";
 import { CONFIG } from "../config";
 import { ACCESS_TOKEN_EXPIRY, PROPERTY_DESCRIPTOR } from "../constants";
 import { createTokenService } from "../resources/auth/services";
-import type { DecodedToken } from "../types";
 import { createHttpResultError, decodeJWTSafe, verifyJWTSafe } from "../utils";
 
 async function verifyJWTMiddleware(
@@ -42,54 +41,23 @@ async function verifyJWTMiddleware(
     return;
   }
 
+  // token is valid and maybe expired
+
+  // token is valid and not expired
+  // reuse same token
+  // if (verifiedAccessTokenUnwrapped.kind === "success") {
+  //   Object.defineProperty(request.body, "accessToken", {
+  //     value: accessToken,
+  //     ...PROPERTY_DESCRIPTOR,
+  //   });
+  // }
+
   // token is valid and expired
-  const verifiedAccessTokenUnwrapped = verifiedAccessTokenResult.safeUnwrap();
+  // always create new token, delete old token
 
-  console.log("verifiedAccessTokenUnwrapped", verifiedAccessTokenUnwrapped);
+  const decodedAccessTokenResult = await decodeJWTSafe(accessToken);
 
-  let decodedAccessToken: DecodedToken | undefined = void 0;
-
-  // token is now valid but expired
-  // a token expiry throws error and data is not returned
-  // so it is instead decoded now to get the data
-  if (verifiedAccessTokenUnwrapped.kind === "mildError") {
-    const decodedAccessTokenResult = await decodeJWTSafe(accessToken);
-
-    if (decodedAccessTokenResult.err) {
-      response.status(200).json(
-        createHttpResultError({
-          message: "Error decoding access token",
-          triggerLogout: true,
-        }),
-      );
-
-      return;
-    }
-
-    const decodedAccessTokenUnwrapped =
-      decodedAccessTokenResult.safeUnwrap().data;
-
-    console.log("decodedAccessTokenUnwrapped", decodedAccessTokenUnwrapped);
-
-    if (decodedAccessTokenUnwrapped.length === 0) {
-      response.status(200).json(
-        createHttpResultError({
-          message: "Error decoding access token",
-          triggerLogout: true,
-        }),
-      );
-
-      return;
-    }
-
-    decodedAccessToken = decodedAccessTokenUnwrapped[0];
-  }
-
-  // verified token is now valid
-  decodedAccessToken = verifiedAccessTokenUnwrapped.data[0];
-
-  // if decodedAccessToken is still undefined, it means token is invalid
-  if (decodedAccessToken === undefined) {
+  if (decodedAccessTokenResult.err) {
     response.status(200).json(
       createHttpResultError({
         message: "Error decoding access token",
@@ -100,7 +68,16 @@ async function verifyJWTMiddleware(
     return;
   }
 
-  console.log("decodedAccessToken", decodedAccessToken);
+  const decodedAccessToken = decodedAccessTokenResult.safeUnwrap().data[0];
+  if (!decodedAccessToken) {
+    response.status(200).json(
+      createHttpResultError({
+        message: "Error decoding access token",
+        triggerLogout: true,
+      }),
+    );
+    return;
+  }
 
   const tokenCreationResult = await createTokenService({
     decodedOldToken: decodedAccessToken,
