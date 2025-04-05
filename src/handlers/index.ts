@@ -95,9 +95,11 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
       } = request.query;
 
       console.group("getQueriedResourcesHandler");
+      console.log("accessToken", accessToken);
       console.log("filter", JSON.stringify(filter, null, 2));
       console.log("options", options);
       console.log("projection", projection);
+      console.log("newQueryFlag", newQueryFlag);
       console.log("totalDocuments", totalDocuments);
       console.groupEnd();
 

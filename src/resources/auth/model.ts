@@ -1,8 +1,11 @@
 import { model, Schema, type Types } from "mongoose";
+import { AUTH_SESSION_EXPIRY } from "./constants";
 
 type AuthSchema = {
+  // this is the token that is currently active for the user associated with this session
+  currentlyActiveToken: string;
   addressIP: string;
-  expireAt?: Date; // user will be required to log in their session again after 12 hours - back up measure
+  expireAt?: Date; // user will be required to log in their session again after 3 hours - back up measure
   userAgent: string;
   userId: Types.ObjectId;
   username: string;
@@ -17,14 +20,19 @@ type AuthDocument = AuthSchema & {
 
 const authSchema = new Schema(
   {
+    currentlyActiveToken: {
+      type: String,
+      required: [true, "Currently Active Token is required"],
+    },
     addressIP: {
       type: String,
       required: [true, "IP Address is required"],
     },
     expireAt: {
       type: Date,
-      default: () => new Date(Date.now() + 1000 * 60 * 60 * 1), // 1 hour
-      index: { expires: "1h" }, // 1 hour
+      default: () => new Date(AUTH_SESSION_EXPIRY), // 3 hours
+      // index: { expires: "1m" }, // 1 hour
+      expires: "3h",
     },
     userAgent: {
       type: String,

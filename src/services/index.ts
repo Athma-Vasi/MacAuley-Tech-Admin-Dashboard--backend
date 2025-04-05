@@ -4,7 +4,7 @@ import type {
   MongooseBaseQueryOptionKeys,
   QueryOptions,
 } from "mongoose";
-import { Err, Ok, type Result } from "ts-results";
+import { Err, Ok } from "ts-results";
 import type {
   ArrayOperators,
   DBRecord,

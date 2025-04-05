@@ -53,7 +53,7 @@ async function verifyJWTMiddleware(
   // }
 
   // token is valid and expired
-  // always create new token, delete old token
+  // always create new token
 
   const decodedAccessTokenResult = await decodeJWTSafe(accessToken);
 
@@ -80,6 +80,7 @@ async function verifyJWTMiddleware(
   }
 
   const tokenCreationResult = await createTokenService({
+    accessToken,
     decodedOldToken: decodedAccessToken,
     expiresIn: ACCESS_TOKEN_EXPIRY,
     request,
@@ -89,7 +90,21 @@ async function verifyJWTMiddleware(
   if (tokenCreationResult.err) {
     response.status(200).json(
       createHttpResultError({
-        message: "Error creating access token",
+        message: tokenCreationResult.val.message,
+        triggerLogout: true,
+      }),
+    );
+
+    return;
+  }
+
+  console.log("tokenCreationResult", tokenCreationResult);
+
+  if (tokenCreationResult.safeUnwrap().kind === "notFound") {
+    response.status(200).json(
+      createHttpResultError({
+        message: "Session expired",
+        // user needs to log in again
         triggerLogout: true,
       }),
     );
@@ -102,7 +117,7 @@ async function verifyJWTMiddleware(
   if (tokenCreationResultUnwrapped.length === 0) {
     response.status(200).json(
       createHttpResultError({
-        message: "Error creating access token",
+        message: "Token created not found",
         triggerLogout: true,
       }),
     );
@@ -114,6 +129,7 @@ async function verifyJWTMiddleware(
 
   const [newAccessToken] = tokenCreationResultUnwrapped;
 
+  // newly created access token is accessed by handlers and returned with httpServerResponse
   Object.defineProperty(request.body, "accessToken", {
     value: newAccessToken,
     ...PROPERTY_DESCRIPTOR,

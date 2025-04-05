@@ -4,27 +4,22 @@ import { Err, Ok } from "ts-results";
 import {
   createNewResourceService,
   deleteManyResourcesService,
-  deleteResourceByIdService,
   getResourceByIdService,
+  updateResourceByIdService,
 } from "../../services";
 import type { DecodedToken, ServiceResult } from "../../types";
 import { createErrorLogSchema } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
-import { AuthModel, type AuthSchema } from "./model";
+import { AuthModel } from "./model";
 
 // this is a service that creates a new token for the user
 // it is used when the user wants to refresh their token
 // it takes the decoded old token and creates a new token with the same payload
-// but with a new session ID
-// it also deletes the old session from the database
-// and creates a new session with the new session ID
+// and with existing session ID
+// and updates its currentlyActiveToken field with newly created access token
 async function createTokenService(
-  {
-    decodedOldToken,
-    expiresIn,
-    request,
-    seed,
-  }: {
+  { accessToken, decodedOldToken, expiresIn, request, seed }: {
+    accessToken: string;
     decodedOldToken: DecodedToken;
     expiresIn: SignOptions["expiresIn"];
     request: Request;
@@ -61,20 +56,39 @@ async function createTokenService(
           ),
           ErrorLogModel,
         );
+
+        return new Err({ message: "Error deleting session" });
       }
 
+      return new Err({ message: "Unable to retrieve session" });
+    }
+
+    const existingSessionUnwrapped = getSessionResult.safeUnwrap();
+
+    // session not found, means session document auto expired
+    if (existingSessionUnwrapped.kind === "notFound") {
+      // user needs to log in again
+      return new Ok({ data: [], kind: "notFound" });
+    }
+
+    const [existingSession] = existingSessionUnwrapped.data;
+
+    console.log("createTokenService");
+    console.log("existing session", existingSession);
+
+    if (existingSession === null || existingSession === undefined) {
       return new Err({ message: "Error getting session" });
     }
 
-    const existingSessionUnwrapped = getSessionResult.safeUnwrap().data;
+    // session was found,
 
-    if (existingSessionUnwrapped.length === 0) {
+    // if the incoming access token is not the same as the one in the database
+    if (existingSession.currentlyActiveToken !== accessToken) {
       // invalidate all sessions for this user
       const deleteManyResult = await deleteManyResourcesService({
         filter: { userId },
         model: AuthModel,
       });
-
       if (deleteManyResult.err) {
         await createNewResourceService(
           createErrorLogSchema(
@@ -84,82 +98,54 @@ async function createTokenService(
           ErrorLogModel,
         );
       }
-
-      return new Err({ message: "Session not found" });
+      return new Err({ message: "Access token cannot be matched" });
     }
 
-    const [existingSession] = existingSessionUnwrapped;
-
-    console.log("createTokenService");
-    console.log("existing session", existingSession);
-
-    // delete old session from database
-
-    const deleteSessionResult = await deleteResourceByIdService(
-      existingSession._id.toString(),
-      AuthModel,
+    // create a new access token
+    // and use existing session ID to sign new token
+    const newAccessToken = jwt.sign(
+      { userId, username, roles, sessionId: existingSession._id.toString() },
+      seed,
+      { expiresIn },
     );
 
-    if (deleteSessionResult.err) {
+    // update the session in the database with the new access token
+    const updateSessionResult = await updateResourceByIdService(
+      {
+        fields: {
+          currentlyActiveToken: newAccessToken,
+          addressIP: request.ip ?? "unknown",
+          userAgent: request.headers["user-agent"] ?? "unknown",
+        },
+        model: AuthModel,
+        resourceId: existingSession._id.toString(),
+        updateOperator: "$set",
+      },
+    );
+
+    if (updateSessionResult.err) {
       await createNewResourceService(
         createErrorLogSchema(
-          deleteSessionResult.val,
+          updateSessionResult.val,
           request.body,
         ),
         ErrorLogModel,
       );
 
-      return new Err({
-        message: "Error deleting previous session",
-      });
+      return new Err({ message: "Error updating session" });
     }
 
-    // create new session
-    const authSessionSchema: AuthSchema = {
-      addressIP: request.ip ?? "",
-      // user will be required to log in their session again after 1 hour - back up measure
-      expireAt: new Date(Date.now() + 1000 * 60 * 60 * 1 * 1),
-      userAgent: request.get("User-Agent") ?? "",
-      userId,
-      username,
-    };
-
-    const createAuthSessionResult = await createNewResourceService(
-      authSessionSchema,
-      AuthModel,
-    );
-
-    if (createAuthSessionResult.err) {
-      await createNewResourceService(
-        createErrorLogSchema(createAuthSessionResult.val, request.body),
-        ErrorLogModel,
-      );
-
-      return new Err({ message: "Error creating session" });
+    // update session was successful
+    // return the new access token
+    const [updatedSession] = updateSessionResult.safeUnwrap().data;
+    if (updatedSession === null || updatedSession === undefined) {
+      return new Err({ message: "Error updating session" });
     }
 
-    const createAuthSessionUnwrapped =
-      createAuthSessionResult.safeUnwrap().data;
-
-    if (createAuthSessionUnwrapped.length === 0) {
-      await createNewResourceService(
-        createErrorLogSchema(createAuthSessionResult.val, request.body),
-        ErrorLogModel,
-      );
-
-      return new Err({ message: "Error creating session" });
-    }
-
-    const [newAuthSession] = createAuthSessionUnwrapped;
-
-    // and use its ID to sign new token
-    const newAccessToken = jwt.sign(
-      { userId, username, roles, sessionId: newAuthSession._id },
-      seed,
-      { expiresIn },
-    );
-
-    return new Ok({ data: [newAccessToken], kind: "success" });
+    return new Ok({
+      data: [newAccessToken],
+      kind: "success",
+    });
   } catch (error: unknown) {
     await createNewResourceService(
       createErrorLogSchema(

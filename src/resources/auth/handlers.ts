@@ -7,6 +7,7 @@ import {
   createNewResourceService,
   deleteResourceByIdService,
   getResourceByFieldService,
+  updateResourceByIdService,
 } from "../../services";
 import type {
   CreateNewResourceRequest,
@@ -30,6 +31,7 @@ import {
   FinancialMetricsModel,
 } from "../metrics/financial/model";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
+import { AUTH_SESSION_EXPIRY } from "./constants";
 import { AuthModel, type AuthSchema } from "./model";
 
 // @desc   Login user
@@ -116,11 +118,12 @@ function loginUserHandler<
 
       const { ACCESS_TOKEN_SEED } = CONFIG;
 
+      // create auth session without token
       const authSessionSchema: AuthSchema = {
-        addressIP: request.ip ?? "",
-        // user will be required to log in their session again after 1 day
-        // expireAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 1),
-        userAgent: request.get("User-Agent") ?? "",
+        addressIP: request.ip ?? "unknown",
+        currentlyActiveToken: "notAToken",
+        expireAt: new Date(AUTH_SESSION_EXPIRY), // 3 hour
+        userAgent: request.get("User-Agent") ?? "unknown",
         userId: userDocument._id,
         username: userDocument.username,
       };
@@ -161,6 +164,7 @@ function loginUserHandler<
 
       const [authSession] = createAuthSessionUnwrapped;
 
+      // create a new access token and use the session ID to sign the new token
       const accessToken = jwt.sign(
         {
           userId: userDocument._id,
@@ -171,6 +175,36 @@ function loginUserHandler<
         ACCESS_TOKEN_SEED,
         { expiresIn: ACCESS_TOKEN_EXPIRY },
       );
+
+      // update the session with the new access token
+      const updateSessionResult = await updateResourceByIdService({
+        fields: {
+          currentlyActiveToken: accessToken,
+          addressIP: request.ip ?? "unknown",
+          userAgent: request.headers["user-agent"] ?? "unknown",
+        },
+        model,
+        resourceId: authSession._id.toString(),
+        updateOperator: "$set",
+      });
+
+      if (updateSessionResult.err) {
+        await createNewResourceService(
+          createErrorLogSchema(
+            updateSessionResult.val,
+            request.body,
+          ),
+          ErrorLogModel,
+        );
+
+        response.status(200).json(
+          createHttpResultError({
+            message:
+              "Unable to update session's access token. Please try again!",
+          }),
+        );
+        return;
+      }
 
       const userDocPartial = Object.entries(userDocument).reduce(
         (userDocAcc, [key, value]) => {
