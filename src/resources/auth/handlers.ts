@@ -15,6 +15,7 @@ import type {
   HttpResult,
   LoginUserRequest,
   RequestAfterJWTVerification,
+  RequestAfterQueryParsing,
 } from "../../types";
 import {
   compareHashedStringWithPlainStringSafe,
@@ -32,7 +33,7 @@ import {
 } from "../metrics/financial/model";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
 import { AUTH_SESSION_EXPIRY } from "./constants";
-import { AuthModel, type AuthSchema } from "./model";
+import type { AuthSchema } from "./model";
 
 // @desc   Login user
 // @route  POST /auth/login
@@ -291,7 +292,7 @@ function registerUserHandler<
   ) => {
     try {
       const { schema } = request.body;
-      const { username, password } = schema;
+      const { username, password, email } = schema;
 
       const getUserResult = await getResourceByFieldService({
         filter: { username },
@@ -338,13 +339,24 @@ function registerUserHandler<
 
         response.status(200).json(
           createHttpResultError({
-            message: "Unable to register. Please try again.",
+            message: "Unable to hash password. Please try again.",
           }),
         );
         return;
       }
 
-      const hashedPassword = hashPasswordResult.safeUnwrap().data;
+      const hashedPasswordUnwrapped = hashPasswordResult.safeUnwrap().data;
+
+      if (hashedPasswordUnwrapped.length === 0) {
+        response.status(200).json(
+          createHttpResultError({
+            message: "Unable to retrieve hashed password. Please try again.",
+          }),
+        );
+        return;
+      }
+
+      const [hashedPassword] = hashedPasswordUnwrapped;
       const userSchema = {
         ...schema,
         password: hashedPassword,
@@ -369,7 +381,7 @@ function registerUserHandler<
 
         response.status(200).json(
           createHttpResultError({
-            message: "Unable to register. Please try again.",
+            message: "Unable to create user. Please try again.",
           }),
         );
         return;
@@ -460,7 +472,7 @@ function logoutUserHandler<
 
       const deleteSessionResult = await deleteResourceByIdService(
         sessionId.toString(),
-        AuthModel,
+        model,
       );
 
       if (deleteSessionResult.err) {
@@ -502,7 +514,69 @@ function logoutUserHandler<
   };
 }
 
-export { loginUserHandler, logoutUserHandler, registerUserHandler };
+// @desc   Check if email or username exists
+// @route  GET /auth/check
+// @access Public
+function checkUsernameOrEmailExistsHandler<
+  Doc extends DBRecord = DBRecord,
+>(model: Model<Doc>) {
+  return async (
+    request: RequestAfterQueryParsing,
+    response: Response<HttpResult<boolean>>,
+  ) => {
+    const { filter } = request.query;
+
+    console.log("filter in checkUsernameOrEmailExistsHandler", filter);
+
+    const isUsernameOrEmailExistsResult = await getResourceByFieldService({
+      filter: filter as any,
+      model,
+    });
+
+    if (isUsernameOrEmailExistsResult.err) {
+      await createNewResourceService(
+        createErrorLogSchema(
+          isUsernameOrEmailExistsResult.val,
+          request.body,
+        ),
+        ErrorLogModel,
+      );
+
+      response.status(200).json(
+        createHttpResultError({
+          message: "Unable to check existence of username",
+        }),
+      );
+      return;
+    }
+
+    console.log(
+      "isUsernameOrEmailExistsResult",
+      isUsernameOrEmailExistsResult.safeUnwrap(),
+    );
+
+    // username or email exists
+    if (isUsernameOrEmailExistsResult.val.kind === "success") {
+      response.status(200).json(
+        createHttpResultSuccess({ data: [true], accessToken: "" }),
+      );
+      return;
+    }
+
+    // username or email does not exist
+    response.status(200).json(
+      createHttpResultSuccess({ data: [false], accessToken: "" }),
+    );
+    return;
+  };
+}
+
+export {
+  checkUsernameOrEmailExistsHandler,
+  loginUserHandler,
+  logoutUserHandler,
+  registerUserHandler,
+};
 
 // create random business metrics
 // const businessMetrics = await createRandomBusinessMetrics({

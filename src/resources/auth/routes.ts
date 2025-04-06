@@ -1,9 +1,13 @@
 import { Router } from "express";
 
-import { verifyJWTMiddleware } from "../../middlewares";
+import {
+  createMongoDbQueryObject,
+  verifyJWTMiddleware,
+} from "../../middlewares";
 import { validateSchemaMiddleware } from "../../middlewares/validateSchema";
 import { UserModel } from "../user";
 import {
+  checkUsernameOrEmailExistsHandler,
   loginUserHandler,
   logoutUserHandler,
   registerUserHandler,
@@ -39,6 +43,14 @@ authRouter.route("/register").post(
 authRouter.route("/logout").post(
   verifyJWTMiddleware,
   logoutUserHandler(AuthModel),
+);
+
+// @desc   Check if username or email exists
+// @route  GET /auth/check
+// @access Public
+authRouter.route("/check").get(
+  createMongoDbQueryObject,
+  checkUsernameOrEmailExistsHandler(UserModel),
 );
 
 export { authRouter };

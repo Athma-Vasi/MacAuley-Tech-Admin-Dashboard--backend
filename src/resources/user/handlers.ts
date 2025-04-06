@@ -19,10 +19,6 @@ import {
   createHttpResultSuccess,
 } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
-import {
-  updateUsernameEmailSetWithEmailService,
-  updateUsernameEmailSetWithUsernameService,
-} from "../usernameEmailSet";
 
 // @desc   Create new user
 // @route  POST /api/v1/user
@@ -108,26 +104,6 @@ function createNewUserHandler<
         );
 
         response.status(200).json(createHttpResultError({ status: 500 }));
-        return;
-      }
-
-      const { username, email } = schema;
-
-      const updateUsernameEmailSetResult = await Promise.all([
-        updateUsernameEmailSetWithUsernameService(username),
-        updateUsernameEmailSetWithEmailService(email),
-      ]);
-
-      if (updateUsernameEmailSetResult.some((value) => value.err)) {
-        await createNewResourceService(
-          createErrorLogSchema(
-            updateUsernameEmailSetResult,
-            request.body,
-          ),
-          ErrorLogModel,
-        );
-
-        response.status(200).json(createHttpResultError({}));
         return;
       }
 
