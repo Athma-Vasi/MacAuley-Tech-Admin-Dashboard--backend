@@ -204,6 +204,8 @@ type UserSchema = {
   firstName: string;
   jobPosition: JobPosition;
   lastName: string;
+  orgId: number;
+  parentOrgId: number;
   password: string;
   postalCodeCanada: CanadianPostalCode;
   postalCodeUS: USPostalCode;
@@ -296,6 +298,14 @@ const userSchema = new Schema<UserDocument>(
       type: String,
       enum: ["All Locations", "Store 1", "Store 2", "Store 3"],
       default: "All Locations",
+    },
+    orgId: {
+      type: Number,
+      required: [true, "Organization ID is required"],
+    },
+    parentOrgId: {
+      type: Number,
+      required: [true, "Parent organization ID is required"],
     },
     roles: {
       type: [String],

@@ -9,30 +9,9 @@ import {
   USER_ROLES_REGEX,
   USERNAME_REGEX,
 } from "../../regex";
+import type { UserSchema } from "./model";
 
-/**
- * type UserSchema = {
-   addressLine: string;
-   city: string;
-   country: Country;
-   department: Department;
-   email: string;
-   firstName: string;
-   jobPosition: JobPosition;
-   lastName: string;
-   password: string;
-   postalCodeCanada: CanadianPostalCode;
-   postalCodeUS: USPostalCode;
-   profilePictureUrl: string;
-   province: Province;
-   roles: UserRoles;
-   state: StatesUS;
-   storeLocation: AllStoreLocations;
-   username: string;
- };
- */
-
-const createUserJoiSchema = Joi.object({
+const createUserJoiSchema = Joi.object<UserSchema>({
   username: Joi.string().regex(USERNAME_REGEX).required(),
   password: Joi.string().regex(PASSWORD_REGEX).required(),
   email: Joi.string().email().required(),
@@ -48,11 +27,13 @@ const createUserJoiSchema = Joi.object({
   firstName: Joi.string().regex(FULL_NAME_REGEX).required(),
   lastName: Joi.string().regex(FULL_NAME_REGEX).required(),
   jobPosition: Joi.string().required(),
+  orgId: Joi.number().required(),
+  parentOrgId: Joi.number().required(),
   profilePictureUrl: Joi.string().required(),
   roles: Joi.array().items(Joi.string().regex(USER_ROLES_REGEX)).required(),
 });
 
-const updateUserJoiSchema = Joi.object({
+const updateUserJoiSchema = Joi.object<UserSchema>({
   username: Joi.string().regex(USERNAME_REGEX).optional(),
   password: Joi.string().regex(PASSWORD_REGEX).optional(),
   email: Joi.string().email().optional(),
@@ -68,6 +49,8 @@ const updateUserJoiSchema = Joi.object({
   firstName: Joi.string().regex(FULL_NAME_REGEX).optional(),
   lastName: Joi.string().regex(FULL_NAME_REGEX).optional(),
   jobPosition: Joi.string().optional(),
+  orgId: Joi.number().optional(),
+  parentOrgId: Joi.number().optional(),
   profilePictureUrl: Joi.string().optional(),
   roles: Joi.array().items(Joi.string().regex(USER_ROLES_REGEX)).optional(),
 });
