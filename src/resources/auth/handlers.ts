@@ -255,6 +255,13 @@ function loginUserHandler<
 
       const [financialMetricsDocument] = financialMetricsDocumentUnwrapped;
 
+      console.group("loginUserHandler");
+      console.log("userDocument", userDocument);
+      console.log("financialMetricsDocument", financialMetricsDocument);
+      console.log("accessToken", accessToken);
+      console.log("authSession", authSession);
+      console.groupEnd();
+
       response.status(200).json(
         createHttpResultSuccess({
           accessToken,

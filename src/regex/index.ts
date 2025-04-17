@@ -319,8 +319,32 @@ const YEARS_REGEX =
  */
 const DAYS_REGEX = /^(0[1-9]|[12][0-9]|3[01])$/;
 
+/**
+ * - /^[A-Za-z]\d[A-Za-z][ ]?\d[A-Za-z]\d$/
+ * - matches the following Canadian postal code format: A1A 1A1 or A1A1A1
+ */
+const POSTAL_CODE_CANADA_REGEX = /^[A-Za-z]\d[A-Za-z][ ]?\d[A-Za-z]\d$/;
+
+/**
+ * - /^\d{5}(-\d{4})?$/
+ * - matches the following US postal code format: 12345 or 12345-6789
+ * - ^ asserts that the string starts with a digit.
+ * - \d{5} matches exactly 5 digits.
+ * - (-\d{4})? is an optional group that matches a hyphen followed by exactly 4 digits.
+ * - $ asserts that the string ends with a digit.
+ */
+const POSTAL_CODE_US_REGEX = /^\d{5}(-\d{4})?$/;
+
+/**
+ * - /^[A-Za-z0-9\s.,#-]+$/
+ * - contains only letters, numbers, spaces, periods, commas, and hyphens.
+ * - ^ and $ ensure that the entire string matches the regex.
+ */
+const ADDRESS_LINE_REGEX = /^[A-Za-z0-9\s.,#-]+$/;
+
 export {
   ACCOUNTING_REGEX,
+  ADDRESS_LINE_REGEX,
   ALL_STORE_LOCATIONS_REGEX,
   CITY_REGEX,
   CUSTOMER_SERVICE_REGEX,
@@ -344,6 +368,8 @@ export {
   OBJECT_KEY_REGEX,
   OFFICE_ADMINISTRATION_REGEX,
   PASSWORD_REGEX,
+  POSTAL_CODE_CANADA_REGEX,
+  POSTAL_CODE_US_REGEX,
   PRODUCT_CATEGORY_REGEX,
   REPAIR_CATEGORY_REGEX,
   REPAIR_TECHNICIANS_REGEX,
