@@ -16,16 +16,14 @@ const EMAIL_REGEX =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 /**
- * - /^(?=.{3,20}$)(?![-_.])(?!.*[-_.]{2})[a-zA-Z0-9-_.]+(?<![-_.])$/
- * - (?=.{3,20}$) enforces a minimum of 3 characters and a maximum of 20 characters.
- * - (?![-_.]) ensures that the username does not start with a hyphen, underscore, or period.
- * - (?!.*[-_.]{2}) ensures that the username does not contain two hyphens, underscores, or periods in a row.
- * - [a-zA-Z0-9-_.]+ matches any alphanumeric character, hyphen, underscore, or period.
- * - (?<![-_.]) ensures that the username does not end with a hyphen, underscore, or period.
+ * - /^(?=.{3,48}$)(?![-_.])(?!^0*\.?0*$)[a-zA-Z0-9-_.]+$/
+ * - (?=.{3,48}$) ensures the string is between 3 and 20 characters long.
+ * - (?![-_.]) ensures the string does not start with a hyphen, underscore, or period.
+ * - (?!^0*\.?0*$) ensures the string does not consist entirely of zeroes.
+ * - [a-zA-Z0-9-_.]+ matches alphanumeric characters, hyphens, underscores, and periods.
  * - ^ and $ ensure that the entire string matches the regex.
  */
-const USERNAME_REGEX =
-  /^(?=.{3,20}$)(?![-_.])(?!.*[-_.]{2})[a-zA-Z0-9-_.]+(?<![-_.])$/;
+const USERNAME_REGEX = /^(?=.{3,48}$)(?![-_.])(?!^0*\.?0*$)[a-zA-Z0-9-_.]+$/;
 
 /**
  * - /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*])(?!.*\s).{8,32}$/
@@ -342,13 +340,37 @@ const POSTAL_CODE_US_REGEX = /^\d{5}(-\d{4})?$/;
  */
 const ADDRESS_LINE_REGEX = /^[A-Za-z0-9\s.,#-]+$/;
 
+/**
+ * - /^(Canada|UnitedStates)$/
+ * - matches the following countries: Canada, United States
+ * - ^ and $ ensure that the entire string matches the regex.
+ */
+const COUNTRY_REGEX = /^(Canada|United States)$/;
+
+/**
+ * - /^(Not Applicable|Alberta|British Columbia|Manitoba|New Brunswick|Newfoundland and Labrador|Nova Scotia|Ontario|Prince Edward Island|Quebec|Saskatchewan)$/
+ * - matches the following provinces: Not Applicable, Alberta, British Columbia, Manitoba, New Brunswick, Newfoundland and Labrador, Nova Scotia, Ontario, Prince Edward Island, Quebec, Saskatchewan
+ * - ^ and $ ensure that the entire string matches the regex.
+ */
+const PROVINCE_REGEX =
+  /^(Not Applicable|Alberta|British Columbia|Manitoba|New Brunswick|Newfoundland and Labrador|Nova Scotia|Ontario|Prince Edward Island|Quebec|Saskatchewan|Northwest Territories|Nunavut|Yukon)$/;
+
+/**
+ * - /^(Not Applicable|Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia)$/
+ * - ^ and $ ensure that the entire string matches the regex.
+ */
+const STATES_US_REGEX =
+  /^(Not Applicable|Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming)$/;
+
 export {
   ACCOUNTING_REGEX,
   ADDRESS_LINE_REGEX,
   ALL_STORE_LOCATIONS_REGEX,
   CITY_REGEX,
+  COUNTRY_REGEX,
   CUSTOMER_SERVICE_REGEX,
   DAYS_REGEX,
+  DEPARTMENT_REGEX,
   EMAIL_REGEX,
   EXECUTIVE_MANAGEMENT_REGEX,
   FIELD_SERVICE_TECHNICIANS_REGEX,
@@ -371,10 +393,12 @@ export {
   POSTAL_CODE_CANADA_REGEX,
   POSTAL_CODE_US_REGEX,
   PRODUCT_CATEGORY_REGEX,
+  PROVINCE_REGEX,
   REPAIR_CATEGORY_REGEX,
   REPAIR_TECHNICIANS_REGEX,
   SALES_REGEX,
   SMALL_INTEGER_REGEX,
+  STATES_US_REGEX,
   STORE_ADMINISTRATION_REGEX,
   STORE_LOCATION_REGEX,
   URL_REGEX,

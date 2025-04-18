@@ -1,6 +1,6 @@
 import type { Response } from "express";
 
-import { type UserDocument, UserModel } from "./model";
+import { type UserDocument, UserModel, type UserSchema } from "./model";
 
 import type { Model } from "mongoose";
 import {
@@ -9,14 +9,18 @@ import {
 } from "../../services";
 import type {
   CreateNewResourceRequest,
+  CreateNewResourcesBulkRequest,
   DBRecord,
   HttpResult,
 } from "../../types";
 
+import { Err, Ok } from "ts-results";
+import { HASH_SALT_ROUNDS } from "../../constants";
 import {
   createErrorLogSchema,
   createHttpResultError,
   createHttpResultSuccess,
+  hashStringSafe,
 } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
 
@@ -89,8 +93,42 @@ function createNewUserHandler<
         return;
       }
 
+      const hashPasswordResult = await hashStringSafe({
+        saltRounds: HASH_SALT_ROUNDS,
+        stringToHash: schema.password,
+      });
+
+      if (hashPasswordResult.err) {
+        await createNewResourceService(
+          createErrorLogSchema(hashPasswordResult.val, request.body),
+          ErrorLogModel,
+        );
+
+        console.log("hashPasswordResult", hashPasswordResult);
+
+        response.status(200).json(
+          createHttpResultError({
+            message: "Unable to hash password. Please try again.",
+          }),
+        );
+        return;
+      }
+
+      const hashedPasswordUnwrapped = hashPasswordResult.safeUnwrap().data;
+
+      if (hashedPasswordUnwrapped.length === 0) {
+        response.status(200).json(
+          createHttpResultError({
+            message: "Unable to retrieve hashed password. Please try again.",
+          }),
+        );
+        return;
+      }
+
+      const [hashedPassword] = hashedPasswordUnwrapped;
+
       const userCreationResult = await createNewResourceService(
-        schema,
+        { ...schema, password: hashedPassword },
         UserModel,
       );
 
@@ -127,4 +165,89 @@ function createNewUserHandler<
   };
 }
 
-export { createNewUserHandler };
+// TODO DELETE
+// @desc  Create new users in bulk
+// @route POST /api/v1/user/bulk
+// @access Public
+function createNewUsersBulkHandler<
+  Doc extends DBRecord = DBRecord,
+>(model: Model<Doc>) {
+  return async (
+    request: CreateNewResourcesBulkRequest<Doc>,
+    response: Response<HttpResult<Doc>>,
+  ) => {
+    try {
+      const schemas = request.body.schemas as Array<UserSchema>;
+      const userCreationResults = await Promise.all(
+        schemas.map(async (schema) => {
+          const hashPasswordResult = await hashStringSafe({
+            saltRounds: HASH_SALT_ROUNDS,
+            stringToHash: schema.password,
+          });
+
+          if (hashPasswordResult.err) {
+            return new Err("Unable to hash password. Please try again.");
+          }
+
+          const hashedPasswordUnwrapped = hashPasswordResult.safeUnwrap().data;
+
+          if (hashedPasswordUnwrapped.length === 0) {
+            return new Err(
+              "Unable to retrieve hashed password. Please try again.",
+            );
+          }
+
+          const [hashedPassword] = hashedPasswordUnwrapped;
+
+          const userCreationResult = await createNewResourceService(
+            { ...schema, password: hashedPassword },
+            UserModel,
+          );
+
+          if (userCreationResult.err) {
+            return new Err("Error creating user");
+          }
+
+          const [userCreationResultUnwrapped] =
+            userCreationResult.safeUnwrap().data;
+
+          if (userCreationResultUnwrapped === undefined) {
+            return new Err("Could not create user");
+          }
+
+          return new Ok(userCreationResultUnwrapped);
+        }),
+      );
+
+      const errors = userCreationResults.filter((result) => result.err);
+      if (errors.length > 0) {
+        errors.forEach((error) => {
+          console.log("\n");
+          console.log("bulk users error", JSON.stringify(error, null, 2));
+        });
+        response.status(200).json(
+          createHttpResultError({ message: "Error creating users" }),
+        );
+        return;
+      }
+
+      const successes = userCreationResults.filter((result) => result.ok);
+      const successesUnwrapped = successes.flatMap((result) =>
+        result.safeUnwrap()
+      );
+
+      response.status(200).json(
+        createHttpResultSuccess({
+          data: successesUnwrapped as any,
+          accessToken: "",
+        }),
+      );
+    } catch (error: unknown) {
+      response.status(200).json(
+        createHttpResultError({ message: "Erorr in handler" }),
+      );
+    }
+  };
+}
+
+export { createNewUserHandler, createNewUsersBulkHandler };

@@ -68,6 +68,14 @@ type CreateNewResourceRequest<
   };
 };
 
+type CreateNewResourcesBulkRequest<
+  Schema extends Record<string, unknown> = Record<string, unknown>,
+> = RequestAfterQueryParsing & {
+  body: {
+    schemas: Array<Schema>;
+  };
+};
+
 type GetResourceByIdRequest = RequestAfterQueryParsing & {
   params: {
     resourceId: string;
@@ -220,6 +228,7 @@ type DocumentArrayUpdateOperation<
 export type {
   ArrayOperators,
   CreateNewResourceRequest,
+  CreateNewResourcesBulkRequest,
   DBRecord,
   DecodedToken,
   DeleteAllResourcesRequest,

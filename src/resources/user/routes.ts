@@ -3,7 +3,6 @@ import { Router } from "express";
 import {
   deleteManyResourcesHandler,
   deleteResourceByIdHandler,
-  getQueriedResourcesByUserHandler,
   getQueriedResourcesHandler,
   getResourceByIdHandler,
   updateResourceByIdHandler,
@@ -13,12 +12,15 @@ import {
   validateSchemaMiddleware,
   verifyJWTMiddleware,
 } from "../../middlewares";
-import { createNewUserHandler } from "./handlers";
+import { createNewUserHandler, createNewUsersBulkHandler } from "./handlers";
 import { UserModel } from "./model";
-import { createUserJoiSchema, updateUserJoiSchema } from "./validations";
+import {
+  createUserJoiSchema,
+  createUsersInBulkJoiSchema,
+  updateUserJoiSchema,
+} from "./validations";
 
 const userRouter = Router();
-userRouter.use(addUserProjection);
 
 userRouter
   .route("/")
@@ -42,6 +44,14 @@ userRouter.route("/delete-many").delete(
   deleteManyResourcesHandler(UserModel),
 );
 
+// @desc   Create new users in bulk
+// @route  POST api/v1/user/bulk
+// @access Private/Admin/Manager
+userRouter.route("/bulk").post(
+  validateSchemaMiddleware(createUsersInBulkJoiSchema, "schemas"),
+  createNewUsersBulkHandler(UserModel),
+);
+
 userRouter
   .route("/:resourceId")
   // @desc   Get an user by their ID
@@ -60,5 +70,7 @@ userRouter
     validateSchemaMiddleware(updateUserJoiSchema),
     updateResourceByIdHandler(UserModel),
   );
+
+userRouter.use(addUserProjection);
 
 export { userRouter };

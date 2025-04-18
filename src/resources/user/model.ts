@@ -256,13 +256,13 @@ const userSchema = new Schema<UserDocument>(
     },
     postalCodeCanada: {
       type: String,
-      default: "A1A 1A1",
+      default: "A0A 0A0",
       required: [true, "Postal code is required"],
     },
     postalCodeUS: {
       type: String,
       required: [true, "Postal code is required"],
-      default: "12345",
+      default: "00000",
     },
     province: {
       type: String,
@@ -296,7 +296,6 @@ const userSchema = new Schema<UserDocument>(
     },
     storeLocation: {
       type: String,
-      enum: ["All Locations", "Store 1", "Store 2", "Store 3"],
       default: "All Locations",
     },
     orgId: {
@@ -322,6 +321,9 @@ const userSchema = new Schema<UserDocument>(
 userSchema.index({
   username: "text",
   email: "text",
+  addressLine: "text",
+  firstName: "text",
+  lastName: "text",
 });
 
 const UserModel = model("User", userSchema);
