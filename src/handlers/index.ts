@@ -122,7 +122,11 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
           response
             .status(200)
             .json(
-              createHttpResultError({ status: 400 }),
+              createHttpResultError({
+                status: 400,
+                message: totalResult.val.message ??
+                  "Error getting total documents",
+              }),
             );
           return;
         }
@@ -148,7 +152,13 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
 
         response
           .status(200)
-          .json(createHttpResultError({ status: 400 }));
+          .json(
+            createHttpResultError({
+              status: 400,
+              message: getResourcesResult.val.message ??
+                "Error getting resources",
+            }),
+          );
         return;
       }
 
@@ -189,7 +199,10 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
       );
 
       response.status(200).json(
-        createHttpResultError({}),
+        createHttpResultError({
+          status: 500,
+          message: "Error getting resources",
+        }),
       );
     }
   };
