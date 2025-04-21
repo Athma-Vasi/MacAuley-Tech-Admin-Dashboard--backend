@@ -8,7 +8,7 @@ import {
   updateResourceByIdHandler,
 } from "../../handlers";
 import {
-  addUserProjection,
+  addPasswordProjection,
   validateSchemaMiddleware,
   verifyJWTMiddleware,
 } from "../../middlewares";
@@ -21,6 +21,8 @@ import {
 } from "./validations";
 
 const userRouter = Router();
+
+userRouter.use(addPasswordProjection);
 
 userRouter
   .route("/")
@@ -70,7 +72,5 @@ userRouter
     validateSchemaMiddleware(updateUserJoiSchema),
     updateResourceByIdHandler(UserModel),
   );
-
-userRouter.use(addUserProjection);
 
 export { userRouter };

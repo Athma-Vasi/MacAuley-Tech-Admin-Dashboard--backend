@@ -70,7 +70,7 @@ import { PROPERTY_DESCRIPTOR } from "../constants";
         }
   */
 
-function createMongoDbQueryObject(
+function modifyRequestWithQuery(
   request: Request,
   _response: Response,
   next: NextFunction,
@@ -95,7 +95,10 @@ function createMongoDbQueryObject(
     return;
   }
 
-  console.log("unmodified query: ", JSON.stringify(query, null, 2));
+  console.log(
+    "modifyRequestWithQuery query::BEFORE",
+    JSON.stringify(query, null, 2),
+  );
 
   // keywords are attached to request body
   const EXCLUDED_SET = new Set([
@@ -203,6 +206,12 @@ function createMongoDbQueryObject(
 
       // sort is passed inside the options object passed to mongoose find method
       if (key === "sort") {
+        const initialAcc = Object.keys(value).length === 0
+          ? {
+            createdAt: -1,
+            _id: -1,
+          }
+          : { _id: -1 };
         const newSort = Object.entries(value).reduce((sortAcc, curr) => {
           const [field, sortDirection] = curr as [string, string];
           Object.defineProperty(sortAcc, field, {
@@ -211,7 +220,7 @@ function createMongoDbQueryObject(
           });
 
           return sortAcc;
-        }, { createdAt: -1, _id: -1 });
+        }, initialAcc);
 
         Object.defineProperty(options, "sort", {
           value: newSort,
@@ -262,11 +271,6 @@ function createMongoDbQueryObject(
     value: { ...request.body, newQueryFlag, totalDocuments },
     ...PROPERTY_DESCRIPTOR,
   });
-
-  console.log(
-    "createMongoDbQueryObject: query: ",
-    JSON.stringify(request.query, null, 2),
-  );
 
   next();
   return;
@@ -587,4 +591,4 @@ function createMongoDbQueryObject1(
   return;
 }
 
-export { createMongoDbQueryObject };
+export { modifyRequestWithQuery };

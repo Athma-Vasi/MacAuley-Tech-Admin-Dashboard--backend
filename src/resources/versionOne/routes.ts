@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { createMongoDbQueryObject } from "../../middlewares";
+import { modifyRequestWithQuery } from "../../middlewares";
 import { errorLogRouter } from "../errorLog";
 import { metricsRouter } from "../metrics/routes";
 import { userRouter } from "../user";
 const versionOneRouter = Router();
-versionOneRouter.use(createMongoDbQueryObject);
+versionOneRouter.use(modifyRequestWithQuery);
 
 // route: /api/v1
 versionOneRouter.use("/error-log", errorLogRouter);

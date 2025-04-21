@@ -1,9 +1,6 @@
 import { Router } from "express";
 
-import {
-  createMongoDbQueryObject,
-  verifyJWTMiddleware,
-} from "../../middlewares";
+import { modifyRequestWithQuery, verifyJWTMiddleware } from "../../middlewares";
 import { validateSchemaMiddleware } from "../../middlewares/validateSchema";
 import { UserModel } from "../user";
 import {
@@ -49,7 +46,7 @@ authRouter.route("/logout").post(
 // @route  GET /auth/check
 // @access Public
 authRouter.route("/check").get(
-  createMongoDbQueryObject,
+  modifyRequestWithQuery,
   checkUsernameOrEmailExistsHandler(UserModel),
 );
 

@@ -1,11 +1,11 @@
-import { addUserProjection } from "./addUserProjection";
-import { createMongoDbQueryObject } from "./createMongoDbQueryObject";
+import { addPasswordProjection } from "./addPasswordProjection";
+import { modifyRequestWithQuery } from "./modifyRequestWithQuery";
 import { validateSchemaMiddleware } from "./validateSchema";
 import { verifyJWTMiddleware } from "./verifyJWT";
 
 export {
-  addUserProjection,
-  createMongoDbQueryObject,
+  addPasswordProjection,
+  modifyRequestWithQuery,
   validateSchemaMiddleware,
   verifyJWTMiddleware,
 };
