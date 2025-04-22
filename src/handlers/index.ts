@@ -131,6 +131,8 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
           return;
         }
 
+        console.log("totalResult", totalResult);
+
         totalDocuments = totalResult.safeUnwrap().data ?? 0;
       }
 
@@ -170,8 +172,8 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
         return;
       }
 
-      const { kind, data } = unwrappedResult;
-      if (kind === "notFound" || data === undefined) {
+      const { data } = unwrappedResult;
+      if (data === undefined) {
         response
           .status(200)
           .json(createHttpResultError({ status: 404 }));
@@ -282,8 +284,8 @@ function getQueriedResourcesByUserHandler<Doc extends DBRecord = DBRecord>(
         return;
       }
 
-      const { kind, data } = unwrappedResult;
-      if (kind === "notFound" || data === undefined) {
+      const { data } = unwrappedResult;
+      if (data === undefined) {
         response
           .status(200)
           .json(createHttpResultError({ status: 404 }));

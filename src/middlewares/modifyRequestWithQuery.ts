@@ -104,7 +104,7 @@ function modifyRequestWithQuery(
   const EXCLUDED_SET = new Set([
     "page",
     "fields",
-    "limit",
+    "limitPerPage",
     "newQueryFlag",
     "totalDocuments",
   ]);
