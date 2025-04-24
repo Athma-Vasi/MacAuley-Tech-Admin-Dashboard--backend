@@ -201,7 +201,7 @@ function createNewUsersBulkHandler<
 
           const userCreationResult = await createNewResourceService(
             { ...schema, password: hashedPassword },
-            UserModel,
+            model,
           );
 
           if (userCreationResult.err) {

@@ -3,7 +3,7 @@ import { PROPERTY_DESCRIPTOR } from "../constants";
 
 /**
  *
-     * example: here is a sample query object before transformation:
+     * example: here is a sample express query object before transformation:
      * queryObject:  {
          "$and": {
            "username": {
@@ -100,7 +100,7 @@ function modifyRequestWithQuery(
     JSON.stringify(query, null, 2),
   );
 
-  // keywords are attached to request body
+  // keywords that are attached to request body
   const EXCLUDED_SET = new Set([
     "page",
     "fields",
@@ -109,9 +109,10 @@ function modifyRequestWithQuery(
     "totalDocuments",
   ]);
 
+  // keywords that are attached to request.query.options passed to mongoose find method
   const FIND_QUERY_OPTIONS_KEYWORDS = new Set([
     "tailable",
-    "limit",
+    // "limit",
     "skip",
     "allowDiskUse",
     "batchSize",
@@ -136,6 +137,16 @@ function modifyRequestWithQuery(
     "$where",
   ]);
 
+  const initialAcc = {
+    filter: Object.create(null),
+    limit: 10,
+    newQueryFlag: false,
+    options: Object.create(null),
+    page: 1,
+    projection: [] as string[],
+    totalDocuments: 0,
+  };
+
   const {
     filter,
     limit,
@@ -149,6 +160,22 @@ function modifyRequestWithQuery(
       const { filter, options, projection } = acc;
 
       if (value === undefined) {
+        return acc;
+      }
+
+      // limit is passed into options for pagination
+      // and is also passed into request body
+      if (key === "limit") {
+        Object.defineProperty(options, key, {
+          value,
+          ...PROPERTY_DESCRIPTOR,
+        });
+
+        Object.defineProperty(acc, key, {
+          value,
+          ...PROPERTY_DESCRIPTOR,
+        });
+
         return acc;
       }
 
@@ -241,15 +268,7 @@ function modifyRequestWithQuery(
 
       return acc;
     },
-    {
-      filter: Object.create(null),
-      limit: 10,
-      newQueryFlag: false,
-      options: Object.create(null),
-      page: 1,
-      projection: [] as string[],
-      totalDocuments: 0,
-    },
+    initialAcc,
   );
 
   const skip = (page - 1) * limit; // offset

@@ -94,15 +94,6 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
         options,
       } = request.query;
 
-      console.group("getQueriedResourcesHandler");
-      console.log("accessToken", accessToken);
-      console.log("filter", JSON.stringify(filter, null, 2));
-      console.log("options", options);
-      console.log("projection", projection);
-      console.log("newQueryFlag", newQueryFlag);
-      console.log("totalDocuments", totalDocuments);
-      console.groupEnd();
-
       // only perform a countDocuments scan if a new query is being made
       if (newQueryFlag) {
         const totalResult = await getQueriedTotalResourcesService<Doc>({
@@ -179,6 +170,16 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
           .json(createHttpResultError({ status: 404 }));
         return;
       }
+
+      console.group("getQueriedResourcesHandler");
+      console.log("accessToken", accessToken);
+      console.log("filter", JSON.stringify(filter, null, 2));
+      console.log("options", options);
+      console.log("projection", projection);
+      console.log("newQueryFlag", newQueryFlag);
+      console.log("totalDocuments", totalDocuments);
+      console.log("data", JSON.stringify(data, null, 2));
+      console.groupEnd();
 
       response.status(200).json(
         createHttpResultSuccess({
