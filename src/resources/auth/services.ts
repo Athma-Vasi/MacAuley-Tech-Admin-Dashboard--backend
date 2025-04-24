@@ -40,8 +40,6 @@ async function createTokenService(
     );
 
     if (getSessionResult.err) {
-      console.log("get session result is error");
-
       // invalidate all sessions for this user
       const deleteManyResult = await deleteManyResourcesService({
         filter: { userId },
@@ -72,9 +70,6 @@ async function createTokenService(
     }
 
     const [existingSession] = existingSessionUnwrapped.data;
-
-    console.log("createTokenService");
-    console.log("existing session", existingSession);
 
     if (existingSession === null || existingSession === undefined) {
       return new Err({ message: "Error getting session" });
