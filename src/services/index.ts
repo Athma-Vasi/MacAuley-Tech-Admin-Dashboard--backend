@@ -140,9 +140,9 @@ async function getQueriedTotalResourcesService<
   Doc extends DBRecord = DBRecord,
 >(
   { filter, model, options }: {
-    filter: FilterQuery<Doc> | undefined;
+    filter: FilterQuery<Doc>;
     model: Model<Doc>;
-    options?: QueryOptions<Doc> | undefined;
+    options?: QueryOptions<Doc>;
   },
 ): ServiceResult<Doc> {
   try {
@@ -172,10 +172,10 @@ async function getQueriedTotalResourcesService<
 async function getQueriedResourcesByUserService<
   Doc extends DBRecord = DBRecord,
 >({
-  filter = {},
+  filter,
   model,
-  options = {},
-  projection = null,
+  options,
+  projection,
 }: QueryObjectParsedWithDefaults & {
   model: Model<Doc>;
 }): ServiceResult<Doc[]> {

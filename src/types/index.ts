@@ -27,9 +27,9 @@ type QueryObjectParsed = {
 type QueryObjectParsedWithDefaults<
   Doc extends Record<string, unknown> = Record<string, unknown>,
 > = {
-  filter?: FilterQuery<Doc>;
-  projection?: QueryOptions<Doc> | null;
-  options?: QueryOptions<Doc>;
+  filter: FilterQuery<Doc>;
+  projection: QueryOptions<Doc>;
+  options: QueryOptions<Doc>;
 };
 
 /**
@@ -138,9 +138,6 @@ type DBRecord = Record<string, unknown> & {
   __v: number;
 };
 
-/**
- * -
- */
 type Success<Data = unknown> = {
   data: [Data];
   kind: "success";
