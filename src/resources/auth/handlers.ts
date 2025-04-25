@@ -55,10 +55,6 @@ function loginUserHandler<
     >,
   ) => {
     try {
-      console.group("loginUserHandler");
-      console.log("request.body", request.body);
-      console.groupEnd();
-
       const { schema } = request.body;
       const { username, password } = schema;
 
@@ -255,13 +251,6 @@ function loginUserHandler<
 
       const [financialMetricsDocument] = financialMetricsDocumentUnwrapped;
 
-      console.group("loginUserHandler");
-      console.log("userDocument", userDocument);
-      console.log("financialMetricsDocument", financialMetricsDocument);
-      console.log("accessToken", accessToken);
-      console.log("authSession", authSession);
-      console.groupEnd();
-
       response.status(200).json(
         createHttpResultSuccess({
           accessToken,
@@ -342,8 +331,6 @@ function registerUserHandler<
           ErrorLogModel,
         );
 
-        console.log("hashPasswordResult", hashPasswordResult);
-
         response.status(200).json(
           createHttpResultError({
             message: "Unable to hash password. Please try again.",
@@ -369,10 +356,6 @@ function registerUserHandler<
         password: hashedPassword,
       };
 
-      console.group("registerUserHandler");
-      console.log("userSchema", userSchema);
-      console.groupEnd();
-
       const createUserResult = await createNewResourceService(
         userSchema,
         model,
@@ -383,8 +366,6 @@ function registerUserHandler<
           createErrorLogSchema(createUserResult.val, request.body),
           ErrorLogModel,
         );
-
-        console.log("createUserResult", createUserResult);
 
         response.status(200).json(
           createHttpResultError({
@@ -533,8 +514,6 @@ function checkUsernameOrEmailExistsHandler<
   ) => {
     const { filter } = request.query;
 
-    console.log("filter in checkUsernameOrEmailExistsHandler", filter);
-
     const isUsernameOrEmailExistsResult = await getResourceByFieldService({
       filter: filter as any,
       model,
@@ -556,11 +535,6 @@ function checkUsernameOrEmailExistsHandler<
       );
       return;
     }
-
-    console.log(
-      "isUsernameOrEmailExistsResult",
-      isUsernameOrEmailExistsResult.safeUnwrap(),
-    );
 
     // username or email exists
     if (isUsernameOrEmailExistsResult.val.kind === "success") {

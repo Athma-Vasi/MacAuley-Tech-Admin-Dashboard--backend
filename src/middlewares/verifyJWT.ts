@@ -98,8 +98,6 @@ async function verifyJWTMiddleware(
     return;
   }
 
-  console.log("tokenCreationResult", tokenCreationResult);
-
   if (tokenCreationResult.safeUnwrap().kind === "notFound") {
     response.status(200).json(
       createHttpResultError({
@@ -124,8 +122,6 @@ async function verifyJWTMiddleware(
 
     return;
   }
-
-  console.log("tokenCreationResultUnwrapped", tokenCreationResultUnwrapped);
 
   const [newAccessToken] = tokenCreationResultUnwrapped;
 

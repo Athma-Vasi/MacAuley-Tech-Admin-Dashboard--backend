@@ -1,5 +1,6 @@
 import Joi from "joi";
 import {
+  ALL_STORE_LOCATIONS_REGEX,
   DAYS_REGEX,
   MONTHS_REGEX,
   STORE_LOCATION_REGEX,
@@ -17,7 +18,7 @@ const pertJoiSchema = Joi.object({
 }).required();
 
 const createFinancialMetricsJoiSchema = Joi.object({
-  storeLocation: Joi.string().regex(STORE_LOCATION_REGEX).required(),
+  storeLocation: Joi.string().regex(ALL_STORE_LOCATIONS_REGEX).required(),
   financialMetrics: Joi.array()
     .items(
       Joi.object({

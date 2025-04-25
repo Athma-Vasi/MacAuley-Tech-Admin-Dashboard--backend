@@ -142,11 +142,11 @@ const MEDIUM_INTEGER_REGEX = /^(?!^$|^0*$)[0-9]{1,4}$/;
 const LARGE_INTEGER_REGEX = /^(?!^$|^0*$)[0-9]{1,6}$/;
 
 /**
- * - /^(Calgary|Edmonton|Vancouver)$/
- * - matches the following store locations: Calgary, Edmonton, Vancouver
+ * - /^(All Locations|Calgary|Edmonton|Vancouver)$/
+ * - matches the following store locations:All Locations, Calgary, Edmonton, Vancouver
  * - ^ and $ ensure that the entire string matches the regex.
  */
-const STORE_LOCATION_REGEX = /^(Calgary|Edmonton|Vancouver)$/;
+const STORE_LOCATION_REGEX = /^(All Locations|Calgary|Edmonton|Vancouver)$/;
 
 /**
  * - /^(Chief Executive Officer|Chief Operations Officer|Chief Financial Officer|Chief Technology Officer|Chief Marketing Officer|Chief Sales Officer|Chief Human Resources Officer)$/
@@ -264,20 +264,20 @@ const JOB_POSITION_REGEX =
   /^(Chief Executive Officer|Chief Operations Officer|Chief Financial Officer|Chief Technology Officer|Chief Marketing Officer|Chief Sales Officer|Chief Human Resources Officer|Human Resources Manager|Compensation and Benefits Specialist|Health and Safety Specialist|Training Specialist|Recruiting Specialist|Store Manager|Shift Supervisor|Office Manager|Office Administrator|Receptionist|Data Entry Specialist|Accounting Manager|Accounts Payable Clerk|Accounts Receivable Clerk|Financial Analyst|Sales Manager|Sales Representative|Business Development Specialist|Sales Support Specialist|Sales Operations Analyst|Marketing Manager|Digital Marketing Specialist|Graphic Designer|Public Relations Specialist|Marketing Analyst|IT Manager|Systems Administrator|IT Support Specialist|Database Administrator|Web Developer|Software Developer|Software Engineer|Repair Technicians Supervisor|Electronics Technician|Computer Technician|Smartphone Technician|Tablet Technician|Audio\/Video Equipment Technician|Field Service Supervisor|On-Site Technician|Warehouse Supervisor|Inventory Clerk|Delivery Driver|Parts and Materials Handler|Shipper\/Receiver|Customer Service Supervisor|Customer Service Representative|Technical Support Specialist|Maintenance Supervisor|Maintenance Worker|Custodian)$/;
 
 /**
- * -  /^(Accessory|Central Processing Unit \(CPU\)|Computer Case|Desktop Computer|Display|Graphics Processing Unit \(GPU\)|Headphone|Keyboard|Laptop|Memory \(RAM\)|Microphone|Motherboard|Mouse|Power Supply Unit \(PSU\)|Smartphone|Speaker|Storage|Tablet|Webcam)$/
+ * -  /^(All Products|Accessory|Central Processing Unit \(CPU\)|Computer Case|Desktop Computer|Display|Graphics Processing Unit \(GPU\)|Headphone|Keyboard|Laptop|Memory \(RAM\)|Microphone|Motherboard|Mouse|Power Supply Unit \(PSU\)|Smartphone|Speaker|Storage|Tablet|Webcam)$/
  * - matches the following product categories: Accessory, Central Processing Unit (CPU), Computer Case, Desktop Computer, Display, Graphics Processing Unit (GPU), Headphone, Keyboard, Laptop, Memory (RAM), Microphone, Motherboard, Mouse, Power Supply Unit (PSU), Smartphone, Speaker, Storage, Tablet, Webcam
  * - ^ and $ ensure that the entire string matches the regex.
  */
 const PRODUCT_CATEGORY_REGEX =
-  /^(Accessory|Central Processing Unit \(CPU\)|Computer Case|Desktop Computer|Display|Graphics Processing Unit \(GPU\)|Headphone|Keyboard|Laptop|Memory \(RAM\)|Microphone|Motherboard|Mouse|Power Supply Unit \(PSU\)|Smartphone|Speaker|Storage|Tablet|Webcam)$/;
+  /^(All Products|Accessory|Central Processing Unit \(CPU\)|Computer Case|Desktop Computer|Display|Graphics Processing Unit \(GPU\)|Headphone|Keyboard|Laptop|Memory \(RAM\)|Microphone|Motherboard|Mouse|Power Supply Unit \(PSU\)|Smartphone|Speaker|Storage|Tablet|Webcam)$/;
 
 /**
- * - /^(Accessory|Computer Component|Peripheral|Electronic Device|Mobile Device|Audio\/Video)$/
+ * - /^(All Repairs|Accessory|Computer Component|Peripheral|Electronic Device|Mobile Device|Audio\/Video)$/
  * - matches the following repair categories: Accessory, Computer Component, Peripheral, Electronic Device, Mobile Device, Audio/Video
  * - ^ and $ ensure that the entire string matches the regex.
  */
 const REPAIR_CATEGORY_REGEX =
-  /^(Accessory|Computer Component|Peripheral|Electronic Device|Mobile Device|Audio\/Video)$/;
+  /^(All Repairs|Accessory|Computer Component|Peripheral|Electronic Device|Mobile Device|Audio\/Video)$/;
 
 /**
  * - /^(All Locations|Calgary|Edmonton|Vancouver)$/

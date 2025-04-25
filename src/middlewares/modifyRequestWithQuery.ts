@@ -95,11 +95,6 @@ function modifyRequestWithQuery(
     return;
   }
 
-  console.log(
-    "modifyRequestWithQuery query::BEFORE",
-    JSON.stringify(query, null, 2),
-  );
-
   // keywords that are attached to request body
   const EXCLUDED_SET = new Set([
     "page",
@@ -323,8 +318,6 @@ function createMongoDbQueryObject1(
 
   const { query } = request;
 
-  console.log("query: ", JSON.stringify(query, null, 2));
-
   if (query === undefined) {
     Object.defineProperty(request, "query", {
       value: {
@@ -367,9 +360,6 @@ function createMongoDbQueryObject1(
 
     return acc;
   }, Object.create(null));
-
-  console.log("modifiedQuery: ", JSON.stringify(modifiedQuery, null, 2));
-  console.groupEnd();
 
   const {
     filter,
@@ -595,16 +585,6 @@ function createMongoDbQueryObject1(
     value: { ...request.body, newQueryFlag, totalDocuments },
     ...PROPERTY_DESCRIPTOR,
   });
-
-  console.group("createMongoDbQueryObject: AFTER");
-  console.log("REQUEST BODY", JSON.stringify(request.body, null, 2));
-  console.log("query.newQueryFlag: ", newQueryFlag);
-  console.log("query.totalDocuments: ", totalDocuments);
-  console.log("options: ", JSON.stringify(options, null, 2));
-  console.log("projection: ", JSON.stringify(projection, null, 2));
-  console.log("filter: ", JSON.stringify(filter, null, 2));
-  console.log("stringified filter: ", JSON.stringify(filter, null, 2));
-  console.groupEnd();
 
   next();
   return;

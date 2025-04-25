@@ -15,27 +15,23 @@ const rusJoiSchema = Joi.object({
 
 const createProductMetricsJoiSchema = Joi.object({
     storeLocation: Joi.string().regex(ALL_STORE_LOCATIONS_REGEX).required(),
-    productMetrics: Joi.array().items(
+    metricCategory: Joi.string().regex(PRODUCT_CATEGORY_REGEX),
+    yearlyMetrics: Joi.array().items(
         Joi.object({
-            name: Joi.string().regex(PRODUCT_CATEGORY_REGEX).required(),
-            yearlyMetrics: Joi.array().items(
+            year: Joi.string().regex(YEARS_REGEX).required(),
+            revenue: rusJoiSchema.required(),
+            unitsSold: rusJoiSchema.required(),
+            monthlyMetrics: Joi.array().items(
                 Joi.object({
-                    year: Joi.string().regex(YEARS_REGEX).required(),
+                    month: Joi.string().regex(MONTHS_REGEX).required(),
                     revenue: rusJoiSchema.required(),
                     unitsSold: rusJoiSchema.required(),
-                    monthlyMetrics: Joi.array().items(
+                    dailyMetrics: Joi.array().items(
                         Joi.object({
-                            month: Joi.string().regex(MONTHS_REGEX).required(),
+                            day: Joi.string().regex(DAYS_REGEX)
+                                .required(),
                             revenue: rusJoiSchema.required(),
                             unitsSold: rusJoiSchema.required(),
-                            dailyMetrics: Joi.array().items(
-                                Joi.object({
-                                    day: Joi.string().regex(DAYS_REGEX)
-                                        .required(),
-                                    revenue: rusJoiSchema.required(),
-                                    unitsSold: rusJoiSchema.required(),
-                                }),
-                            ).optional(),
                         }),
                     ).optional(),
                 }),
@@ -46,12 +42,23 @@ const createProductMetricsJoiSchema = Joi.object({
 
 const updateProductMetricsJoiSchema = Joi.object({
     storeLocation: Joi.string().regex(ALL_STORE_LOCATIONS_REGEX).optional(),
-    productMetrics: Joi.array().items(
+    metricCategory: Joi.string().regex(PRODUCT_CATEGORY_REGEX).optional(),
+    yearlyMetrics: Joi.array().items(
         Joi.object({
-            name: Joi.string().regex(PRODUCT_CATEGORY_REGEX).optional(),
-            yearlyMetrics: Joi.array().items(
+            year: Joi.string().regex(YEARS_REGEX).optional(),
+            revenue: Joi.object({
+                total: Joi.number().optional(),
+                online: Joi.number().optional(),
+                inStore: Joi.number().optional(),
+            }).optional(),
+            unitsSold: Joi.object({
+                total: Joi.number().optional(),
+                online: Joi.number().optional(),
+                inStore: Joi.number().optional(),
+            }).optional(),
+            monthlyMetrics: Joi.array().items(
                 Joi.object({
-                    year: Joi.string().regex(YEARS_REGEX).optional(),
+                    month: Joi.string().regex(MONTHS_REGEX).optional(),
                     revenue: Joi.object({
                         total: Joi.number().optional(),
                         online: Joi.number().optional(),
@@ -62,9 +69,10 @@ const updateProductMetricsJoiSchema = Joi.object({
                         online: Joi.number().optional(),
                         inStore: Joi.number().optional(),
                     }).optional(),
-                    monthlyMetrics: Joi.array().items(
+                    dailyMetrics: Joi.array().items(
                         Joi.object({
-                            month: Joi.string().regex(MONTHS_REGEX).optional(),
+                            day: Joi.string().regex(DAYS_REGEX)
+                                .optional(),
                             revenue: Joi.object({
                                 total: Joi.number().optional(),
                                 online: Joi.number().optional(),
@@ -75,22 +83,6 @@ const updateProductMetricsJoiSchema = Joi.object({
                                 online: Joi.number().optional(),
                                 inStore: Joi.number().optional(),
                             }).optional(),
-                            dailyMetrics: Joi.array().items(
-                                Joi.object({
-                                    day: Joi.string().regex(DAYS_REGEX)
-                                        .optional(),
-                                    revenue: Joi.object({
-                                        total: Joi.number().optional(),
-                                        online: Joi.number().optional(),
-                                        inStore: Joi.number().optional(),
-                                    }).optional(),
-                                    unitsSold: Joi.object({
-                                        total: Joi.number().optional(),
-                                        online: Joi.number().optional(),
-                                        inStore: Joi.number().optional(),
-                                    }).optional(),
-                                }),
-                            ).optional(),
                         }),
                     ).optional(),
                 }),

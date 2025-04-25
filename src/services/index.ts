@@ -81,12 +81,6 @@ async function createNewResourceService<
   try {
     const resource = await model.create(schema);
 
-    console.group(
-      "createNewResourceService",
-    );
-    console.log("resource:", resource);
-    console.groupEnd();
-
     return new Ok({
       data: [resource],
       kind: "success",
@@ -167,7 +161,7 @@ async function getQueriedTotalResourcesService<
     }
 
     return new Ok({
-      data: totalQueriedResources,
+      data: [totalQueriedResources],
       kind: "success",
     }) as unknown as ServiceResult<Doc>;
   } catch (error: unknown) {
@@ -295,14 +289,6 @@ async function deleteManyResourcesService<
     )
       .lean()
       .exec();
-
-    console.group(
-      "deleteManyResourcesService",
-    );
-    console.log("totalResources:", totalResources);
-    console.log("acknowledged:", acknowledged);
-    console.log("deletedCount:", deletedCount);
-    console.groupEnd();
 
     return acknowledged && deletedCount === totalResources
       ? new Ok({ data: [true], kind: "success" }) as unknown as ServiceResult<

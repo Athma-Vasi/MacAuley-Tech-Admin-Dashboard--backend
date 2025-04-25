@@ -104,8 +104,6 @@ function createNewUserHandler<
           ErrorLogModel,
         );
 
-        console.log("hashPasswordResult", hashPasswordResult);
-
         response.status(200).json(
           createHttpResultError({
             message: "Unable to hash password. Please try again.",
@@ -222,8 +220,6 @@ function createNewUsersBulkHandler<
       const errors = userCreationResults.filter((result) => result.err);
       if (errors.length > 0) {
         errors.forEach((error) => {
-          console.log("\n");
-          console.log("bulk users error", JSON.stringify(error, null, 2));
         });
         response.status(200).json(
           createHttpResultError({ message: "Error creating users" }),

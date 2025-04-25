@@ -8,10 +8,6 @@ function addPasswordProjection(
 ) {
   const projection = request.query.projection as string | string[] | undefined;
 
-  console.group("addPasswordProjection");
-  console.log("projection", projection);
-  console.groupEnd();
-
   if (!projection) {
     Object.defineProperty(request.query, "projection", {
       value: ["-password"],

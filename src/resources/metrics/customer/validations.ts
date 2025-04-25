@@ -10,6 +10,7 @@ const customersJoiSchema = Joi.object({
     churnRate: Joi.number().default(0),
     retentionRate: Joi.number().default(0),
     new: Joi.object({
+        total: Joi.number().default(0),
         repair: Joi.number().default(0),
         sales: Joi.object({
             inStore: Joi.number().default(0),
@@ -18,6 +19,7 @@ const customersJoiSchema = Joi.object({
         }),
     }),
     returning: Joi.object({
+        total: Joi.number().default(0),
         repair: Joi.number().default(0),
         sales: Joi.object({
             inStore: Joi.number().default(0),

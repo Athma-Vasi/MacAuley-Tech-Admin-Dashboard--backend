@@ -122,9 +122,7 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
           return;
         }
 
-        console.log("totalResult", totalResult);
-
-        totalDocuments = totalResult.safeUnwrap().data ?? 0;
+        totalDocuments = totalResult.safeUnwrap().data?.[0] ?? 0;
       }
 
       const getResourcesResult = await getQueriedResourcesService({
@@ -170,16 +168,6 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
           .json(createHttpResultError({ status: 404 }));
         return;
       }
-
-      console.group("getQueriedResourcesHandler");
-      console.log("accessToken", accessToken);
-      console.log("filter", JSON.stringify(filter, null, 2));
-      console.log("options", options);
-      console.log("projection", projection);
-      console.log("newQueryFlag", newQueryFlag);
-      console.log("totalDocuments", totalDocuments);
-      console.log("data", JSON.stringify(data, null, 2));
-      console.groupEnd();
 
       response.status(200).json(
         createHttpResultSuccess({
@@ -252,7 +240,7 @@ function getQueriedResourcesByUserHandler<Doc extends DBRecord = DBRecord>(
           return;
         }
 
-        totalDocuments = totalResult.safeUnwrap().data ?? 0;
+        totalDocuments = totalResult.safeUnwrap().data?.[0] ?? 0;
       }
 
       const getResourcesResult = await getQueriedResourcesByUserService({
