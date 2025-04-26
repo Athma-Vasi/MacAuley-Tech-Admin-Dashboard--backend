@@ -9,7 +9,7 @@ import type {
   ServiceResult,
 } from "../types";
 
-function createHttpResultError<Data = unknown>({
+function createHttpResponseError<Data = unknown>({
   accessToken = "",
   data = [],
   kind = "error",
@@ -77,7 +77,7 @@ function createHttpResultError<Data = unknown>({
   };
 }
 
-function createHttpResultSuccess<
+function createHttpResponseSuccess<
   Data = unknown,
 >({
   accessToken,
@@ -253,8 +253,8 @@ function toFixedFloat(num: number, precision = 4): number {
 export {
   compareHashedStringWithPlainStringSafe,
   createErrorLogSchema,
-  createHttpResultError,
-  createHttpResultSuccess,
+  createHttpResponseError,
+  createHttpResponseSuccess,
   decodeJWTSafe,
   filterFieldsFromObject,
   hashStringSafe,

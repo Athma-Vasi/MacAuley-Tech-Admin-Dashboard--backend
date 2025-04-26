@@ -4,8 +4,8 @@ import { createNewResourceService } from "../../../services";
 import type { CreateNewResourceRequest, DBRecord } from "../../../types";
 import {
   createErrorLogSchema,
-  createHttpResultError,
-  createHttpResultSuccess,
+  createHttpResponseError,
+  createHttpResponseSuccess,
 } from "../../../utils";
 import { ErrorLogModel } from "../../errorLog";
 import type { FinancialMetricsSchema } from "./model";
@@ -40,7 +40,7 @@ function createNewFinancialMetricHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to create financial metric. Please try again.",
           }),
         );
@@ -52,7 +52,7 @@ function createNewFinancialMetricHandler<
 
       if (financialMetricUnwrapped.length === 0) {
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to create financial metric. Please try again.",
           }),
         );
@@ -60,7 +60,7 @@ function createNewFinancialMetricHandler<
       }
 
       response.status(200).json(
-        createHttpResultSuccess({
+        createHttpResponseSuccess({
           accessToken,
           data: financialMetricUnwrapped,
           message: "Financial Metric created successfully",
@@ -75,7 +75,7 @@ function createNewFinancialMetricHandler<
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResultError({}));
+      response.status(200).json(createHttpResponseError({}));
     }
   };
 }

@@ -4,8 +4,8 @@ import { createNewResourceService } from "../../../services";
 import type { CreateNewResourceRequest, DBRecord } from "../../../types";
 import {
   createErrorLogSchema,
-  createHttpResultError,
-  createHttpResultSuccess,
+  createHttpResponseError,
+  createHttpResponseSuccess,
 } from "../../../utils";
 import { ErrorLogModel } from "../../errorLog";
 import type { RepairMetricsSchema } from "./model";
@@ -40,7 +40,7 @@ function createNewRepairMetricHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to create repair metric. Please try again.",
           }),
         );
@@ -51,7 +51,7 @@ function createNewRepairMetricHandler<
 
       if (repairMetricUnwrapped.length === 0) {
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to create repair metric. Please try again.",
           }),
         );
@@ -59,7 +59,7 @@ function createNewRepairMetricHandler<
       }
 
       response.status(200).json(
-        createHttpResultSuccess({
+        createHttpResponseSuccess({
           accessToken,
           data: repairMetricUnwrapped,
           message: "Repair Metric created successfully",
@@ -74,7 +74,7 @@ function createNewRepairMetricHandler<
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResultError({}));
+      response.status(200).json(createHttpResponseError({}));
     }
   };
 }

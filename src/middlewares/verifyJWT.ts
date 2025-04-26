@@ -3,7 +3,11 @@ import type { NextFunction, Request, Response } from "express";
 import { CONFIG } from "../config";
 import { ACCESS_TOKEN_EXPIRY, PROPERTY_DESCRIPTOR } from "../constants";
 import { createTokenService } from "../resources/auth/services";
-import { createHttpResultError, decodeJWTSafe, verifyJWTSafe } from "../utils";
+import {
+  createHttpResponseError,
+  decodeJWTSafe,
+  verifyJWTSafe,
+} from "../utils";
 
 async function verifyJWTMiddleware(
   request: Request,
@@ -15,7 +19,7 @@ async function verifyJWTMiddleware(
   const [_, accessToken] = request.headers.authorization?.split(" ") || [];
   if (!accessToken) {
     response.status(200).json(
-      createHttpResultError({
+      createHttpResponseError({
         message: "Access token not found",
         triggerLogout: true,
       }),
@@ -32,7 +36,7 @@ async function verifyJWTMiddleware(
   // token is invalid (except for expired)
   if (verifiedAccessTokenResult.err) {
     response.status(200).json(
-      createHttpResultError({
+      createHttpResponseError({
         message: "Access token invalid",
         triggerLogout: true,
       }),
@@ -59,7 +63,7 @@ async function verifyJWTMiddleware(
 
   if (decodedAccessTokenResult.err) {
     response.status(200).json(
-      createHttpResultError({
+      createHttpResponseError({
         message: "Error decoding access token",
         triggerLogout: true,
       }),
@@ -71,7 +75,7 @@ async function verifyJWTMiddleware(
   const decodedAccessToken = decodedAccessTokenResult.safeUnwrap().data[0];
   if (!decodedAccessToken) {
     response.status(200).json(
-      createHttpResultError({
+      createHttpResponseError({
         message: "Error decoding access token",
         triggerLogout: true,
       }),
@@ -89,7 +93,7 @@ async function verifyJWTMiddleware(
 
   if (tokenCreationResult.err) {
     response.status(200).json(
-      createHttpResultError({
+      createHttpResponseError({
         message: tokenCreationResult.val.message,
         triggerLogout: true,
       }),
@@ -100,7 +104,7 @@ async function verifyJWTMiddleware(
 
   if (tokenCreationResult.safeUnwrap().kind === "notFound") {
     response.status(200).json(
-      createHttpResultError({
+      createHttpResponseError({
         message: "Session expired",
         // user needs to log in again
         triggerLogout: true,
@@ -114,7 +118,7 @@ async function verifyJWTMiddleware(
 
   if (tokenCreationResultUnwrapped.length === 0) {
     response.status(200).json(
-      createHttpResultError({
+      createHttpResponseError({
         message: "Token created not found",
         triggerLogout: true,
       }),

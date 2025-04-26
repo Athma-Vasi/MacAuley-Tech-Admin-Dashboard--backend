@@ -4,8 +4,8 @@ import { createNewResourceService } from "../../../services";
 import type { CreateNewResourceRequest, DBRecord } from "../../../types";
 import {
   createErrorLogSchema,
-  createHttpResultError,
-  createHttpResultSuccess,
+  createHttpResponseError,
+  createHttpResponseSuccess,
 } from "../../../utils";
 import { ErrorLogModel } from "../../errorLog";
 import type { CustomerMetricsSchema } from "./model";
@@ -40,7 +40,7 @@ function createNewCustomerMetricHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to create customer metric. Please try again.",
           }),
         );
@@ -52,7 +52,7 @@ function createNewCustomerMetricHandler<
 
       if (customerMetricUnwrapped.length === 0) {
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to create customer metric. Please try again.",
           }),
         );
@@ -60,7 +60,7 @@ function createNewCustomerMetricHandler<
       }
 
       response.status(200).json(
-        createHttpResultSuccess({
+        createHttpResponseSuccess({
           accessToken,
           data: customerMetricUnwrapped,
           message: "Customer Metric created successfully",
@@ -75,7 +75,7 @@ function createNewCustomerMetricHandler<
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResultError({}));
+      response.status(200).json(createHttpResponseError({}));
     }
   };
 }

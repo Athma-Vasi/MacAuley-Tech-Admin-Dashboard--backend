@@ -4,8 +4,8 @@ import { createNewResourceService } from "../../../services";
 import type { CreateNewResourceRequest, DBRecord } from "../../../types";
 import {
   createErrorLogSchema,
-  createHttpResultError,
-  createHttpResultSuccess,
+  createHttpResponseError,
+  createHttpResponseSuccess,
 } from "../../../utils";
 import { ErrorLogModel } from "../../errorLog";
 import type { ProductMetricsSchema } from "./model";
@@ -40,7 +40,7 @@ function createNewProductMetricHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to create product metric. Please try again.",
           }),
         );
@@ -52,7 +52,7 @@ function createNewProductMetricHandler<
 
       if (productMetricUnwrapped.length === 0) {
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to create product metric. Please try again.",
           }),
         );
@@ -60,7 +60,7 @@ function createNewProductMetricHandler<
       }
 
       response.status(200).json(
-        createHttpResultSuccess({
+        createHttpResponseSuccess({
           accessToken,
           data: productMetricUnwrapped,
           message: "Product Metric created successfully",
@@ -75,7 +75,7 @@ function createNewProductMetricHandler<
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResultError({}));
+      response.status(200).json(createHttpResponseError({}));
     }
   };
 }

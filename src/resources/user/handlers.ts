@@ -18,8 +18,8 @@ import { Err, Ok } from "ts-results";
 import { HASH_SALT_ROUNDS } from "../../constants";
 import {
   createErrorLogSchema,
-  createHttpResultError,
-  createHttpResultSuccess,
+  createHttpResponseError,
+  createHttpResponseSuccess,
   hashStringSafe,
 } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
@@ -51,13 +51,13 @@ function createNewUserHandler<
           ErrorLogModel,
         );
 
-        response.status(200).json(createHttpResultError({ status: 500 }));
+        response.status(200).json(createHttpResponseError({ status: 500 }));
         return;
       }
 
       if (usernameExistsResult.val.kind === "success") {
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             status: 400,
             message: "Username already exists",
           }),
@@ -79,13 +79,13 @@ function createNewUserHandler<
           ErrorLogModel,
         );
 
-        response.status(200).json(createHttpResultError({}));
+        response.status(200).json(createHttpResponseError({}));
         return;
       }
 
       if (emailExistsResult.val.kind === "success") {
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             status: 400,
             message: "Email already exists",
           }),
@@ -105,7 +105,7 @@ function createNewUserHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to hash password. Please try again.",
           }),
         );
@@ -116,7 +116,7 @@ function createNewUserHandler<
 
       if (hashedPasswordUnwrapped.length === 0) {
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to retrieve hashed password. Please try again.",
           }),
         );
@@ -139,12 +139,12 @@ function createNewUserHandler<
           ErrorLogModel,
         );
 
-        response.status(200).json(createHttpResultError({ status: 500 }));
+        response.status(200).json(createHttpResponseError({ status: 500 }));
         return;
       }
 
       response.status(200).json(
-        createHttpResultSuccess({
+        createHttpResponseSuccess({
           data: userCreationResult.safeUnwrap().data,
           accessToken: "",
         }),
@@ -158,7 +158,7 @@ function createNewUserHandler<
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResultError({}));
+      response.status(200).json(createHttpResponseError({}));
     }
   };
 }
@@ -222,7 +222,7 @@ function createNewUsersBulkHandler<
         errors.forEach((error) => {
         });
         response.status(200).json(
-          createHttpResultError({ message: "Error creating users" }),
+          createHttpResponseError({ message: "Error creating users" }),
         );
         return;
       }
@@ -233,14 +233,14 @@ function createNewUsersBulkHandler<
       );
 
       response.status(200).json(
-        createHttpResultSuccess({
+        createHttpResponseSuccess({
           data: successesUnwrapped as any,
           accessToken: "",
         }),
       );
     } catch (error: unknown) {
       response.status(200).json(
-        createHttpResultError({ message: "Erorr in handler" }),
+        createHttpResponseError({ message: "Erorr in handler" }),
       );
     }
   };

@@ -20,8 +20,8 @@ import type {
 import {
   compareHashedStringWithPlainStringSafe,
   createErrorLogSchema,
-  createHttpResultError,
-  createHttpResultSuccess,
+  createHttpResponseError,
+  createHttpResponseSuccess,
   decodeJWTSafe,
   hashStringSafe,
   verifyJWTSafe,
@@ -70,7 +70,7 @@ function loginUserHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to get user. Please try again!",
           }),
         );
@@ -81,7 +81,7 @@ function loginUserHandler<
 
       if (userDocument === undefined || userDocument === null) {
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             status: 404,
             message: "User not found",
           }),
@@ -105,7 +105,7 @@ function loginUserHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             status: 401,
             message: "Password incorrect",
           }),
@@ -140,7 +140,7 @@ function loginUserHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to create session. Please try again!",
           }),
         );
@@ -152,7 +152,7 @@ function loginUserHandler<
 
       if (createAuthSessionUnwrapped.length === 0) {
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to create session. Please try again!",
           }),
         );
@@ -195,7 +195,7 @@ function loginUserHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message:
               "Unable to update session's access token. Please try again!",
           }),
@@ -230,7 +230,7 @@ function loginUserHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to get financial metrics document",
           }),
         );
@@ -242,7 +242,7 @@ function loginUserHandler<
 
       if (financialMetricsDocumentUnwrapped.length === 0) {
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to get financial metrics document",
           }),
         );
@@ -252,7 +252,7 @@ function loginUserHandler<
       const [financialMetricsDocument] = financialMetricsDocumentUnwrapped;
 
       response.status(200).json(
-        createHttpResultSuccess({
+        createHttpResponseSuccess({
           accessToken,
           data: [{
             userDocument: userDocPartial,
@@ -269,7 +269,7 @@ function loginUserHandler<
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResultError({}));
+      response.status(200).json(createHttpResponseError({}));
     }
   };
 }
@@ -302,7 +302,7 @@ function registerUserHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to register. Please try again.",
           }),
         );
@@ -313,7 +313,7 @@ function registerUserHandler<
 
       if (unwrappedResult.kind === "success") {
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Username already exists",
           }),
         );
@@ -332,7 +332,7 @@ function registerUserHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to hash password. Please try again.",
           }),
         );
@@ -343,7 +343,7 @@ function registerUserHandler<
 
       if (hashedPasswordUnwrapped.length === 0) {
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to retrieve hashed password. Please try again.",
           }),
         );
@@ -368,7 +368,7 @@ function registerUserHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({
+          createHttpResponseError({
             message: "Unable to create user. Please try again.",
           }),
         );
@@ -376,7 +376,7 @@ function registerUserHandler<
       }
 
       response.status(200).json(
-        createHttpResultSuccess({
+        createHttpResponseSuccess({
           accessToken: "",
           data: [],
           message: "User registered successfully",
@@ -391,7 +391,7 @@ function registerUserHandler<
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResultError({}));
+      response.status(200).json(createHttpResponseError({}));
     }
   };
 }
@@ -413,7 +413,7 @@ function logoutUserHandler<
 
       if (!accessToken) {
         response.status(200).json(
-          createHttpResultError({ triggerLogout: true }),
+          createHttpResponseError({ triggerLogout: true }),
         );
 
         return;
@@ -428,7 +428,7 @@ function logoutUserHandler<
 
       if (verifyAccessTokenResult.err) {
         response.status(200).json(
-          createHttpResultError({ triggerLogout: true }),
+          createHttpResponseError({ triggerLogout: true }),
         );
 
         return;
@@ -438,7 +438,7 @@ function logoutUserHandler<
 
       if (accessTokenDecodedResult.err) {
         response.status(200).json(
-          createHttpResultError({ triggerLogout: true }),
+          createHttpResponseError({ triggerLogout: true }),
         );
 
         return;
@@ -449,7 +449,7 @@ function logoutUserHandler<
 
       if (accessTokenDecodedUnwrapped.length === 0) {
         response.status(200).json(
-          createHttpResultError({ triggerLogout: true }),
+          createHttpResponseError({ triggerLogout: true }),
         );
 
         return;
@@ -473,14 +473,14 @@ function logoutUserHandler<
         );
 
         response.status(200).json(
-          createHttpResultError({ triggerLogout: true }),
+          createHttpResponseError({ triggerLogout: true }),
         );
 
         return;
       }
 
       response.status(200).json(
-        createHttpResultSuccess({
+        createHttpResponseSuccess({
           accessToken: "",
           data: [],
           triggerLogout: true,
@@ -496,7 +496,7 @@ function logoutUserHandler<
       );
 
       response.status(200).json(
-        createHttpResultError({ triggerLogout: true }),
+        createHttpResponseError({ triggerLogout: true }),
       );
     }
   };
@@ -529,7 +529,7 @@ function checkUsernameOrEmailExistsHandler<
       );
 
       response.status(200).json(
-        createHttpResultError({
+        createHttpResponseError({
           message: "Unable to check existence of username",
         }),
       );
@@ -539,14 +539,14 @@ function checkUsernameOrEmailExistsHandler<
     // username or email exists
     if (isUsernameOrEmailExistsResult.val.kind === "success") {
       response.status(200).json(
-        createHttpResultSuccess({ data: [true], accessToken: "" }),
+        createHttpResponseSuccess({ data: [true], accessToken: "" }),
       );
       return;
     }
 
     // username or email does not exist
     response.status(200).json(
-      createHttpResultSuccess({ data: [false], accessToken: "" }),
+      createHttpResponseSuccess({ data: [false], accessToken: "" }),
     );
     return;
   };
