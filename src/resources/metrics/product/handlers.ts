@@ -41,6 +41,7 @@ function createNewProductMetricHandler<
 
         response.status(200).json(
           createHttpResponseError({
+            accessToken,
             message: "Unable to create product metric. Please try again.",
           }),
         );
@@ -53,6 +54,7 @@ function createNewProductMetricHandler<
       if (productMetricUnwrapped.length === 0) {
         response.status(200).json(
           createHttpResponseError({
+            accessToken,
             message: "Unable to create product metric. Please try again.",
           }),
         );

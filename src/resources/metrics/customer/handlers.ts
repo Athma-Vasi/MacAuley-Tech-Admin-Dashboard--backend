@@ -41,6 +41,7 @@ function createNewCustomerMetricHandler<
 
         response.status(200).json(
           createHttpResponseError({
+            accessToken,
             message: "Unable to create customer metric. Please try again.",
           }),
         );
@@ -53,6 +54,7 @@ function createNewCustomerMetricHandler<
       if (customerMetricUnwrapped.length === 0) {
         response.status(200).json(
           createHttpResponseError({
+            accessToken,
             message: "Unable to create customer metric. Please try again.",
           }),
         );

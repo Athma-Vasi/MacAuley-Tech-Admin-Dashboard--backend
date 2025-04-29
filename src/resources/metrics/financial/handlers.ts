@@ -41,6 +41,7 @@ function createNewFinancialMetricHandler<
 
         response.status(200).json(
           createHttpResponseError({
+            accessToken,
             message: "Unable to create financial metric. Please try again.",
           }),
         );
@@ -53,6 +54,7 @@ function createNewFinancialMetricHandler<
       if (financialMetricUnwrapped.length === 0) {
         response.status(200).json(
           createHttpResponseError({
+            accessToken,
             message: "Unable to create financial metric. Please try again.",
           }),
         );

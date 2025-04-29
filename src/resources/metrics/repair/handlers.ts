@@ -41,6 +41,7 @@ function createNewRepairMetricHandler<
 
         response.status(200).json(
           createHttpResponseError({
+            accessToken,
             message: "Unable to create repair metric. Please try again.",
           }),
         );
@@ -52,6 +53,7 @@ function createNewRepairMetricHandler<
       if (repairMetricUnwrapped.length === 0) {
         response.status(200).json(
           createHttpResponseError({
+            accessToken,
             message: "Unable to create repair metric. Please try again.",
           }),
         );
