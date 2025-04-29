@@ -378,7 +378,7 @@ function registerUserHandler<
       response.status(200).json(
         createHttpResponseSuccess({
           accessToken: "",
-          data: [],
+          data: [createUserResult.safeUnwrap().data],
           message: "User registered successfully",
         }),
       );

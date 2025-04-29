@@ -51,7 +51,7 @@ function createNewResourceHandler<Doc extends DBRecord = DBRecord>(
         );
 
         response.status(200).json(
-          createHttpResponseError({ status: 400 }),
+          createHttpResponseError({ accessToken, status: 400 }),
         );
         return;
       }
@@ -114,6 +114,7 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
             .status(200)
             .json(
               createHttpResponseError({
+                accessToken,
                 status: 400,
                 message: totalResult.val.message ??
                   "Error getting total documents",
@@ -157,7 +158,7 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
       if (unwrappedResult === undefined) {
         response
           .status(200)
-          .json(createHttpResponseError({ status: 404 }));
+          .json(createHttpResponseError({ accessToken, status: 404 }));
         return;
       }
 
@@ -165,7 +166,7 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
       if (data === undefined) {
         response
           .status(200)
-          .json(createHttpResponseError({ status: 404 }));
+          .json(createHttpResponseError({ accessToken, status: 404 }));
         return;
       }
 
@@ -235,7 +236,7 @@ function getQueriedResourcesByUserHandler<Doc extends DBRecord = DBRecord>(
           );
 
           response.status(200).json(
-            createHttpResponseError({ status: 400 }),
+            createHttpResponseError({ accessToken, status: 400 }),
           );
           return;
         }
@@ -260,7 +261,7 @@ function getQueriedResourcesByUserHandler<Doc extends DBRecord = DBRecord>(
         );
 
         response.status(200).json(
-          createHttpResponseError({ status: 400 }),
+          createHttpResponseError({ accessToken, status: 400 }),
         );
         return;
       }
@@ -269,7 +270,7 @@ function getQueriedResourcesByUserHandler<Doc extends DBRecord = DBRecord>(
       if (unwrappedResult === undefined) {
         response
           .status(200)
-          .json(createHttpResponseError({ status: 404 }));
+          .json(createHttpResponseError({ accessToken, status: 404 }));
         return;
       }
 
@@ -277,7 +278,7 @@ function getQueriedResourcesByUserHandler<Doc extends DBRecord = DBRecord>(
       if (data === undefined) {
         response
           .status(200)
-          .json(createHttpResponseError({ status: 404 }));
+          .json(createHttpResponseError({ accessToken, status: 404 }));
         return;
       }
 
@@ -337,7 +338,7 @@ function updateResourceByIdHandler<Doc extends DBRecord = DBRecord>(
         );
 
         response.status(200).json(
-          createHttpResponseError({ status: 400 }),
+          createHttpResponseError({ accessToken, status: 400 }),
         );
         return;
       }
@@ -390,7 +391,7 @@ function getResourceByIdHandler<Doc extends DBRecord = DBRecord>(
         );
 
         response.status(200).json(
-          createHttpResponseError({ status: 404 }),
+          createHttpResponseError({ accessToken, status: 404 }),
         );
         return;
       }
@@ -443,13 +444,13 @@ function deleteResourceByIdHandler<Doc extends DBRecord = DBRecord>(
         );
 
         response.status(200).json(
-          createHttpResponseError({ status: 404 }),
+          createHttpResponseError({ accessToken, status: 404 }),
         );
         return;
       }
 
       response.status(200).json(
-        createHttpResponseSuccess({ data: [], accessToken }),
+        createHttpResponseSuccess({ data: [true], accessToken }),
       );
     } catch (error: unknown) {
       await createNewResourceService(
