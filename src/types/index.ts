@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import type { FilterQuery, QueryOptions, Types } from "mongoose";
 import type { ParsedQs } from "qs";
 import type { Result } from "ts-results";
+import { FileExtension } from "../resources/fileUpload/model";
 import type { UserRoles } from "../resources/user";
 
 type DecodedToken = {
@@ -222,6 +223,33 @@ type DocumentArrayUpdateOperation<
   fields: Partial<Document>;
 };
 
+/**
+ * type signature of file object created by express-fileupload
+ */
+type FileUploadObject = {
+  name: string;
+  data: Buffer;
+  size: number;
+  encoding: string;
+  tempFilePath: string;
+  truncated: boolean;
+  mimetype: string;
+  md5: string;
+  mv: (path: string, callback: (error: unknown) => void) => void;
+};
+
+/**
+ * type signature of file object created after fileInfoExtracter middleware runs
+ */
+type FileInfoObject = {
+  uploadedFile: Buffer;
+  fileName: string;
+  fileExtension: FileExtension;
+  fileSize: number;
+  fileMimeType: string;
+  fileEncoding: string;
+};
+
 export type {
   ArrayOperators,
   CreateNewResourceRequest,
@@ -232,6 +260,8 @@ export type {
   DeleteResourceRequest,
   DocumentUpdateOperation,
   FieldOperators,
+  FileInfoObject,
+  FileUploadObject,
   GetQueriedResourceByUserRequest,
   GetQueriedResourceRequest,
   GetResourceByFieldRequest,
