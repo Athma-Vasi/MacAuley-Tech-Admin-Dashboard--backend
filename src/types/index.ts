@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import type { FilterQuery, QueryOptions, Types } from "mongoose";
 import type { ParsedQs } from "qs";
 import type { Result } from "ts-results";
-import { FileExtension } from "../resources/fileUpload/model";
+import type { FileExtension } from "../resources/fileUpload/model";
 import type { UserRoles } from "../resources/user";
 
 type DecodedToken = {

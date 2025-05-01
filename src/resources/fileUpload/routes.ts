@@ -1,4 +1,6 @@
 import { Router } from "express";
+import expressFileUpload from "express-fileupload";
+import { ALLOWED_FILE_EXTENSIONS } from "../../constants";
 import {
     createNewResourceHandler,
     deleteResourceByIdHandler,
@@ -7,8 +9,11 @@ import {
     getResourceByIdHandler,
     updateResourceByIdHandler,
 } from "../../handlers";
-import expressFileUpload from "express-fileupload";
 import {
+    fileExtensionLimiterMiddleware,
+    fileInfoExtractorMiddleware,
+    fileSizeLimiterMiddleware,
+    filesPayloadExistsMiddleware,
     modifyRequestWithQuery,
     validateSchemaMiddleware,
     verifyJWTMiddleware,
@@ -39,7 +44,7 @@ fileUploadRouter
         filesPayloadExistsMiddleware,
         fileSizeLimiterMiddleware,
         fileExtensionLimiterMiddleware(ALLOWED_FILE_EXTENSIONS),
-        fileInfoExtracterMiddleware,
+        fileInfoExtractorMiddleware,
         validateSchemaMiddleware(createFileUploadJoiSchema, "schema"),
         createNewResourceHandler(FileUploadModel),
     );

@@ -12,8 +12,11 @@ const PROPERTY_DESCRIPTOR: PropertyDescriptor = {
   writable: true,
 };
 
+const ALLOWED_FILE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"];
+
 export {
   ACCESS_TOKEN_EXPIRY,
+  ALLOWED_FILE_EXTENSIONS,
   HASH_SALT_ROUNDS,
   PROPERTY_DESCRIPTOR,
   REFRESH_TOKEN_EXPIRY,

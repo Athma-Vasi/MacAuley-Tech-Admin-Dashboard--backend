@@ -5,7 +5,7 @@ import type { FileUploadObject } from "../types";
 /**
  * This middleware extracts the file information from the request object and adds it to the request body.
  */
-function fileInfoExtracterMiddleware(
+function fileInfoExtractorMiddleware(
     request: Request,
     _response: Response,
     next: NextFunction,
@@ -53,7 +53,7 @@ function fileInfoExtracterMiddleware(
     });
 
     console.log("\n");
-    console.group("fileInfoExtracterMiddleware");
+    console.group("fileInfoExtractorMiddleware");
     console.log({ files });
     console.log({ fileUploads: request.body.fileUploads });
     console.groupEnd();
@@ -61,4 +61,4 @@ function fileInfoExtracterMiddleware(
     return next();
 }
 
-export { fileInfoExtracterMiddleware };
+export { fileInfoExtractorMiddleware };
