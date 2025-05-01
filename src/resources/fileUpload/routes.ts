@@ -7,18 +7,22 @@ import {
     getResourceByIdHandler,
     updateResourceByIdHandler,
 } from "../../handlers";
+import expressFileUpload from "express-fileupload";
 import {
+    modifyRequestWithQuery,
     validateSchemaMiddleware,
     verifyJWTMiddleware,
+    verifyRoles,
 } from "../../middlewares";
 import { FileUploadModel } from "./model";
+import { createFileUploadJoiSchema } from "./validations";
 
 const fileUploadRouter = Router();
 
 fileUploadRouter.use(
     verifyJWTMiddleware,
     verifyRoles,
-    createMongoDbQueryObject,
+    modifyRequestWithQuery,
 );
 
 fileUploadRouter

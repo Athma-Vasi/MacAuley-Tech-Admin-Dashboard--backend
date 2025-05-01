@@ -22,7 +22,7 @@ type FileUploadDocument = FileUploadSchema & {
     __v: number;
 };
 
-const fileUploadSchema = new Schema<FileUploadSchema>(
+const fileUploadSchema = new Schema<FileUploadDocument>(
     {
         userId: {
             type: Schema.Types.ObjectId,

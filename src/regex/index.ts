@@ -362,6 +362,48 @@ const PROVINCE_REGEX =
 const STATES_US_REGEX =
   /^(Not Applicable|Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming)$/;
 
+/**
+ * - /^[a-zA-Z0-9\s.,'()-]{1,50}$/i
+ * - [a-zA-Z0-9\s.,'()-] matches any letter, digit, whitespace, period, comma, single quotation mark, hyphen, or parentheses.
+ * - {1,50} ensures that the text is between 1 and 50 characters long.
+ * - ^ and $ ensure that the entire string matches the regex.
+ * - i makes the regex case-insensitive.
+ */
+const FILE_NAME_REGEX = /^[a-zA-Z0-9\s.,'()-]{1,50}$/i;
+
+/**
+ * - /\.(jpg|jpeg|png|webp)$
+ * - \. matches a period.
+ * - (jpg|jpeg|png|webp) matches either "jpg", "jpeg", "png", or "webp".
+ * - $ asserts that the string ends with one of the file extensions.
+ */
+const FILE_EXTENSIONS_REGEX = /\.(jpg|jpeg|png|webp)$/;
+
+/**
+ * - /^\d{1,6}$/
+ * - ^ asserts that the string starts with a digit.
+ * - \d{1,6} matches between 1 and 6 digits. This represents the file size in bytes, allowing for a range of digit lengths from 1 to 6.
+ * - $ asserts that the string ends with a digit.
+ * - technically a SI prefix is used here, as binary size of 1MB = 1,048,576 bytes
+ */
+const FILE_SIZE_REGEX = /^\d{1,6}$/;
+
+/**
+ * - /^image\/(jpeg|png|webp)$/
+ * - ^ asserts that the string starts with "image/".
+ * - (jpeg|png|webp) matches either "jpeg", "png", or "webp".
+ * - $ asserts that the string ends with one of the file extensions.
+ */
+const FILE_MIME_TYPES_REGEX = /^image\/(jpeg|png|webp)$/;
+
+/**
+ * - /^(7bit|8bit|binary|quoted-printable|base64)$/
+ * - (7bit|8bit|binary|quoted-printable|base64) matches either "7bit", "8bit", "binary", "quoted-printable", or "base64".
+ * - ^ asserts that the string starts with one of the file encodings.
+ * - $ asserts that the string ends with one of the file encodings.
+ */
+const FILE_ENCODING_REGEX = /^(7bit|8bit|binary|quoted-printable|base64)$/;
+
 export {
   ACCOUNTING_REGEX,
   ADDRESS_LINE_REGEX,
@@ -374,6 +416,11 @@ export {
   EMAIL_REGEX,
   EXECUTIVE_MANAGEMENT_REGEX,
   FIELD_SERVICE_TECHNICIANS_REGEX,
+  FILE_ENCODING_REGEX,
+  FILE_EXTENSIONS_REGEX,
+  FILE_MIME_TYPES_REGEX,
+  FILE_NAME_REGEX,
+  FILE_SIZE_REGEX,
   FLOAT_REGEX,
   FULL_NAME_REGEX,
   HUMAN_RESOURCES_REGEX,
