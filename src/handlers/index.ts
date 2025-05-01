@@ -94,12 +94,20 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
         options,
       } = request.query;
 
+      console.log("\n");
+      console.log("--getQueriedResourcesHandler--");
+      console.log("filter", JSON.stringify(filter, null, 2));
+      console.log("projection", projection);
+      console.log("options", options);
+
       // only perform a countDocuments scan if a new query is being made
       if (newQueryFlag) {
         const totalResult = await getQueriedTotalResourcesService<Doc>({
           filter,
           model,
         });
+
+        console.log("totalResult", totalResult);
 
         if (totalResult.err) {
           await createNewResourceService(
@@ -133,6 +141,8 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
         projection,
       });
 
+      console.log("getResourcesResult", getResourcesResult);
+
       if (getResourcesResult.err) {
         await createNewResourceService(
           createErrorLogSchema(
@@ -159,6 +169,18 @@ function getQueriedResourcesHandler<Doc extends DBRecord = DBRecord>(
         response
           .status(200)
           .json(createHttpResponseError({ accessToken, status: 404 }));
+        return;
+      }
+
+      if (unwrappedResult.kind === "notFound") {
+        response
+          .status(200)
+          .json(
+            createHttpResponseSuccess({
+              accessToken,
+              data: [],
+            }),
+          );
         return;
       }
 
@@ -274,6 +296,18 @@ function getQueriedResourcesByUserHandler<Doc extends DBRecord = DBRecord>(
         return;
       }
 
+      if (unwrappedResult.kind === "notFound") {
+        response
+          .status(200)
+          .json(
+            createHttpResponseSuccess({
+              accessToken,
+              data: [],
+            }),
+          );
+        return;
+      }
+
       const { data } = unwrappedResult;
       if (data === undefined) {
         response
@@ -343,12 +377,32 @@ function updateResourceByIdHandler<Doc extends DBRecord = DBRecord>(
         return;
       }
 
+      const unwrappedResult = updateResourceResult.safeUnwrap();
+      if (unwrappedResult === undefined) {
+        response
+          .status(200)
+          .json(createHttpResponseError({ accessToken, status: 404 }));
+        return;
+      }
+
+      if (unwrappedResult.kind === "notFound") {
+        response
+          .status(200)
+          .json(
+            createHttpResponseSuccess({
+              accessToken,
+              data: [],
+            }),
+          );
+        return;
+      }
+
       response
         .status(200)
         .json(
           createHttpResponseSuccess({
             accessToken,
-            data: [updateResourceResult.safeUnwrap().data],
+            data: updateResourceResult.safeUnwrap().data,
           }),
         );
     } catch (error: unknown) {
@@ -393,6 +447,26 @@ function getResourceByIdHandler<Doc extends DBRecord = DBRecord>(
         response.status(200).json(
           createHttpResponseError({ accessToken, status: 404 }),
         );
+        return;
+      }
+
+      const unwrappedResult = getResourceResult.safeUnwrap();
+      if (unwrappedResult === undefined) {
+        response
+          .status(200)
+          .json(createHttpResponseError({ accessToken, status: 404 }));
+        return;
+      }
+
+      if (unwrappedResult.kind === "notFound") {
+        response
+          .status(200)
+          .json(
+            createHttpResponseSuccess({
+              accessToken,
+              data: [],
+            }),
+          );
         return;
       }
 

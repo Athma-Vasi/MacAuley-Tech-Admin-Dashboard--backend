@@ -77,6 +77,18 @@ function loginUserHandler<
         return;
       }
 
+      if (getUserResult.val.kind === "notFound") {
+        console.log(`Username ${username} not found`);
+        response.status(200).json(
+          createHttpResponseSuccess({
+            accessToken: "",
+            data: [],
+            message: "User not found",
+          }),
+        );
+        return;
+      }
+
       const [userDocument] = getUserResult.safeUnwrap().data;
 
       if (userDocument === undefined || userDocument === null) {
@@ -378,7 +390,7 @@ function registerUserHandler<
       response.status(200).json(
         createHttpResponseSuccess({
           accessToken: "",
-          data: [createUserResult.safeUnwrap().data],
+          data: createUserResult.safeUnwrap().data,
           message: "User registered successfully",
         }),
       );

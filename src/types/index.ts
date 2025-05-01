@@ -123,7 +123,7 @@ type LoginUserRequest = Request & {
 type HttpResult<Data = unknown> = {
   accessToken: string;
   data: Array<Data>;
-  kind: "error" | "success";
+  kind: "error" | "success" | "notFound";
   message: string;
   pages: number;
   status: number;
