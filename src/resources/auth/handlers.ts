@@ -407,7 +407,7 @@ function registerUserHandler<
 
       const fileUploadSchema: FileUploadSchema = {
         ...fileUploads[0],
-        associatedDocumentId: "temporaryId",
+        associatedDocumentId: userDocument._id,
         userId: userDocument._id,
         username: userDocument.username,
       };
@@ -435,22 +435,22 @@ function registerUserHandler<
 
       const createFileUploadUnwrapped = createFileUploadResult.safeUnwrap()
         .data;
-      if (createFileUploadUnwrapped.length === 0) {
+      const [fileUploadDocument] = createFileUploadUnwrapped;
+      if (fileUploadDocument === undefined) {
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to retrieve file upload. Please try again.",
+            message: "Unable to retrieve file upload document.",
           }),
         );
         return;
       }
-      const [fileUploadDocument] = createFileUploadUnwrapped;
       console.log({ fileUploadDocument });
 
       const updateUserResult = await updateResourceByIdService({
         fields: {
           fileUploadId: fileUploadDocument._id,
         },
-        model,
+        model: UserModel,
         resourceId: userDocument._id.toString(),
         updateOperator: "$set",
       });
@@ -473,16 +473,15 @@ function registerUserHandler<
       }
 
       const updateUserUnwrapped = updateUserResult.safeUnwrap().data;
-      if (updateUserUnwrapped.length === 0) {
+      const [updatedUserDocument] = updateUserUnwrapped;
+      if (updatedUserDocument === undefined) {
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to retrieve updated user. Please try again.",
+            message: "Unable to retrieve updated user document.",
           }),
         );
         return;
       }
-
-      const [updatedUserDocument] = updateUserUnwrapped;
       console.log({ updatedUserDocument });
 
       const updateFileUploadResult = await updateResourceByIdService({
@@ -511,64 +510,21 @@ function registerUserHandler<
       }
       const updateFileUploadUnwrapped =
         updateFileUploadResult.safeUnwrap().data;
-      if (updateFileUploadUnwrapped.length === 0) {
-        response.status(200).json(
-          createHttpResponseError({
-            message:
-              "Unable to retrieve updated file upload. Please try again.",
-          }),
-        );
-        return;
-      }
       const [updatedFileUploadDocument] = updateFileUploadUnwrapped;
+      if (updatedFileUploadDocument === undefined) {
+        response.status(200).json(
+          createHttpResponseError({
+            message: "Unable to retrieve updated file upload document.",
+          }),
+        );
+        return;
+      }
       console.log({ updatedFileUploadDocument });
-
-      // DEV ONLY : REMOVE THIS
-      // delete created user
-      const deleteUserResult = await deleteResourceByIdService(
-        updatedUserDocument._id.toString(),
-        model,
-      );
-      if (deleteUserResult.err) {
-        await createNewResourceService(
-          createErrorLogSchema(
-            deleteUserResult.val,
-            request.body,
-          ),
-          ErrorLogModel,
-        );
-        response.status(200).json(
-          createHttpResponseError({
-            message: "Unable to delete user. Please try again.",
-          }),
-        );
-        return;
-      }
-
-      const deleteFileUploadResult = await deleteResourceByIdService(
-        updatedFileUploadDocument._id.toString(),
-        FileUploadModel,
-      );
-      if (deleteFileUploadResult.err) {
-        await createNewResourceService(
-          createErrorLogSchema(
-            deleteFileUploadResult.val,
-            request.body,
-          ),
-          ErrorLogModel,
-        );
-        response.status(200).json(
-          createHttpResponseError({
-            message: "Unable to delete file upload. Please try again.",
-          }),
-        );
-        return;
-      }
 
       response.status(200).json(
         createHttpResponseSuccess({
           accessToken: "",
-          data: [updateFileUploadResult],
+          data: [true],
           message: "User registered successfully",
         }),
       );

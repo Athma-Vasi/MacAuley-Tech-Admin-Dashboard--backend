@@ -201,8 +201,6 @@ type UserSchema = {
   country: Country;
   department: Department;
   email: string;
-  // empty string is a placeholder for the file upload id (if any)
-  fileUploadId: Types.ObjectId | string;
   firstName: string;
   jobPosition: JobPosition;
   lastName: string;
@@ -222,6 +220,7 @@ type UserSchema = {
 type UserDocument = UserSchema & {
   _id: Types.ObjectId;
   createdAt: Date;
+  fileUploadId?: Types.ObjectId | string;
   updatedAt: Date;
   __v: number;
 };
@@ -229,10 +228,9 @@ type UserDocument = UserSchema & {
 const userSchema = new Schema<UserDocument>(
   {
     fileUploadId: {
-      default: "",
-      type: String,
-      ref: "FileUpload",
+      type: Schema.Types.ObjectId,
       required: false,
+      ref: "FileUpload",
     },
     username: {
       type: String,

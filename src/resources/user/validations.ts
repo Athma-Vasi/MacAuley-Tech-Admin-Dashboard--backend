@@ -21,7 +21,6 @@ const createUserJoiSchema = Joi.object<UserSchema>({
   username: Joi.string().regex(USERNAME_REGEX).required(),
   password: Joi.string().regex(PASSWORD_REGEX).required(),
   email: Joi.string().email().required(),
-  fileUploadId: Joi.string(),
   addressLine: Joi.string().regex(ADDRESS_LINE_REGEX).required(),
   city: Joi.string().regex(CITY_REGEX).required(),
   country: Joi.string().regex(COUNTRY_REGEX).required(),
@@ -44,11 +43,12 @@ const createUsersInBulkJoiSchema = Joi.array().items(
   createUserJoiSchema,
 );
 
-const updateUserJoiSchema = Joi.object<UserSchema>({
+const updateUserJoiSchema = Joi.object<UserSchema & { fileUploadId: string }>({
   username: Joi.string().regex(USERNAME_REGEX).optional(),
   password: Joi.string().regex(PASSWORD_REGEX).optional(),
   email: Joi.string().email().optional(),
   addressLine: Joi.string().regex(ADDRESS_LINE_REGEX).optional(),
+  fileUploadId: Joi.string().optional(),
   city: Joi.string().regex(CITY_REGEX).optional(),
   country: Joi.string().regex(COUNTRY_REGEX).optional(),
   postalCodeCanada: Joi.string().regex(POSTAL_CODE_CANADA_REGEX).optional(),
