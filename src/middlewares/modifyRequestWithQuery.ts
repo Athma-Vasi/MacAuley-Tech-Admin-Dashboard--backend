@@ -286,6 +286,10 @@ function modifyRequestWithQuery(
     ...PROPERTY_DESCRIPTOR,
   });
 
+  console.group("modifyRequestWithQuery");
+  console.log({ query });
+  console.groupEnd();
+
   next();
   return;
 }

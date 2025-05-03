@@ -7,6 +7,7 @@ import {
 } from "../../regex";
 
 const createFileUploadJoiSchema = Joi.object({
+    associatedDocumentId: Joi.string(),
     uploadedFile: Joi.binary().required(),
     fileExtension: Joi.string().regex(FILE_EXTENSIONS_REGEX).required(),
     fileName: Joi.string().regex(FILE_NAME_REGEX).required(),

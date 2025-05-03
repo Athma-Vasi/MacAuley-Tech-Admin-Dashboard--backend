@@ -1,4 +1,5 @@
 import { addPasswordProjection } from "./addPasswordProjection";
+import { extractSchemaMiddleware } from "./extractSchema";
 import { fileExtensionLimiterMiddleware } from "./fileExtensionLimiter";
 import { fileInfoExtractorMiddleware } from "./fileInfoExtractor";
 import { filesPayloadExistsMiddleware } from "./filePayloadExists";
@@ -10,6 +11,7 @@ import { verifyRoles } from "./verifyRoles";
 
 export {
   addPasswordProjection,
+  extractSchemaMiddleware,
   fileExtensionLimiterMiddleware,
   fileInfoExtractorMiddleware,
   fileSizeLimiterMiddleware,

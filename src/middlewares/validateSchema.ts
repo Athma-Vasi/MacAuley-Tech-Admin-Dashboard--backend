@@ -17,6 +17,13 @@ function validateSchemaMiddleware(
       ? reqBodyField.fields
       : reqBodyField;
 
+    console.log("\n");
+    console.group("validateSchemaMiddleware");
+    console.log({ reqBodyField });
+    console.log({ fields });
+    console.log({ fieldName });
+    console.groupEnd();
+
     const { error } = schema.validate(fields, options);
 
     if (error) {

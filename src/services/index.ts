@@ -211,12 +211,15 @@ async function updateResourceByIdService<
   updateOperator: FieldOperators | ArrayOperators;
 }): ServiceResult<Doc> {
   try {
-    const updateString = `{ "${updateOperator}":  ${JSON.stringify(fields)} }`;
-    const updateObject = JSON.parse(updateString);
+    // const updateString = `{ "${updateOperator}":  ${JSON.stringify(fields)} }`;
+    // const updateObject = JSON.parse(updateString);
+    const updateObject = {
+      [updateOperator]: fields,
+    };
 
     const resource = await model.findByIdAndUpdate(
       resourceId,
-      updateObject,
+      updateObject as any,
       { new: true },
     )
       .lean()

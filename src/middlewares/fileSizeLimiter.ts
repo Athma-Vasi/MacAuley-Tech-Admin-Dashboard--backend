@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
-import type { FileUploadObject } from "../types";
 import createHttpError from "http-errors";
+import type { FileUploadObject } from "../types";
 
 function fileSizeLimiterMiddleware(
     request: Request,
@@ -15,11 +15,9 @@ function fileSizeLimiterMiddleware(
         | FileUploadObject
         | FileUploadObject[];
 
-    // just a lil stitious...
     if (!files || (Array.isArray(files) && files.length === 0)) {
-        return next(
-            new createHttpError.BadRequest("No files found in request object"),
-        );
+        next();
+        return;
     }
 
     const filesOverLimit = Object.entries(files).reduce<FileUploadObject[]>(
@@ -34,6 +32,7 @@ function fileSizeLimiterMiddleware(
 
     console.log("\n");
     console.group("fileSizeLimiterMiddleware");
+    console.log({ files });
     console.log({ filesOverLimit });
     console.groupEnd();
 
@@ -51,7 +50,8 @@ function fileSizeLimiterMiddleware(
         return next(new createHttpError.PayloadTooLarge(message));
     }
 
-    return next();
+    next();
+    return;
 }
 
 export { fileSizeLimiterMiddleware };

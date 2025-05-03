@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
-import createHttpError from "http-errors";
-import type { FileUploadObject } from "../types";
+import { PROPERTY_DESCRIPTOR } from "../constants";
+import type { FileExtension } from "../resources/fileUpload/model";
+import type { FileInfoObject, FileUploadObject } from "../types";
 
 /**
  * This middleware extracts the file information from the request object and adds it to the request body.
@@ -15,18 +16,10 @@ function fileInfoExtractorMiddleware(
         | FileUploadObject
         | FileUploadObject[];
 
-    // just a lil stitious...
     if (!files || (Array.isArray(files) && files.length === 0)) {
-        return next(
-            new createHttpError.BadRequest("No files found in request object"),
-        );
+        next();
+        return;
     }
-
-    const PROPERTY_DESCRIPTOR: PropertyDescriptor = {
-        writable: true,
-        enumerable: true,
-        configurable: true,
-    };
 
     Object.defineProperty(request.body, "fileUploads", {
         value: [],
@@ -35,10 +28,10 @@ function fileInfoExtractorMiddleware(
 
     Object.entries(files).forEach((file: [string, FileUploadObject]) => {
         const [_, { data, name, mimetype, size, encoding }] = file;
-        const fileInfoObject = {
+        const fileInfoObject: FileInfoObject = {
             uploadedFile: data,
             fileName: name,
-            fileExtension: mimetype.split("/")[1],
+            fileExtension: mimetype.split("/")[1] as FileExtension,
             fileSize: size,
             fileMimeType: mimetype,
             fileEncoding: encoding,
@@ -58,7 +51,8 @@ function fileInfoExtractorMiddleware(
     console.log({ fileUploads: request.body.fileUploads });
     console.groupEnd();
 
-    return next();
+    next();
+    return;
 }
 
 export { fileInfoExtractorMiddleware };

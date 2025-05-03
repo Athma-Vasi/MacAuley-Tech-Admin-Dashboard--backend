@@ -61,6 +61,15 @@ type RequestAfterQueryParsing = RequestAfterJWTVerification & {
   query: QueryObjectParsedWithDefaults;
 };
 
+type RequestAfterFilesExtracting<
+  Schema extends Record<string, unknown> = Record<string, unknown>,
+> = RequestAfterQueryParsing & {
+  body: {
+    fileUploads: Array<FileInfoObject>;
+    schema: Schema;
+  };
+};
+
 type CreateNewResourceRequest<
   Schema extends Record<string, unknown> = Record<string, unknown>,
 > = RequestAfterQueryParsing & {
@@ -273,6 +282,7 @@ export type {
   QueriedTotalResourceGetRequestServiceInput,
   QueryObjectParsed,
   QueryObjectParsedWithDefaults,
+  RequestAfterFilesExtracting,
   RequestAfterJWTVerification,
   RequestAfterQueryParsing,
   ServiceResult,

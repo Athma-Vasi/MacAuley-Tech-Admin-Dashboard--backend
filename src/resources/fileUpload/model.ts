@@ -1,8 +1,10 @@
 import { model, Schema, type Types } from "mongoose";
 
-type FileExtension = "jpeg" | "png" | "gif" | "pdf" | "jpg";
+type FileExtension = "jpeg" | "png" | "jpg" | "webp";
 
 type FileUploadSchema = {
+    // empty string is used as a placeholder for the model name
+    associatedDocumentId: Types.ObjectId | string;
     userId: Types.ObjectId;
     uploadedFile: Buffer;
     username: string;
@@ -15,8 +17,6 @@ type FileUploadSchema = {
 
 type FileUploadDocument = FileUploadSchema & {
     _id: Types.ObjectId;
-    // some fileUploads may not be associated with any document
-    associatedDocumentId?: Types.ObjectId | undefined;
     createdAt: Date;
     updatedAt: Date;
     __v: number;
@@ -24,6 +24,10 @@ type FileUploadDocument = FileUploadSchema & {
 
 const fileUploadSchema = new Schema<FileUploadDocument>(
     {
+        associatedDocumentId: {
+            default: "",
+            type: String,
+        },
         userId: {
             type: Schema.Types.ObjectId,
             required: [true, "User Id is required"],

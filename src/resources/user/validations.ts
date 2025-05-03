@@ -21,6 +21,7 @@ const createUserJoiSchema = Joi.object<UserSchema>({
   username: Joi.string().regex(USERNAME_REGEX).required(),
   password: Joi.string().regex(PASSWORD_REGEX).required(),
   email: Joi.string().email().required(),
+  fileUploadId: Joi.string(),
   addressLine: Joi.string().regex(ADDRESS_LINE_REGEX).required(),
   city: Joi.string().regex(CITY_REGEX).required(),
   country: Joi.string().regex(COUNTRY_REGEX).required(),
@@ -35,7 +36,7 @@ const createUserJoiSchema = Joi.object<UserSchema>({
   jobPosition: Joi.string().regex(JOB_POSITION_REGEX).required(),
   orgId: Joi.number().required(),
   parentOrgId: Joi.number().required(),
-  profilePictureUrl: Joi.string().required(),
+  profilePictureUrl: Joi.string().optional(),
   roles: Joi.array().items(Joi.string().regex(USER_ROLES_REGEX)).required(),
 });
 

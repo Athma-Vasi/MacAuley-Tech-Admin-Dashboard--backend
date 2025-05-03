@@ -10,10 +10,10 @@ import {
   updateResourceByIdService,
 } from "../../services";
 import type {
-  CreateNewResourceRequest,
   DBRecord,
   HttpResult,
   LoginUserRequest,
+  RequestAfterFilesExtracting,
   RequestAfterJWTVerification,
   RequestAfterQueryParsing,
 } from "../../types";
@@ -27,6 +27,7 @@ import {
   verifyJWTSafe,
 } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
+import { FileUploadModel, type FileUploadSchema } from "../fileUpload/model";
 import {
   type FinancialMetricsDocument,
   FinancialMetricsModel,
@@ -295,12 +296,18 @@ function registerUserHandler<
   model: Model<Doc>,
 ) {
   return async (
-    request: CreateNewResourceRequest<UserSchema>,
+    request: RequestAfterFilesExtracting<UserSchema>,
     response: Response,
   ) => {
     try {
-      const { schema } = request.body;
-      const { username, password, email } = schema;
+      const { schema, fileUploads } = request.body;
+      const { username, password } = schema;
+
+      console.log("\n");
+      console.group("registerUserHandler");
+      console.log({ fileUploads });
+      console.log({ schema });
+      console.groupEnd();
 
       const getUserResult = await getResourceByFieldService({
         filter: { username },
@@ -387,10 +394,181 @@ function registerUserHandler<
         return;
       }
 
+      const createUserUnwrapped = createUserResult.safeUnwrap().data;
+      if (createUserUnwrapped.length === 0) {
+        response.status(200).json(
+          createHttpResponseError({
+            message: "Unable to retrieve user. Please try again.",
+          }),
+        );
+        return;
+      }
+      const [userDocument] = createUserUnwrapped;
+
+      const fileUploadSchema: FileUploadSchema = {
+        ...fileUploads[0],
+        associatedDocumentId: "temporaryId",
+        userId: userDocument._id,
+        username: userDocument.username,
+      };
+
+      const createFileUploadResult = await createNewResourceService(
+        fileUploadSchema,
+        FileUploadModel,
+      );
+      if (createFileUploadResult.err) {
+        await createNewResourceService(
+          createErrorLogSchema(
+            createFileUploadResult.val,
+            request.body,
+          ),
+          ErrorLogModel,
+        );
+
+        response.status(200).json(
+          createHttpResponseError({
+            message: "Unable to upload file. Please try again.",
+          }),
+        );
+        return;
+      }
+
+      const createFileUploadUnwrapped = createFileUploadResult.safeUnwrap()
+        .data;
+      if (createFileUploadUnwrapped.length === 0) {
+        response.status(200).json(
+          createHttpResponseError({
+            message: "Unable to retrieve file upload. Please try again.",
+          }),
+        );
+        return;
+      }
+      const [fileUploadDocument] = createFileUploadUnwrapped;
+      console.log({ fileUploadDocument });
+
+      const updateUserResult = await updateResourceByIdService({
+        fields: {
+          fileUploadId: fileUploadDocument._id,
+        },
+        model,
+        resourceId: userDocument._id.toString(),
+        updateOperator: "$set",
+      });
+      if (updateUserResult.err) {
+        await createNewResourceService(
+          createErrorLogSchema(
+            updateUserResult.val,
+            request.body,
+          ),
+          ErrorLogModel,
+        );
+
+        response.status(200).json(
+          createHttpResponseError({
+            message:
+              "Unable to update user with file upload id. Please try again.",
+          }),
+        );
+        return;
+      }
+
+      const updateUserUnwrapped = updateUserResult.safeUnwrap().data;
+      if (updateUserUnwrapped.length === 0) {
+        response.status(200).json(
+          createHttpResponseError({
+            message: "Unable to retrieve updated user. Please try again.",
+          }),
+        );
+        return;
+      }
+
+      const [updatedUserDocument] = updateUserUnwrapped;
+      console.log({ updatedUserDocument });
+
+      const updateFileUploadResult = await updateResourceByIdService({
+        fields: {
+          associatedDocumentId: updatedUserDocument._id,
+        },
+        model: FileUploadModel,
+        resourceId: fileUploadDocument._id.toString(),
+        updateOperator: "$set",
+      });
+      if (updateFileUploadResult.err) {
+        await createNewResourceService(
+          createErrorLogSchema(
+            updateFileUploadResult.val,
+            request.body,
+          ),
+          ErrorLogModel,
+        );
+        response.status(200).json(
+          createHttpResponseError({
+            message:
+              "Unable to update file upload with associated document id. Please try again.",
+          }),
+        );
+        return;
+      }
+      const updateFileUploadUnwrapped =
+        updateFileUploadResult.safeUnwrap().data;
+      if (updateFileUploadUnwrapped.length === 0) {
+        response.status(200).json(
+          createHttpResponseError({
+            message:
+              "Unable to retrieve updated file upload. Please try again.",
+          }),
+        );
+        return;
+      }
+      const [updatedFileUploadDocument] = updateFileUploadUnwrapped;
+      console.log({ updatedFileUploadDocument });
+
+      // DEV ONLY : REMOVE THIS
+      // delete created user
+      const deleteUserResult = await deleteResourceByIdService(
+        updatedUserDocument._id.toString(),
+        model,
+      );
+      if (deleteUserResult.err) {
+        await createNewResourceService(
+          createErrorLogSchema(
+            deleteUserResult.val,
+            request.body,
+          ),
+          ErrorLogModel,
+        );
+        response.status(200).json(
+          createHttpResponseError({
+            message: "Unable to delete user. Please try again.",
+          }),
+        );
+        return;
+      }
+
+      const deleteFileUploadResult = await deleteResourceByIdService(
+        updatedFileUploadDocument._id.toString(),
+        FileUploadModel,
+      );
+      if (deleteFileUploadResult.err) {
+        await createNewResourceService(
+          createErrorLogSchema(
+            deleteFileUploadResult.val,
+            request.body,
+          ),
+          ErrorLogModel,
+        );
+        response.status(200).json(
+          createHttpResponseError({
+            message: "Unable to delete file upload. Please try again.",
+          }),
+        );
+        return;
+      }
+
       response.status(200).json(
         createHttpResponseSuccess({
           accessToken: "",
-          data: createUserResult.safeUnwrap().data,
+          data: [updateFileUploadResult],
           message: "User registered successfully",
         }),
       );

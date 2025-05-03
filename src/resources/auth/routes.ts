@@ -1,8 +1,16 @@
 import { Router } from "express";
-
-import { modifyRequestWithQuery, verifyJWTMiddleware } from "../../middlewares";
+import expressFileUpload from "express-fileupload";
+import {
+  extractSchemaMiddleware,
+  fileExtensionLimiterMiddleware,
+  fileInfoExtractorMiddleware,
+  fileSizeLimiterMiddleware,
+  modifyRequestWithQuery,
+  verifyJWTMiddleware,
+} from "../../middlewares";
 import { validateSchemaMiddleware } from "../../middlewares/validateSchema";
 import { UserModel } from "../user";
+import { createUserJoiSchema } from "../user/validations";
 import {
   checkUsernameOrEmailExistsHandler,
   loginUserHandler,
@@ -29,7 +37,14 @@ authRouter.route("/login").post(
 // @route  POST /auth/register
 // @access Public
 authRouter.route("/register").post(
-  validateSchemaMiddleware(createAuthSessionJoiSchema, "schema"),
+  modifyRequestWithQuery,
+  expressFileUpload({ createParentPath: true }),
+  // filesPayloadExistsMiddleware,
+  fileSizeLimiterMiddleware,
+  fileExtensionLimiterMiddleware,
+  fileInfoExtractorMiddleware,
+  extractSchemaMiddleware,
+  validateSchemaMiddleware(createUserJoiSchema, "schema"),
   registerUserHandler(UserModel),
 );
 

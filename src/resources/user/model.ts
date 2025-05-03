@@ -201,6 +201,8 @@ type UserSchema = {
   country: Country;
   department: Department;
   email: string;
+  // empty string is a placeholder for the file upload id (if any)
+  fileUploadId: Types.ObjectId | string;
   firstName: string;
   jobPosition: JobPosition;
   lastName: string;
@@ -209,7 +211,7 @@ type UserSchema = {
   password: string;
   postalCodeCanada: CanadianPostalCode;
   postalCodeUS: USPostalCode;
-  profilePictureUrl: string;
+  profilePictureUrl?: string;
   province: Province;
   roles: UserRoles;
   state: StatesUS;
@@ -226,6 +228,12 @@ type UserDocument = UserSchema & {
 
 const userSchema = new Schema<UserDocument>(
   {
+    fileUploadId: {
+      default: "",
+      type: String,
+      ref: "FileUpload",
+      required: false,
+    },
     username: {
       type: String,
       required: [true, "Username is required"],
@@ -239,7 +247,6 @@ const userSchema = new Schema<UserDocument>(
       type: String,
       required: [true, "Email is required"],
       unique: true,
-      index: true,
     },
     addressLine: {
       type: String,
@@ -292,6 +299,7 @@ const userSchema = new Schema<UserDocument>(
     },
     profilePictureUrl: {
       type: String,
+      required: false,
       default: "",
     },
     storeLocation: {

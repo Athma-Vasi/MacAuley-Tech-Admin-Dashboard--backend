@@ -1,6 +1,5 @@
 import { Router } from "express";
 import expressFileUpload from "express-fileupload";
-import { ALLOWED_FILE_EXTENSIONS } from "../../constants";
 import {
     createNewResourceHandler,
     deleteResourceByIdHandler,
@@ -43,7 +42,7 @@ fileUploadRouter
         expressFileUpload({ createParentPath: true }),
         filesPayloadExistsMiddleware,
         fileSizeLimiterMiddleware,
-        fileExtensionLimiterMiddleware(ALLOWED_FILE_EXTENSIONS),
+        fileExtensionLimiterMiddleware,
         fileInfoExtractorMiddleware,
         validateSchemaMiddleware(createFileUploadJoiSchema, "schema"),
         createNewResourceHandler(FileUploadModel),
