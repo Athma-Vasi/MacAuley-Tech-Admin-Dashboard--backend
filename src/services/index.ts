@@ -211,8 +211,6 @@ async function updateResourceByIdService<
   updateOperator: FieldOperators | ArrayOperators;
 }): ServiceResult<Doc> {
   try {
-    // const updateString = `{ "${updateOperator}":  ${JSON.stringify(fields)} }`;
-    // const updateObject = JSON.parse(updateString);
     const updateObject = {
       [updateOperator]: fields,
     };

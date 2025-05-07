@@ -1,4 +1,5 @@
 import { model, Schema, type Types } from "mongoose";
+import { FILE_UPLOAD_EXPIRY } from "../../constants";
 
 type FileExtension = "jpeg" | "png" | "jpg" | "webp";
 
@@ -6,6 +7,7 @@ type FileUploadSchema = {
     userId: Types.ObjectId;
     uploadedFile: Buffer;
     username: string;
+    expireAt?: Date;
     fileExtension: FileExtension;
     fileName: string;
     fileSize: number;
@@ -23,6 +25,12 @@ type FileUploadDocument = FileUploadSchema & {
 
 const fileUploadSchema = new Schema<FileUploadDocument>(
     {
+        expireAt: {
+            type: Date,
+            default: () => new Date(FILE_UPLOAD_EXPIRY), // 1 hour
+            // index: { expires: "1m" }, // 1 hour
+            expires: "1h",
+        },
         associatedDocumentId: {
             type: String,
             required: false,

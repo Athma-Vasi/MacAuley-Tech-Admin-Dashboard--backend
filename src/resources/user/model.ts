@@ -1,4 +1,5 @@
 import { model, Schema, type Types } from "mongoose";
+import { NEW_USER_EXPIRY } from "../../constants";
 import type { StoreLocation } from "../metrics/types";
 
 type UserRoles = ("Admin" | "Employee" | "Manager")[];
@@ -201,6 +202,7 @@ type UserSchema = {
   country: Country;
   department: Department;
   email: string;
+  expireAt?: Date;
   firstName: string;
   jobPosition: JobPosition;
   lastName: string;
@@ -227,6 +229,12 @@ type UserDocument = UserSchema & {
 
 const userSchema = new Schema<UserDocument>(
   {
+    expireAt: {
+      type: Date,
+      default: () => new Date(NEW_USER_EXPIRY), // 1 hour
+      // index: { expires: "1m" }, // 1 hour
+      expires: "1h",
+    },
     fileUploadId: {
       type: Schema.Types.ObjectId,
       required: false,

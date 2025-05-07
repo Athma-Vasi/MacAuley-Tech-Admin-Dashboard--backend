@@ -12,9 +12,14 @@ const PROPERTY_DESCRIPTOR: PropertyDescriptor = {
   writable: true,
 };
 
+const FILE_UPLOAD_EXPIRY = Date.now() + 1000 * 60 * 60 * 1; // 1 hours
+const NEW_USER_EXPIRY = Date.now() + 1000 * 60 * 60 * 1; // 1 hours
+
 export {
   ACCESS_TOKEN_EXPIRY,
+  FILE_UPLOAD_EXPIRY,
   HASH_SALT_ROUNDS,
+  NEW_USER_EXPIRY,
   PROPERTY_DESCRIPTOR,
   REFRESH_TOKEN_EXPIRY,
   TRIGGER_LOGOUT_KEY,

@@ -32,7 +32,7 @@ const authSchema = new Schema(
       type: Date,
       default: () => new Date(AUTH_SESSION_EXPIRY), // 3 hours
       // index: { expires: "1m" }, // 1 hour
-      expires: "3h",
+      expires: "1h",
     },
     userAgent: {
       type: String,

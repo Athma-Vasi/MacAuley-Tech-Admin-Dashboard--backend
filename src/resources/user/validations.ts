@@ -35,7 +35,7 @@ const createUserJoiSchema = Joi.object<UserSchema>({
   jobPosition: Joi.string().regex(JOB_POSITION_REGEX).required(),
   orgId: Joi.number().required(),
   parentOrgId: Joi.number().required(),
-  profilePictureUrl: Joi.string().optional(),
+  profilePictureUrl: Joi.string().allow("").optional(),
   roles: Joi.array().items(Joi.string().regex(USER_ROLES_REGEX)).required(),
 });
 
