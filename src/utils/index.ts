@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { Err, None, Ok, Option, Some } from "ts-results";
+import { Err, None, Ok, type Option, Some } from "ts-results";
 import type { ErrorLogSchema } from "../resources/errorLog";
 import type {
   DecodedToken,
@@ -148,40 +148,45 @@ async function compareHashedStringWithPlainStringSafe({
 }: {
   hashedString: string;
   plainString: string;
-}): Promise<SafeBoxResult<boolean>> {
+}): Promise<SafeBoxResult<boolean, unknown>> {
   try {
     const isMatch = await bcrypt.compare(plainString, hashedString);
     return new Ok({ data: Some(isMatch) });
   } catch (error: unknown) {
-    return new Err({ data: Some(error) });
+    return new Err({
+      data: Some(error),
+      message: Some("Error comparing strings"),
+    });
   }
 }
 
 async function hashStringSafe({ saltRounds, stringToHash }: {
   saltRounds: number;
   stringToHash: string;
-}): ServiceResult<string> {
+}): Promise<SafeBoxResult<string, unknown>> {
   try {
     const hashedString = await bcrypt.hash(stringToHash, saltRounds);
-    return new Ok({ data: [hashedString], kind: "success" });
+    return new Ok({ data: Some(hashedString) });
   } catch (error: unknown) {
-    return new Err({ data: error, message: "Error hashing string" });
+    return new Err({
+      data: Some(error),
+      message: Some("Error hashing string"),
+    });
   }
 }
 
 async function decodeJWTSafe(
   token: string,
-): ServiceResult<DecodedToken> {
+): Promise<SafeBoxResult<DecodedToken, unknown>> {
   try {
     const decoded = jwt.decode(token, { json: true }) as DecodedToken | null;
-
     if (decoded === null) {
-      return new Ok({ data: [], kind: "mildError" });
+      return new Ok({ data: None, message: Some("Token is invalid") });
     }
 
-    return new Ok({ data: [decoded], kind: "success" });
+    return new Ok({ data: Some(decoded) });
   } catch (error: unknown) {
-    return new Err({ data: error, message: "Error decoding JWT" });
+    return new Err({ data: Some(error), message: Some("Error decoding JWT") });
   }
 }
 
@@ -190,15 +195,14 @@ async function verifyJWTSafe(
     seed: string;
     token: string;
   },
-): ServiceResult<DecodedToken> {
+): Promise<SafeBoxResult<DecodedToken, unknown>> {
   try {
     const decoded = jwt.verify(token, seed) as DecodedToken;
-
-    return new Ok({ data: [decoded], kind: "success" });
+    return new Ok({ data: Some(decoded) });
   } catch (error: unknown) {
     return error instanceof Error && error?.name === "TokenExpiredError"
-      ? new Ok({ data: [], kind: "mildError" })
-      : new Err({ data: error, message: "Error verifying JWT" });
+      ? new Ok({ data: None, message: Some("Token is expired") })
+      : new Err({ data: Some(error), message: Some("Error verifying JWT") });
   }
 }
 
