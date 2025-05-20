@@ -130,7 +130,9 @@ type LoginUserRequest = Request & {
   };
 };
 
-type DBRecord = Record<string, unknown> & {
+type RecordDB<
+  Schema extends Record<string, unknown> = Record<string, unknown>,
+> = Schema & {
   _id: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -285,7 +287,6 @@ export type {
   ArrayOperators,
   CreateNewResourceRequest,
   CreateNewResourcesBulkRequest,
-  DBRecord,
   DecodedToken,
   DeleteAllResourcesRequest,
   DeleteResourceRequest,
@@ -305,6 +306,7 @@ export type {
   QueriedTotalResourceGetRequestServiceInput,
   QueryObjectParsed,
   QueryObjectParsedWithDefaults,
+  RecordDB,
   RequestAfterFilesExtracting,
   RequestAfterJWTVerification,
   RequestAfterQueryParsing,

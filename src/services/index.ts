@@ -3,45 +3,45 @@ import type {
   Model,
   MongooseBaseQueryOptionKeys,
   QueryOptions,
+  RootFilterQuery,
 } from "mongoose";
-import { Err, Ok } from "ts-results";
+import { Err, None, Ok, Some } from "ts-results";
 import type {
   ArrayOperators,
-  DBRecord,
   FieldOperators,
+  Prettify,
   QueryObjectParsedWithDefaults,
-  ServiceResult,
+  RecordDB,
+  SafeBoxResult,
 } from "../types";
+import mongodb = require("mongodb");
 
 async function getResourceByIdService<
-  Doc extends DBRecord = DBRecord,
+  Doc extends Record<string, unknown> = RecordDB,
 >(
   resourceId: string,
-  model: Model<Doc>,
-): ServiceResult<Doc> {
+  model: Prettify<Model<Doc>>,
+): Promise<SafeBoxResult<Doc, unknown>> {
   try {
     const resource = await model.findById(resourceId)
       .lean()
-      .exec();
+      .exec() as Doc;
 
     if (resource === null || resource === undefined) {
-      return new Ok({ data: [], kind: "notFound" });
+      return new Ok({ data: None, message: Some("Resource not found") });
     }
 
-    return new Ok({
-      data: [resource],
-      kind: "success",
-    }) as unknown as ServiceResult<Doc>;
+    return new Ok({ data: Some(resource) });
   } catch (error: unknown) {
     return new Err({
-      data: error,
-      message: "Error getting resource",
+      data: Some(error),
+      message: Some("Error getting resource by ID"),
     });
   }
 }
 
 async function getResourceByFieldService<
-  Doc extends DBRecord = DBRecord,
+  Doc extends Record<string, unknown> = RecordDB,
 >({
   filter,
   model,
@@ -52,125 +52,50 @@ async function getResourceByFieldService<
   model: Model<Doc>;
   projection?: Record<string, unknown>;
   options?: QueryOptions<Doc>;
-}): ServiceResult<Doc> {
+}): Promise<SafeBoxResult<Doc, unknown>> {
   try {
     const resourceBox = await model.find(filter, projection, options)
       .lean()
-      .exec();
+      .exec() as Doc[];
 
     if (resourceBox.length === 0 || resourceBox.length > 1) {
-      return new Ok({ data: [], kind: "notFound" });
+      return new Ok({ data: None, message: Some("Resource not found") });
     }
 
-    return new Ok({
-      data: resourceBox,
-      kind: "success",
-    }) as unknown as ServiceResult<Doc>;
+    return new Ok({ data: Some(resourceBox[0]) });
   } catch (error: unknown) {
-    return new Err({ data: error, message: "Error getting resource" });
+    return new Err({
+      data: Some(error),
+      message: Some("Error getting resource by field"),
+    });
   }
 }
 
 async function createNewResourceService<
   Schema extends Record<string, unknown> = Record<string, unknown>,
-  Doc extends DBRecord = DBRecord,
+  Doc extends Record<string, unknown> = RecordDB,
 >(
   schema: Schema,
   model: Model<Doc>,
-): ServiceResult<Doc> {
+): Promise<SafeBoxResult<Doc, unknown>> {
   try {
-    const resource = await model.create(schema);
+    const resource = await model.create(schema) as Doc;
 
-    return new Ok({
-      data: [resource],
-      kind: "success",
-    }) as unknown as ServiceResult<Doc>;
-  } catch (error: unknown) {
-    return new Err({ data: error, message: "Error creating resource" });
-  }
-}
+    if (resource === null || resource === undefined) {
+      return new Ok({ data: None, message: Some("Resource not found") });
+    }
 
-async function createAndNotReturnResourceService<
-  Schema extends Record<string, unknown> = Record<string, unknown>,
-  Doc extends DBRecord = DBRecord,
->(
-  schema: Schema,
-  model: Model<Doc>,
-): ServiceResult<boolean> {
-  try {
-    await model.create(schema);
-    return new Ok({
-      data: [true],
-      kind: "success",
-    }) as unknown as ServiceResult<boolean>;
+    return new Ok({ data: Some(resource) });
   } catch (error: unknown) {
-    return new Err({ data: error, message: "Error creating resource" });
+    return new Err({
+      data: Some(error),
+      message: Some("Error creating resource"),
+    });
   }
 }
 
 async function getQueriedResourcesService<
-  Doc extends DBRecord = DBRecord,
->({
-  filter = {},
-  model,
-  options,
-  projection,
-}: QueryObjectParsedWithDefaults & {
-  model: Model<Doc>;
-}): ServiceResult<Doc[]> {
-  try {
-    const resources = await model.find(filter, projection, options)
-      .lean()
-      .exec();
-
-    if (resources.length === 0) {
-      return new Ok({ data: [], kind: "notFound" });
-    }
-
-    return new Ok({
-      data: resources,
-      kind: "success",
-    }) as unknown as ServiceResult<Doc[]>;
-  } catch (error: unknown) {
-    return new Err({ data: error, message: "Error getting resources" });
-  }
-}
-
-async function getQueriedTotalResourcesService<
-  Doc extends DBRecord = DBRecord,
->(
-  { filter, model, options }: {
-    filter: FilterQuery<Doc>;
-    model: Model<Doc>;
-    options?: QueryOptions<Doc>;
-  },
-): ServiceResult<Doc> {
-  try {
-    const totalQueriedResources = await model.countDocuments(
-      filter,
-      options as unknown as Pick<
-        QueryOptions<Doc>,
-        MongooseBaseQueryOptionKeys
-      >,
-    )
-      .lean()
-      .exec();
-
-    if (totalQueriedResources === 0) {
-      return new Ok({ data: [], kind: "notFound" });
-    }
-
-    return new Ok({
-      data: [totalQueriedResources],
-      kind: "success",
-    }) as unknown as ServiceResult<Doc>;
-  } catch (error: unknown) {
-    return new Err({ data: error, message: "Error getting total resources" });
-  }
-}
-
-async function getQueriedResourcesByUserService<
-  Doc extends DBRecord = DBRecord,
+  Doc extends Record<string, unknown> = RecordDB,
 >({
   filter,
   model,
@@ -178,27 +103,88 @@ async function getQueriedResourcesByUserService<
   projection,
 }: QueryObjectParsedWithDefaults & {
   model: Model<Doc>;
-}): ServiceResult<Doc[]> {
+}): Promise<SafeBoxResult<Doc[], unknown>> {
   try {
     const resources = await model.find(filter, projection, options)
       .lean()
-      .exec();
+      .exec() as Doc[];
 
     if (resources.length === 0) {
-      return new Ok({ data: [], kind: "notFound" });
+      return new Ok({ data: None, message: Some("Resource not found") });
     }
 
-    return new Ok({
-      data: resources,
-      kind: "success",
-    }) as unknown as ServiceResult<Doc[]>;
+    return new Ok({ data: Some(resources) });
   } catch (error: unknown) {
-    return new Err({ data: error, message: "Error getting resources" });
+    return new Err({
+      data: Some(error),
+      message: Some("Error getting resources"),
+    });
+  }
+}
+
+async function getQueriedTotalResourcesService<
+  Doc extends Record<string, unknown> = RecordDB,
+>(
+  { filter, model, options }: {
+    filter: RootFilterQuery<Doc> | undefined;
+    model: Model<Doc>;
+    options: Pick<
+      QueryOptions<Doc>,
+      MongooseBaseQueryOptionKeys
+    >;
+  },
+): Promise<SafeBoxResult<number, unknown>> {
+  try {
+    const totalQueriedResources = await model.countDocuments(
+      filter,
+      options,
+    )
+      .lean()
+      .exec() as number;
+
+    if (totalQueriedResources === 0) {
+      return new Ok({ data: None, message: Some("Resource not found") });
+    }
+
+    return new Ok({ data: Some(totalQueriedResources) });
+  } catch (error: unknown) {
+    return new Err({
+      data: Some(error),
+      message: Some("Error getting total resources"),
+    });
+  }
+}
+
+async function getQueriedResourcesByUserService<
+  Doc extends Record<string, unknown> = RecordDB,
+>({
+  filter,
+  model,
+  options,
+  projection,
+}: QueryObjectParsedWithDefaults & {
+  model: Model<Doc>;
+}): Promise<SafeBoxResult<Doc[], unknown>> {
+  try {
+    const resources = await model.find(filter, projection, options)
+      .lean()
+      .exec() as Doc[];
+
+    if (resources.length === 0) {
+      return new Ok({ data: None, message: Some("Resource not found") });
+    }
+
+    return new Ok({ data: Some(resources) });
+  } catch (error: unknown) {
+    return new Err({
+      data: Some(error),
+      message: Some("Error getting resources"),
+    });
   }
 }
 
 async function updateResourceByIdService<
-  Doc extends DBRecord = DBRecord,
+  Doc extends Record<string, unknown> = RecordDB,
 >({
   resourceId,
   fields,
@@ -209,7 +195,7 @@ async function updateResourceByIdService<
   fields: Record<string, unknown>;
   model: Model<Doc>;
   updateOperator: FieldOperators | ArrayOperators;
-}): ServiceResult<Doc> {
+}): Promise<SafeBoxResult<Doc, unknown>> {
   try {
     const updateObject = {
       [updateOperator]: fields,
@@ -217,31 +203,34 @@ async function updateResourceByIdService<
 
     const resource = await model.findByIdAndUpdate(
       resourceId,
-      updateObject as any,
+      updateObject as Pick<
+        QueryOptions<Doc>,
+        MongooseBaseQueryOptionKeys
+      >,
       { new: true },
     )
       .lean()
-      .exec();
+      .exec() as Doc;
 
     if (resource === null || resource === undefined) {
-      return new Ok({ data: [], kind: "notFound" });
+      return new Ok({ data: None, message: Some("Resource not found") });
     }
 
-    return new Ok({
-      data: [resource],
-      kind: "success",
-    }) as unknown as ServiceResult<Doc>;
+    return new Ok({ data: Some(resource) });
   } catch (error: unknown) {
-    return new Err({ data: error, message: "Error updating resource" });
+    return new Err({
+      data: Some(error),
+      message: Some("Error updating resource"),
+    });
   }
 }
 
 async function deleteResourceByIdService<
-  Doc extends DBRecord = DBRecord,
+  Doc extends Record<string, unknown> = RecordDB,
 >(
   resourceId: string,
   model: Model<Doc>,
-): ServiceResult<boolean> {
+): Promise<SafeBoxResult<boolean, unknown>> {
   try {
     const { acknowledged, deletedCount } = await model.deleteOne({
       _id: resourceId,
@@ -250,27 +239,25 @@ async function deleteResourceByIdService<
       .exec();
 
     return acknowledged && deletedCount === 1
-      ? new Ok({ data: [true], kind: "success" }) as unknown as ServiceResult<
-        boolean
-      >
-      : new Ok({
-        data: [false],
-        kind: "mildError",
-      }) as unknown as ServiceResult<boolean>;
+      ? new Ok({ data: Some(true) })
+      : new Ok({ data: None, message: Some("Resource not found") });
   } catch (error: unknown) {
-    return new Err({ data: error, message: "Error deleting resource" });
+    return new Err({
+      data: Some(error),
+      message: Some("Error deleting resource"),
+    });
   }
 }
 
 async function deleteManyResourcesService<
-  Doc extends DBRecord = DBRecord,
+  Doc extends Record<string, unknown> = RecordDB,
 >(
   { filter, model, options }: {
     filter?: FilterQuery<Doc>;
     options?: QueryOptions<Doc>;
     model: Model<Doc>;
   },
-): ServiceResult<boolean> {
+): Promise<SafeBoxResult<boolean, unknown>> {
   try {
     const totalResources = await model.countDocuments(
       filter,
@@ -280,7 +267,8 @@ async function deleteManyResourcesService<
       >,
     )
       .lean()
-      .exec();
+      .exec() as number;
+
     const { acknowledged, deletedCount } = await model.deleteMany(
       filter,
       options as unknown as Pick<
@@ -292,20 +280,17 @@ async function deleteManyResourcesService<
       .exec();
 
     return acknowledged && deletedCount === totalResources
-      ? new Ok({ data: [true], kind: "success" }) as unknown as ServiceResult<
-        boolean
-      >
-      : new Ok({
-        data: [false],
-        kind: "mildError",
-      }) as unknown as ServiceResult<boolean>;
+      ? new Ok({ data: Some(true) })
+      : new Ok({ data: None, message: Some("Some resources not found") });
   } catch (error: unknown) {
-    return new Err({ data: error, message: "Error deleting resources" });
+    return new Err({
+      data: Some(error),
+      message: Some("Error deleting resources"),
+    });
   }
 }
 
 export {
-  createAndNotReturnResourceService,
   createNewResourceService,
   deleteManyResourcesService,
   deleteResourceByIdService,
