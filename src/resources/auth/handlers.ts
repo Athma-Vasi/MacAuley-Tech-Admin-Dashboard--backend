@@ -120,8 +120,6 @@ function loginUserHandler<
         response.status(200).json(
           // for security
           createHttpResponseSuccess({
-            accessToken: "",
-            data: [],
             message: "Invalid credentials",
           }),
         );

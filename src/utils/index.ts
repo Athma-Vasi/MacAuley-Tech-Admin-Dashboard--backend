@@ -1,33 +1,33 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { Err, Ok } from "ts-results";
+import { Err, None, Ok, Option, Some } from "ts-results";
 import type { ErrorLogSchema } from "../resources/errorLog";
 import type {
   DecodedToken,
-  HttpResult,
+  HttpServerResponse,
   RequestAfterJWTVerification,
-  ServiceResult,
+  SafeBoxResult,
 } from "../types";
 
 function createHttpResponseError<Data = unknown>({
-  accessToken = "",
-  data = [],
+  accessToken = None,
+  data = None,
   kind = "error",
-  message,
+  message = "Unexpected error occurred",
   pages = 0,
   status = 500,
   totalDocuments = 0,
   triggerLogout = false,
 }: {
-  accessToken?: string;
-  data?: [];
+  accessToken?: Option<string>;
+  data?: Option<Data>;
   kind?: "error" | "success";
   message?: string;
   pages?: number;
   status?: number;
   totalDocuments?: number;
   triggerLogout?: boolean;
-}): HttpResult<Data> {
+}): HttpServerResponse<Data> {
   const statusDescriptionTable: Record<number, string> = {
     400: "Bad Request",
     401: "Unauthorized",
@@ -80,8 +80,8 @@ function createHttpResponseError<Data = unknown>({
 function createHttpResponseSuccess<
   Data = unknown,
 >({
-  accessToken,
-  data = [],
+  accessToken = None,
+  data = None,
   kind = "success",
   message = "Successful operation",
   pages = 0,
@@ -89,15 +89,15 @@ function createHttpResponseSuccess<
   totalDocuments = 0,
   triggerLogout = false,
 }: {
-  accessToken: string;
-  data: Array<Data>;
+  accessToken?: Option<string>;
+  data?: Option<Data>;
   kind?: "error" | "success";
   message?: string;
   pages?: number;
   status?: number;
   totalDocuments?: number;
   triggerLogout?: boolean;
-}): HttpResult<Data> {
+}): HttpServerResponse<Data> {
   return {
     accessToken,
     data,
@@ -148,12 +148,12 @@ async function compareHashedStringWithPlainStringSafe({
 }: {
   hashedString: string;
   plainString: string;
-}): ServiceResult<boolean> {
+}): Promise<SafeBoxResult<boolean>> {
   try {
     const isMatch = await bcrypt.compare(plainString, hashedString);
-    return new Ok({ data: [isMatch], kind: "success" });
+    return new Ok({ data: Some(isMatch) });
   } catch (error: unknown) {
-    return new Err({ data: error, message: "Error comparing strings" });
+    return new Err({ data: Some(error) });
   }
 }
 

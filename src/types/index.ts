@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import type { FilterQuery, QueryOptions, Types } from "mongoose";
 import type { ParsedQs } from "qs";
-import type { Result } from "ts-results";
+import type { Option, Result } from "ts-results";
 import type { FileExtension } from "../resources/fileUpload/model";
 import type { UserRoles } from "../resources/user";
 
@@ -130,17 +130,6 @@ type LoginUserRequest = Request & {
   };
 };
 
-type HttpResult<Data = unknown> = {
-  accessToken: string;
-  data: Array<Data>;
-  kind: "error" | "success" | "notFound";
-  message: string;
-  pages: number;
-  status: number;
-  totalDocuments: number;
-  triggerLogout: boolean;
-};
-
 type DBRecord = Record<string, unknown> & {
   _id: Types.ObjectId;
   createdAt: Date;
@@ -148,28 +137,61 @@ type DBRecord = Record<string, unknown> & {
   __v: number;
 };
 
-type Success<Data = unknown> = {
-  data: [Data];
-  kind: "success";
-} | {
-  data: [];
-  kind: "notFound";
-} | {
-  data: [];
-  kind: "mildError";
+// type Success<Data = unknown> = {
+//   data: [Data];
+//   kind: "success";
+// } | {
+//   data: [];
+//   kind: "notFound";
+// } | {
+//   data: [];
+//   kind: "mildError";
+// };
+
+// type NotSuccess = {
+//   message: string;
+// };
+
+// type ServiceResult<Data = unknown> = Promise<
+//   Result<Success<Data>, NotSuccess>
+// >;
+type SafeBoxSuccess<Data = unknown> = {
+  data: Option<Data>;
+  message?: Option<string>;
+};
+type SafeBoxError<Error_ = any> = {
+  data?: Option<Error_>;
+  message?: Option<string>;
 };
 
-type NotSuccess = {
+type SafeBoxResult<Data = unknown, Error_ = any> = Result<
+  SafeBoxSuccess<Data>,
+  SafeBoxError<Error_>
+>;
+
+// non options fields are guaranteed to be present
+// as all responses are sent from a creator function with default values
+type HttpServerResponse<Data = unknown> = {
+  accessToken: Option<string>;
+  data: Option<Data>;
+  kind: "error" | "success";
   message: string;
+  pages: number;
+  status: number;
+  totalDocuments: number;
+  triggerLogout: boolean;
 };
 
-type ServiceResult<Data = unknown> = Promise<
-  Result<Success<Data>, NotSuccess>
+type HttpServerResponseResult<Data = unknown> = Response<
+  Awaited<SafeBoxResult<HttpServerResponse<Data>>>
 >;
 
-type HttpServerResponse<Data = unknown> = Response<
-  Awaited<HttpResult<Data>>
->;
+// gives the final flattened type after mapping, intersecting, or conditional logic
+type Prettify<T> =
+  & {
+    [K in keyof T]: T[K];
+  }
+  & {};
 
 /**
  * Used in the getQueried${resource}Service default GET request service functions for all resources.
@@ -275,9 +297,10 @@ export type {
   GetQueriedResourceRequest,
   GetResourceByFieldRequest,
   GetResourceByIdRequest,
-  HttpResult,
   HttpServerResponse,
+  HttpServerResponseResult,
   LoginUserRequest,
+  Prettify,
   QueriedResourceGetRequestServiceInput,
   QueriedTotalResourceGetRequestServiceInput,
   QueryObjectParsed,
@@ -285,7 +308,8 @@ export type {
   RequestAfterFilesExtracting,
   RequestAfterJWTVerification,
   RequestAfterQueryParsing,
-  ServiceResult,
-  Success,
+  SafeBoxError,
+  SafeBoxResult,
+  SafeBoxSuccess,
   UpdateResourceByIdRequest,
 };
