@@ -64,10 +64,11 @@ async function createTokenService(
     const existingSessionUnwrapped = getSessionResult.safeUnwrap();
 
     // session not found, means session document auto expired
-    if (existingSessionUnwrapped.kind === "notFound") {
-      // user needs to log in again
-      return new Ok({ data: [], kind: "notFound" });
-    }
+
+    // if (existingSessionUnwrapped.kind === "notFound") {
+    //   // user needs to log in again
+    //   return new Ok({ data: [], kind: "notFound" });
+    // }
 
     const [existingSession] = existingSessionUnwrapped.data;
 

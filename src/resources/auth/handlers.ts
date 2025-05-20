@@ -84,7 +84,7 @@ function loginUserHandler<
           createHttpResponseSuccess({
             accessToken: "",
             data: [],
-            message: "User not found",
+            message: "Invalid credentials",
           }),
         );
         return;
@@ -96,7 +96,7 @@ function loginUserHandler<
         response.status(200).json(
           createHttpResponseError({
             status: 404,
-            message: "User not found",
+            message: "Invalid credentials",
           }),
         );
         return;
@@ -118,9 +118,11 @@ function loginUserHandler<
         );
 
         response.status(200).json(
-          createHttpResponseError({
-            status: 401,
-            message: "Password incorrect",
+          // for security
+          createHttpResponseSuccess({
+            accessToken: "",
+            data: [],
+            message: "Invalid credentials",
           }),
         );
         return;
@@ -628,8 +630,7 @@ function logoutUserHandler<
       response.status(200).json(
         createHttpResponseSuccess({
           accessToken: "",
-          data: [],
-          triggerLogout: true,
+          data: [true],
         }),
       );
     } catch (error: unknown) {
