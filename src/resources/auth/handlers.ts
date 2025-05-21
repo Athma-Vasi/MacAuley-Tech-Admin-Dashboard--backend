@@ -132,7 +132,7 @@ function loginUserHandler<
       const authSessionSchema: AuthSchema = {
         addressIP: request.ip ?? "unknown",
         currentlyActiveToken: "notAToken",
-        expireAt: new Date(AUTH_SESSION_EXPIRY), // 3 hour
+        // expireAt: new Date(AUTH_SESSION_EXPIRY), // 9 hours
         userAgent: request.get("User-Agent") ?? "unknown",
         userId: userDocument._id,
         username: userDocument.username,

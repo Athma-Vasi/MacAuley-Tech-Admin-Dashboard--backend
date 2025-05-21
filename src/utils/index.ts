@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
 import type { Request } from "express";
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import { Err, None, Ok, type Option, Some } from "ts-results";
+import { STATUS_DESCRIPTION_TABLE } from "../constants";
 import type { ErrorLogSchema } from "../resources/errorLog";
 import type {
   DecodedToken,
@@ -33,49 +34,12 @@ function createHttpResponseError<
   totalDocuments?: number;
   triggerLogout?: boolean;
 }): ResponsePayloadResult<Data> {
-  const statusDescriptionTable: Record<number, string> = {
-    400: "Bad Request",
-    401: "Unauthorized",
-    403: "Forbidden",
-    404: "Not Found",
-    406: "Not Acceptable",
-    407: "Proxy Authentication Required",
-    408: "Request Timeout",
-    409: "Conflict",
-    410: "Gone",
-    411: "Length Required",
-    412: "Precondition Failed",
-    413: "Payload Too Large",
-    414: "URI Too Long",
-    415: "Unsupported Media Type",
-    416: "Range Not Satisfiable",
-    417: "Expectation Failed",
-    418: "I'm a teapot",
-    421: "Misdirected Request",
-    422: "Unprocessable Entity",
-    423: "Locked",
-    424: "Failed Dependency",
-    425: "Too Early",
-    426: "Upgrade Required",
-    428: "Precondition Required",
-    429: "Too Many Requests",
-    431: "Request Header Fields Too Large",
-    451: "Unavailable For Legal Reasons",
-
-    500: "Internal Server Error",
-    501: "Not Implemented",
-    502: "Bad Gateway",
-    503: "Service Unavailable",
-    504: "Gateway Timeout",
-    505: "HTTP Version Not Supported",
-  };
-
   const accessToken = request.body.accessToken
     ? Some(request.body.accessToken)
     : None;
 
   const message = error.none
-    ? statusDescriptionTable[status] ?? "Unknown error"
+    ? STATUS_DESCRIPTION_TABLE[status] ?? "Unknown error"
     : error.val instanceof Error
     ? error.val.message
     : typeof error === "string"
@@ -95,7 +59,7 @@ function createHttpResponseError<
 }
 
 function createHttpResponseSuccess<Data = unknown>({
-  accessToken = None,
+  accessToken,
   data = None,
   kind = "success",
   message = "Successful operation",
@@ -235,6 +199,19 @@ async function verifyJWTSafe(
   }
 }
 
+function signJWTSafe({ payload, secretOrPrivateKey, options }: {
+  payload: string | Buffer | object;
+  secretOrPrivateKey: jwt.Secret | jwt.PrivateKey;
+  options?: SignOptions;
+}) {
+  try {
+    const token = jwt.sign(payload, secretOrPrivateKey, options);
+    return new Ok({ data: Some(token) });
+  } catch (error: unknown) {
+    return new Err({ data: Some(error), message: Some("Error signing JWT") });
+  }
+}
+
 function returnEmptyFieldsTuple(input: Record<string, unknown>) {
   const fieldValuesTuples: [string, boolean][] = Object.entries(input).map(
     ([field, value]) => [field, value === ""],
@@ -293,6 +270,7 @@ export {
   hashStringSafe,
   removeUndefinedAndNullValues,
   returnEmptyFieldsTuple,
+  signJWTSafe,
   toFixedFloat,
   verifyJWTSafe,
 };

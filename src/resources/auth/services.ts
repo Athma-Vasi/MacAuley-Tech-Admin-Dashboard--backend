@@ -1,14 +1,14 @@
 import type { Request } from "express";
-import jwt, { type SignOptions } from "jsonwebtoken";
-import { Err, Ok } from "ts-results";
+import type { SignOptions } from "jsonwebtoken";
+import { Err, None, Ok, Some } from "ts-results";
 import {
   createNewResourceService,
   deleteManyResourcesService,
   getResourceByIdService,
   updateResourceByIdService,
 } from "../../services";
-import type { DecodedToken, ServiceResult } from "../../types";
-import { createErrorLogSchema } from "../../utils";
+import type { DecodedToken, SafeBoxResult } from "../../types";
+import { createErrorLogSchema, signJWTSafe } from "../../utils";
 import { ErrorLogModel } from "../errorLog";
 import { AuthModel } from "./model";
 
@@ -25,7 +25,7 @@ async function createTokenService(
     request: Request;
     seed: string;
   },
-): ServiceResult<string> {
+): Promise<SafeBoxResult<string, unknown>> {
   try {
     const {
       userId,
@@ -39,8 +39,9 @@ async function createTokenService(
       AuthModel,
     );
 
-    if (getSessionResult.err) {
-      // invalidate all sessions for this user
+    // if unable to get auth session document
+    if (getSessionResult.err || getSessionResult.val.data.none) {
+      // delete all currently active sessions for this user
       const deleteManyResult = await deleteManyResourcesService({
         filter: { userId },
         model: AuthModel,
@@ -55,32 +56,27 @@ async function createTokenService(
           ErrorLogModel,
         );
 
-        return new Err({ message: "Error deleting session" });
+        return deleteManyResult;
       }
 
-      return new Err({ message: "Unable to retrieve session" });
+      return deleteManyResult.val.data.none
+        ? new Err({
+          data: None,
+          message: deleteManyResult.val.message ??
+            Some("Some sessions not found"),
+        })
+        : new Err({
+          data: None,
+          message: Some("Deleted all sessions"),
+        });
     }
 
-    const existingSessionUnwrapped = getSessionResult.safeUnwrap();
-
-    // session not found, means session document auto expired
-
-    // if (existingSessionUnwrapped.kind === "notFound") {
-    //   // user needs to log in again
-    //   return new Ok({ data: [], kind: "notFound" });
-    // }
-
-    const [existingSession] = existingSessionUnwrapped.data;
-
-    if (existingSession === null || existingSession === undefined) {
-      return new Err({ message: "Error getting session" });
-    }
-
-    // session was found,
+    // auth session document found
+    const authSessionDocument = getSessionResult.val.data.val;
 
     // if the incoming access token is not the same as the one in the database
-    if (existingSession.currentlyActiveToken !== accessToken) {
-      // invalidate all sessions for this user
+    if (authSessionDocument.currentlyActiveToken !== accessToken) {
+      // delete all currently active sessions for this user
       const deleteManyResult = await deleteManyResourcesService({
         filter: { userId },
         model: AuthModel,
@@ -93,28 +89,59 @@ async function createTokenService(
           ),
           ErrorLogModel,
         );
+
+        return deleteManyResult;
       }
-      return new Err({ message: "Access token cannot be matched" });
+
+      return deleteManyResult.val.data.none
+        ? new Err({
+          data: None,
+          message: deleteManyResult.val.message ??
+            Some("Some sessions not found"),
+        })
+        : new Err({
+          data: None,
+          message: Some("Deleted all sessions"),
+        });
     }
 
     // create a new access token
     // and use existing session ID to sign new token
-    const newAccessToken = jwt.sign(
-      { userId, username, roles, sessionId: existingSession._id.toString() },
-      seed,
-      { expiresIn },
-    );
+    const newAccessTokenResult = signJWTSafe({
+      payload: {
+        userId,
+        username,
+        roles,
+        sessionId: authSessionDocument._id.toString(),
+      },
+      secretOrPrivateKey: seed,
+      options: {
+        expiresIn,
+      },
+    });
+
+    if (newAccessTokenResult.err) {
+      await createNewResourceService(
+        createErrorLogSchema(
+          newAccessTokenResult.val,
+          request.body,
+        ),
+        ErrorLogModel,
+      );
+
+      return newAccessTokenResult;
+    }
 
     // update the session in the database with the new access token
     const updateSessionResult = await updateResourceByIdService(
       {
         fields: {
-          currentlyActiveToken: newAccessToken,
+          currentlyActiveToken: newAccessTokenResult.val.data.val,
           addressIP: request.ip ?? "unknown",
           userAgent: request.headers["user-agent"] ?? "unknown",
         },
         model: AuthModel,
-        resourceId: existingSession._id.toString(),
+        resourceId: authSessionDocument._id.toString(),
         updateOperator: "$set",
       },
     );
@@ -128,30 +155,35 @@ async function createTokenService(
         ErrorLogModel,
       );
 
-      return new Err({ message: "Error updating session" });
+      return updateSessionResult;
+    }
+
+    if (updateSessionResult.val.data.none) {
+      return new Err({
+        data: None,
+        message: updateSessionResult.val.message ??
+          Some("Unable to update session"),
+      });
     }
 
     // update session was successful
     // return the new access token
-    const [updatedSession] = updateSessionResult.safeUnwrap().data;
-    if (updatedSession === null || updatedSession === undefined) {
-      return new Err({ message: "Error updating session" });
-    }
-
     return new Ok({
-      data: [newAccessToken],
-      kind: "success",
+      data: newAccessTokenResult.val.data,
+      message: Some("Token created successfully"),
     });
   } catch (error: unknown) {
+    const message = Some("Error creating token");
+
     await createNewResourceService(
       createErrorLogSchema(
-        error,
+        { data: Some(error), message },
         request.body,
       ),
       ErrorLogModel,
     );
 
-    return new Err({ message: "Error creating token" });
+    return new Err({ data: Some(error), message });
   }
 }
 

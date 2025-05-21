@@ -5,7 +5,7 @@ type AuthSchema = {
   // this is the token that is currently active for the user associated with this session
   currentlyActiveToken: string;
   addressIP: string;
-  expireAt?: Date; // user will be required to log in their session again after 3 hours - back up measure
+  // expireAt?: Date; // user will be required to log in their session again after 3 hours - back up measure
   userAgent: string;
   userId: Types.ObjectId;
   username: string;
@@ -28,12 +28,12 @@ const authSchema = new Schema(
       type: String,
       required: [true, "IP Address is required"],
     },
-    expireAt: {
-      type: Date,
-      default: () => new Date(AUTH_SESSION_EXPIRY), // 3 hours
-      // index: { expires: "1m" }, // 1 hour
-      expires: "1h",
-    },
+    // expireAt: {
+    //   type: Date,
+    //   default: () => new Date(AUTH_SESSION_EXPIRY), // 9 hours
+    //   // index: { expires: "1m" }, // 1 hour
+    //   expires: "1h",
+    // },
     userAgent: {
       type: String,
       required: [true, "User Agent is required"],

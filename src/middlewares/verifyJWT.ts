@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
+import { Some } from "ts-results";
 import { CONFIG } from "../config";
 import { ACCESS_TOKEN_EXPIRY, PROPERTY_DESCRIPTOR } from "../constants";
 import { createTokenService } from "../resources/auth/services";
@@ -20,7 +21,9 @@ async function verifyJWTMiddleware(
   if (!accessToken) {
     response.status(200).json(
       createHttpResponseError({
-        message: "Access token not found",
+        error: Some("Access token not found"),
+        request,
+        status: 401,
         triggerLogout: true,
       }),
     );
@@ -37,7 +40,9 @@ async function verifyJWTMiddleware(
   if (verifiedAccessTokenResult.err) {
     response.status(200).json(
       createHttpResponseError({
-        message: "Access token invalid",
+        error: verifiedAccessTokenResult.val.message,
+        request,
+        status: 401,
         triggerLogout: true,
       }),
     );
@@ -46,55 +51,47 @@ async function verifyJWTMiddleware(
   }
 
   // token is valid and maybe expired
-
-  // token is valid and not expired
-  // reuse same token
-  // if (verifiedAccessTokenUnwrapped.kind === "success") {
-  //   Object.defineProperty(request.body, "accessToken", {
-  //     value: accessToken,
-  //     ...PROPERTY_DESCRIPTOR,
-  //   });
-  // }
-
-  // token is valid and expired
   // always create new token
 
   const decodedAccessTokenResult = await decodeJWTSafe(accessToken);
-
   if (decodedAccessTokenResult.err) {
     response.status(200).json(
       createHttpResponseError({
-        message: "Error decoding access token",
+        error: decodedAccessTokenResult.val.message,
+        request,
+        status: 401,
         triggerLogout: true,
       }),
     );
 
     return;
   }
-
-  const decodedAccessToken = decodedAccessTokenResult.safeUnwrap().data[0];
-  if (!decodedAccessToken) {
+  if (decodedAccessTokenResult.val.data.none) {
     response.status(200).json(
       createHttpResponseError({
-        message: "Error decoding access token",
+        error: Some("Decoded access token is empty"),
+        request,
+        status: 401,
         triggerLogout: true,
       }),
     );
+
     return;
   }
 
   const tokenCreationResult = await createTokenService({
     accessToken,
-    decodedOldToken: decodedAccessToken,
+    decodedOldToken: decodedAccessTokenResult.val.data.val,
     expiresIn: ACCESS_TOKEN_EXPIRY,
     request,
     seed: ACCESS_TOKEN_SEED,
   });
-
   if (tokenCreationResult.err) {
     response.status(200).json(
       createHttpResponseError({
-        message: tokenCreationResult.val.message,
+        error: tokenCreationResult.val.message,
+        request,
+        status: 400,
         triggerLogout: true,
       }),
     );

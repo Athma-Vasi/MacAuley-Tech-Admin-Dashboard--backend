@@ -53,9 +53,7 @@ function createNewResourceHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            error: createResourceResult.val.data.none
-              ? Some("Resource not found")
-              : createResourceResult.val.data,
+            error: createResourceResult.val.message,
             request,
             status: 400,
           }),
@@ -128,9 +126,7 @@ function getQueriedResourcesHandler<
             .status(200)
             .json(
               createHttpResponseError({
-                error: totalResult.val.data.none
-                  ? Some("Unable to get total resources")
-                  : totalResult.val.data,
+                error: totalResult.val.message,
                 request,
                 status: 400,
               }),
@@ -163,9 +159,7 @@ function getQueriedResourcesHandler<
           .status(200)
           .json(
             createHttpResponseError({
-              error: getResourcesResult.val.data.none
-                ? Some("Unable to get resources")
-                : getResourcesResult.val.data,
+              error: getResourcesResult.val.message,
               request,
               status: 400,
             }),
@@ -242,9 +236,7 @@ function getQueriedResourcesByUserHandler<
 
           response.status(200).json(
             createHttpResponseError({
-              error: totalDocuments.val.data.none
-                ? Some("Unable to get total resources")
-                : totalDocuments.val.data,
+              error: totalResult.val.message,
               request,
               status: 400,
             }),
@@ -275,9 +267,7 @@ function getQueriedResourcesByUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            error: getResourcesResult.val.data.none
-              ? Some("Unable to get resources")
-              : getResourcesResult.val.data,
+            error: getResourcesResult.val.message,
             request,
             status: 400,
           }),
@@ -347,9 +337,7 @@ function updateResourceByIdHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            error: updateResourceResult.val.data.none
-              ? Some("Resource not found")
-              : updateResourceResult.val.data,
+            error: updateResourceResult.val.message,
             request,
             status: 404,
           }),
