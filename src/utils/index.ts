@@ -7,7 +7,7 @@ import type { ErrorLogSchema } from "../resources/errorLog";
 import type {
   DecodedToken,
   RequestAfterJWTVerification,
-  ResponsePayloadResult,
+  ResponsePayload,
   SafeBoxError,
   SafeBoxResult,
 } from "../types";
@@ -16,7 +16,6 @@ function createHttpResponseError<
   ModifiedRequest extends Request = Request,
   Data = unknown,
 >({
-  data = None,
   error,
   kind = "error",
   pages = 0,
@@ -25,7 +24,6 @@ function createHttpResponseError<
   totalDocuments = 0,
   triggerLogout = false,
 }: {
-  data?: Option<Data>;
   error: Option<unknown>;
   kind?: "error" | "success";
   request: ModifiedRequest;
@@ -33,11 +31,7 @@ function createHttpResponseError<
   status?: number;
   totalDocuments?: number;
   triggerLogout?: boolean;
-}): ResponsePayloadResult<Data> {
-  const accessToken = request.body.accessToken
-    ? Some(request.body.accessToken)
-    : None;
-
+}): ResponsePayload<Data> {
   const message = error.none
     ? STATUS_DESCRIPTION_TABLE[status] ?? "Unknown error"
     : error.val instanceof Error
@@ -46,16 +40,16 @@ function createHttpResponseError<
     ? error
     : JSON.stringify(error);
 
-  return new Err({
-    accessToken,
-    data,
+  return {
+    accessToken: request.body.accessToken ? request.body.accessToken : "",
+    data: [],
     kind,
     message,
     pages,
     status,
     totalDocuments,
     triggerLogout,
-  });
+  };
 }
 
 function createHttpResponseSuccess<Data = unknown>({
@@ -76,17 +70,17 @@ function createHttpResponseSuccess<Data = unknown>({
   status?: number;
   totalDocuments?: number;
   triggerLogout?: boolean;
-}): ResponsePayloadResult<Data> {
-  return new Ok({
-    accessToken,
-    data,
+}): ResponsePayload<Data> {
+  return {
+    accessToken: accessToken.none ? "" : accessToken.safeUnwrap(),
+    data: data.none ? [] : [data.safeUnwrap()],
     kind,
     message,
     pages,
     status,
     totalDocuments,
     triggerLogout,
-  });
+  };
 }
 
 function createErrorLogSchema(

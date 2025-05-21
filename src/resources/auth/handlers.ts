@@ -1,9 +1,12 @@
-import type { Response } from "express";
 import jwt from "jsonwebtoken";
-import type { Model } from "mongoose";
-import { None } from "ts-results";
+import type { FilterQuery, Model } from "mongoose";
+import { None, Some } from "ts-results";
 import { CONFIG } from "../../config";
-import { ACCESS_TOKEN_EXPIRY, HASH_SALT_ROUNDS } from "../../constants";
+import {
+  ACCESS_TOKEN_EXPIRY,
+  HASH_SALT_ROUNDS,
+  PROPERTY_DESCRIPTOR,
+} from "../../constants";
 import {
   createNewResourceService,
   deleteResourceByIdService,
@@ -11,9 +14,9 @@ import {
   updateResourceByIdService,
 } from "../../services";
 import type {
-  DBRecord,
-  HttpResult,
+  HttpServerResponse,
   LoginUserRequest,
+  RecordDB,
   RequestAfterFilesExtracting,
   RequestAfterJWTVerification,
   RequestAfterQueryParsing,
@@ -41,19 +44,17 @@ import type { AuthSchema } from "./model";
 // @route  POST /auth/login
 // @access Public
 function loginUserHandler<
-  Doc extends DBRecord = DBRecord,
+  Doc extends RecordDB = RecordDB,
 >(
   model: Model<Doc>,
 ) {
   return async (
     request: LoginUserRequest,
-    response: Response<
-      HttpResult<
-        {
-          userDocument: UserDocument;
-          financialMetricsDocument: FinancialMetricsDocument;
-        }
-      >
+    response: HttpServerResponse<
+      {
+        userDocument: Omit<UserDocument, "password">;
+        financialMetricsDocument: FinancialMetricsDocument;
+      }
     >,
   ) => {
     try {
@@ -73,7 +74,7 @@ function loginUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            error: getUserResult.val.message,
+            error: getUserResult.val.data,
             request,
             status: 401,
           }),
@@ -83,10 +84,10 @@ function loginUserHandler<
 
       if (getUserResult.val.data.none) {
         response.status(200).json(
-          createHttpResponseSuccess({
-            accessToken: None,
-            data: None,
-            message: "Invalid credentials",
+          createHttpResponseError({
+            error: Some("Invalid credentials"),
+            request,
+            kind: "success",
           }),
         );
         return;
@@ -108,10 +109,10 @@ function loginUserHandler<
         );
 
         response.status(200).json(
-          createHttpResponseSuccess({
-            accessToken: None,
-            data: None,
-            message: "Invalid credentials",
+          createHttpResponseError({
+            error: Some("Invalid credentials"),
+            request,
+            kind: "success",
           }),
         );
         return;
@@ -146,7 +147,7 @@ function loginUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            error: createAuthSessionResult.val.message,
+            error: createAuthSessionResult.val.data,
             request,
             status: 401,
           }),
@@ -156,10 +157,10 @@ function loginUserHandler<
 
       if (createAuthSessionResult.val.data.none) {
         response.status(200).json(
-          createHttpResponseSuccess({
-            accessToken: None,
-            data: None,
-            message: "Invalid credentials",
+          createHttpResponseError({
+            error: Some("Invalid credentials"),
+            request,
+            kind: "success",
           }),
         );
         return;
@@ -201,7 +202,7 @@ function loginUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            error: updateSessionResult.val.message,
+            error: updateSessionResult.val.data,
             request,
             status: 401,
           }),
@@ -209,12 +210,18 @@ function loginUserHandler<
         return;
       }
 
-      const userDocPartial = Object.entries(userDocument).reduce(
+      const userDocPartial = Object.entries(userDocument).reduce<
+        Omit<UserDocument, "password">
+      >(
         (userDocAcc, [key, value]) => {
           if (key === "password") {
             return userDocAcc;
           }
-          userDocAcc[key] = value;
+
+          Object.defineProperty(userDocAcc, key, {
+            value,
+            ...PROPERTY_DESCRIPTOR,
+          });
 
           return userDocAcc;
         },
@@ -237,7 +244,7 @@ function loginUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            error: financialMetricsDocumentResult.val.message,
+            error: financialMetricsDocumentResult.val.data,
             request,
             status: 401,
           }),
@@ -245,39 +252,40 @@ function loginUserHandler<
         return;
       }
 
-      const financialMetricsDocumentUnwrapped = financialMetricsDocumentResult
-        .safeUnwrap().data;
-
-      if (financialMetricsDocumentUnwrapped.length === 0) {
+      if (financialMetricsDocumentResult.val.data.none) {
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to get financial metrics document",
+            error: Some("Unable to get financial metrics"),
+            request,
+            status: 401,
           }),
         );
         return;
       }
 
-      const [financialMetricsDocument] = financialMetricsDocumentUnwrapped;
-
       response.status(200).json(
         createHttpResponseSuccess({
-          accessToken,
-          data: [{
+          accessToken: Some(accessToken),
+          data: Some({
             userDocument: userDocPartial,
-            financialMetricsDocument,
-          }],
+            financialMetricsDocument: financialMetricsDocumentResult.val
+              .data
+              .safeUnwrap(),
+          }),
         }),
       );
     } catch (error: unknown) {
       await createNewResourceService(
         createErrorLogSchema(
-          error,
+          { data: Some(error), message: Some("Error logging in user") },
           request.body,
         ),
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResponseError({}));
+      response.status(200).json(
+        createHttpResponseError({ error: Some(error), request }),
+      );
     }
   };
 }
@@ -286,13 +294,13 @@ function loginUserHandler<
 // @route  POST /auth/register
 // @access Public
 function registerUserHandler<
-  Doc extends DBRecord = DBRecord,
+  Doc extends RecordDB = RecordDB,
 >(
   model: Model<Doc>,
 ) {
   return async (
     request: RequestAfterFilesExtracting<UserSchema>,
-    response: Response,
+    response: HttpServerResponse<boolean>,
   ) => {
     try {
       const { schema, fileUploads } = request.body;
@@ -317,18 +325,20 @@ function registerUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to register. Please try again.",
+            error: getUserResult.val.data,
+            request,
+            status: 401,
           }),
         );
         return;
       }
 
-      const unwrappedResult = getUserResult.safeUnwrap();
-
-      if (unwrappedResult.kind === "success") {
+      if (getUserResult.val.data.some) {
         response.status(200).json(
           createHttpResponseError({
-            message: "Username already exists",
+            error: Some("Username already exists"),
+            request,
+            status: 401,
           }),
         );
         return;
@@ -347,27 +357,28 @@ function registerUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to hash password. Please try again.",
+            error: hashPasswordResult.val.data,
+            request,
+            status: 401,
           }),
         );
         return;
       }
 
-      const hashedPasswordUnwrapped = hashPasswordResult.safeUnwrap().data;
-
-      if (hashedPasswordUnwrapped.length === 0) {
+      if (hashPasswordResult.val.data.none) {
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to retrieve hashed password. Please try again.",
+            error: Some("Unable to hash password"),
+            request,
+            status: 401,
           }),
         );
         return;
       }
 
-      const [hashedPassword] = hashedPasswordUnwrapped;
       const userSchema = {
         ...schema,
-        password: hashedPassword,
+        password: hashPasswordResult.val.data.safeUnwrap(),
       };
 
       const createUserResult = await createNewResourceService(
@@ -383,22 +394,26 @@ function registerUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to create user. Please try again.",
+            error: createUserResult.val.data,
+            request,
+            status: 401,
           }),
         );
         return;
       }
 
-      const createUserUnwrapped = createUserResult.safeUnwrap().data;
-      if (createUserUnwrapped.length === 0) {
+      if (createUserResult.val.data.none) {
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to retrieve user. Please try again.",
+            error: Some("Unable to create user"),
+            request,
+            status: 401,
           }),
         );
         return;
       }
-      const [userDocument] = createUserUnwrapped;
+
+      const userDocument = createUserResult.val.data.safeUnwrap();
 
       const fileUploadSchema: FileUploadSchema = {
         ...fileUploads[0],
@@ -422,24 +437,26 @@ function registerUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to upload file. Please try again.",
+            error: createFileUploadResult.val.data,
+            request,
+            status: 401,
           }),
         );
         return;
       }
 
-      const createFileUploadUnwrapped = createFileUploadResult.safeUnwrap()
-        .data;
-      const [fileUploadDocument] = createFileUploadUnwrapped;
-      if (fileUploadDocument === undefined) {
+      if (createFileUploadResult.val.data.none) {
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to retrieve file upload document.",
+            error: Some("Unable to create file upload"),
+            request,
+            status: 401,
           }),
         );
         return;
       }
-      console.log({ fileUploadDocument });
+
+      const fileUploadDocument = createFileUploadResult.val.data.safeUnwrap();
 
       const updateUserResult = await updateResourceByIdService({
         fields: {
@@ -460,24 +477,26 @@ function registerUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            message:
-              "Unable to update user with file upload id. Please try again.",
+            error: updateUserResult.val.data,
+            request,
+            status: 401,
           }),
         );
         return;
       }
 
-      const updateUserUnwrapped = updateUserResult.safeUnwrap().data;
-      const [updatedUserDocument] = updateUserUnwrapped;
-      if (updatedUserDocument === undefined) {
+      if (updateUserResult.val.data.none) {
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to retrieve updated user document.",
+            error: Some("Unable to update user"),
+            request,
+            status: 401,
           }),
         );
         return;
       }
-      console.log({ updatedUserDocument });
+
+      const updatedUserDocument = updateUserResult.val.data.safeUnwrap();
 
       const updateFileUploadResult = await updateResourceByIdService({
         fields: {
@@ -497,42 +516,46 @@ function registerUserHandler<
         );
         response.status(200).json(
           createHttpResponseError({
-            message:
-              "Unable to update file upload with associated document id. Please try again.",
+            error: updateFileUploadResult.val.data,
+            request,
+            status: 401,
           }),
         );
         return;
       }
-      const updateFileUploadUnwrapped =
-        updateFileUploadResult.safeUnwrap().data;
-      const [updatedFileUploadDocument] = updateFileUploadUnwrapped;
-      if (updatedFileUploadDocument === undefined) {
+
+      if (updateFileUploadResult.val.data.none) {
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to retrieve updated file upload document.",
+            error: Some("Unable to update file upload"),
+            request,
+            status: 401,
           }),
         );
         return;
       }
-      console.log({ updatedFileUploadDocument });
 
       response.status(200).json(
         createHttpResponseSuccess({
-          accessToken: "",
-          data: [true],
+          accessToken: None,
+          data: Some(true),
           message: "User registered successfully",
         }),
       );
     } catch (error: unknown) {
       await createNewResourceService(
         createErrorLogSchema(
-          error,
+          { data: Some(error), message: Some("Error registering user") },
           request.body,
         ),
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResponseError({}));
+      response.status(200).json(createHttpResponseError({
+        error: Some(error),
+        request,
+        status: 401,
+      }));
     }
   };
 }
@@ -541,20 +564,25 @@ function registerUserHandler<
 // @route  POST /auth/logout
 // @access Private
 function logoutUserHandler<
-  Doc extends DBRecord = DBRecord,
+  Doc extends RecordDB = RecordDB,
 >(
   model: Model<Doc>,
 ) {
   return async (
     request: RequestAfterJWTVerification,
-    response: Response,
+    response: HttpServerResponse<boolean>,
   ) => {
     try {
       const { accessToken } = request.body;
 
       if (!accessToken) {
         response.status(200).json(
-          createHttpResponseError({ triggerLogout: true }),
+          createHttpResponseError({
+            error: Some("Access token is required"),
+            request,
+            status: 401,
+            triggerLogout: true,
+          }),
         );
 
         return;
@@ -569,7 +597,12 @@ function logoutUserHandler<
 
       if (verifyAccessTokenResult.err) {
         response.status(200).json(
-          createHttpResponseError({ triggerLogout: true }),
+          createHttpResponseError({
+            error: verifyAccessTokenResult.val.data,
+            request,
+            status: 401,
+            triggerLogout: true,
+          }),
         );
 
         return;
@@ -579,24 +612,31 @@ function logoutUserHandler<
 
       if (accessTokenDecodedResult.err) {
         response.status(200).json(
-          createHttpResponseError({ triggerLogout: true }),
+          createHttpResponseError({
+            error: accessTokenDecodedResult.val.data,
+            request,
+            status: 401,
+            triggerLogout: true,
+          }),
         );
 
         return;
       }
 
-      const accessTokenDecodedUnwrapped = accessTokenDecodedResult.safeUnwrap()
-        .data;
-
-      if (accessTokenDecodedUnwrapped.length === 0) {
+      if (accessTokenDecodedResult.val.data.none) {
         response.status(200).json(
-          createHttpResponseError({ triggerLogout: true }),
+          createHttpResponseError({
+            error: Some("Access token is invalid"),
+            request,
+            status: 401,
+            triggerLogout: true,
+          }),
         );
 
         return;
       }
 
-      const [accessTokenDecoded] = accessTokenDecodedUnwrapped;
+      const accessTokenDecoded = accessTokenDecodedResult.val.data.safeUnwrap();
       const sessionId = accessTokenDecoded.sessionId;
 
       const deleteSessionResult = await deleteResourceByIdService(
@@ -614,7 +654,12 @@ function logoutUserHandler<
         );
 
         response.status(200).json(
-          createHttpResponseError({ triggerLogout: true }),
+          createHttpResponseError({
+            error: deleteSessionResult.val.data,
+            request,
+            status: 401,
+            triggerLogout: true,
+          }),
         );
 
         return;
@@ -622,21 +667,27 @@ function logoutUserHandler<
 
       response.status(200).json(
         createHttpResponseSuccess({
-          accessToken: "",
-          data: [true],
+          accessToken: None,
+          data: Some(true),
+          message: "User logged out successfully",
         }),
       );
     } catch (error: unknown) {
       await createNewResourceService(
         createErrorLogSchema(
-          error,
+          { data: Some(error), message: Some("Error logging out user") },
           request.body,
         ),
         ErrorLogModel,
       );
 
       response.status(200).json(
-        createHttpResponseError({ triggerLogout: true }),
+        createHttpResponseError({
+          error: Some(error),
+          request,
+          status: 401,
+          triggerLogout: true,
+        }),
       );
     }
   };
@@ -646,16 +697,16 @@ function logoutUserHandler<
 // @route  GET /auth/check
 // @access Public
 function checkUsernameOrEmailExistsHandler<
-  Doc extends DBRecord = DBRecord,
+  Doc extends RecordDB = RecordDB,
 >(model: Model<Doc>) {
   return async (
     request: RequestAfterQueryParsing,
-    response: Response<HttpResult<boolean>>,
+    response: HttpServerResponse<boolean>,
   ) => {
     const { filter } = request.query;
 
     const isUsernameOrEmailExistsResult = await getResourceByFieldService({
-      filter: filter as any,
+      filter: filter as FilterQuery<Doc>,
       model,
     });
 
@@ -670,23 +721,33 @@ function checkUsernameOrEmailExistsHandler<
 
       response.status(200).json(
         createHttpResponseError({
-          message: "Unable to check existence of username",
+          error: isUsernameOrEmailExistsResult.val.data,
+          request,
+          status: 401,
         }),
       );
       return;
     }
 
     // username or email exists
-    if (isUsernameOrEmailExistsResult.val.kind === "success") {
+    if (isUsernameOrEmailExistsResult.val.data.some) {
       response.status(200).json(
-        createHttpResponseSuccess({ data: [true], accessToken: "" }),
+        createHttpResponseSuccess({
+          data: Some(true),
+          accessToken: None,
+          message: "Username or email already exists",
+        }),
       );
       return;
     }
 
     // username or email does not exist
     response.status(200).json(
-      createHttpResponseSuccess({ data: [false], accessToken: "" }),
+      createHttpResponseSuccess({
+        accessToken: None,
+        data: Some(false),
+        message: "Username or email does not exist",
+      }),
     );
     return;
   };

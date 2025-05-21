@@ -15,7 +15,7 @@ import type {
   CreateNewResourceRequest,
   GetQueriedResourceRequest,
   GetResourceByIdRequest,
-  HttpServerResponseResult,
+  HttpServerResponse,
   RecordDB,
   UpdateResourceByIdRequest,
 } from "../types";
@@ -32,7 +32,7 @@ function createNewResourceHandler<
 ) {
   return async (
     request: CreateNewResourceRequest,
-    response: HttpServerResponseResult<Doc>,
+    response: HttpServerResponse<Doc>,
   ) => {
     try {
       const { accessToken, schema } = request.body;
@@ -53,7 +53,7 @@ function createNewResourceHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            error: createResourceResult.val.message,
+            error: createResourceResult.val.data,
             request,
             status: 400,
           }),
@@ -95,7 +95,7 @@ function getQueriedResourcesHandler<
 ) {
   return async (
     request: GetQueriedResourceRequest,
-    response: HttpServerResponseResult<Doc[]>,
+    response: HttpServerResponse<Doc[]>,
   ) => {
     try {
       let { accessToken, newQueryFlag, totalDocuments } = request.body;
@@ -126,7 +126,7 @@ function getQueriedResourcesHandler<
             .status(200)
             .json(
               createHttpResponseError({
-                error: totalResult.val.message,
+                error: totalResult.val.data,
                 request,
                 status: 400,
               }),
@@ -159,7 +159,7 @@ function getQueriedResourcesHandler<
           .status(200)
           .json(
             createHttpResponseError({
-              error: getResourcesResult.val.message,
+              error: getResourcesResult.val.data,
               request,
               status: 400,
             }),
@@ -204,7 +204,7 @@ function getQueriedResourcesByUserHandler<
 ) {
   return async (
     request: GetQueriedResourceRequest,
-    response: HttpServerResponseResult<Doc[]>,
+    response: HttpServerResponse<Doc[]>,
   ) => {
     try {
       const {
@@ -236,7 +236,7 @@ function getQueriedResourcesByUserHandler<
 
           response.status(200).json(
             createHttpResponseError({
-              error: totalResult.val.message,
+              error: totalResult.val.data,
               request,
               status: 400,
             }),
@@ -267,7 +267,7 @@ function getQueriedResourcesByUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            error: getResourcesResult.val.message,
+            error: getResourcesResult.val.data,
             request,
             status: 400,
           }),
@@ -310,7 +310,7 @@ function updateResourceByIdHandler<
 ) {
   return async (
     request: UpdateResourceByIdRequest,
-    response: HttpServerResponseResult<Doc>,
+    response: HttpServerResponse<Doc>,
   ) => {
     try {
       const { resourceId } = request.params;
@@ -337,7 +337,7 @@ function updateResourceByIdHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            error: updateResourceResult.val.message,
+            error: updateResourceResult.val.data,
             request,
             status: 404,
           }),
@@ -375,7 +375,7 @@ function getResourceByIdHandler<Doc extends Record<string, unknown> = RecordDB>(
 ) {
   return async (
     request: GetResourceByIdRequest,
-    response: HttpServerResponseResult<Doc>,
+    response: HttpServerResponse<Doc>,
   ) => {
     try {
       const { accessToken } = request.body;
@@ -397,7 +397,7 @@ function getResourceByIdHandler<Doc extends Record<string, unknown> = RecordDB>(
 
         response.status(200).json(
           createHttpResponseError({
-            error: getResourceResult.val.message,
+            error: getResourceResult.val.data,
             request,
             status: 404,
           }),
@@ -437,7 +437,7 @@ function deleteResourceByIdHandler<
 ) {
   return async (
     request: GetResourceByIdRequest,
-    response: HttpServerResponseResult<boolean>,
+    response: HttpServerResponse<boolean>,
   ) => {
     try {
       const { accessToken } = request.body;
@@ -459,7 +459,7 @@ function deleteResourceByIdHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            error: deletedResult.val.message,
+            error: deletedResult.val.data,
             request,
             status: 404,
           }),
@@ -497,7 +497,7 @@ function deleteManyResourcesHandler<
 ) {
   return async (
     request: GetQueriedResourceRequest,
-    response: HttpServerResponseResult<boolean>,
+    response: HttpServerResponse<boolean>,
   ) => {
     try {
       const { accessToken } = request.body;
@@ -514,7 +514,7 @@ function deleteManyResourcesHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            error: deletedResult.val.message,
+            error: deletedResult.val.data,
             request,
             status: 404,
           }),
