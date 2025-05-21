@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import type { Request } from "express";
-import jwt, { SignOptions } from "jsonwebtoken";
+import jwt, { type SignOptions } from "jsonwebtoken";
 import { Err, None, Ok, type Option, Some } from "ts-results";
 import { STATUS_DESCRIPTION_TABLE } from "../constants";
 import type { ErrorLogSchema } from "../resources/errorLog";

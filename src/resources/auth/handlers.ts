@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import jwt from "jsonwebtoken";
 import type { Model } from "mongoose";
+import { None } from "ts-results";
 import { CONFIG } from "../../config";
 import { ACCESS_TOKEN_EXPIRY, HASH_SALT_ROUNDS } from "../../constants";
 import {
@@ -72,30 +73,19 @@ function loginUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to get user. Please try again!",
+            error: getUserResult.val.message,
+            request,
+            status: 401,
           }),
         );
         return;
       }
 
-      if (getUserResult.val.kind === "notFound") {
-        console.log(`Username ${username} not found`);
+      if (getUserResult.val.data.none) {
         response.status(200).json(
           createHttpResponseSuccess({
-            accessToken: "",
-            data: [],
-            message: "Invalid credentials",
-          }),
-        );
-        return;
-      }
-
-      const [userDocument] = getUserResult.safeUnwrap().data;
-
-      if (userDocument === undefined || userDocument === null) {
-        response.status(200).json(
-          createHttpResponseError({
-            status: 404,
+            accessToken: None,
+            data: None,
             message: "Invalid credentials",
           }),
         );
@@ -104,7 +94,7 @@ function loginUserHandler<
 
       const isPasswordCorrectResult =
         await compareHashedStringWithPlainStringSafe({
-          hashedString: userDocument.password,
+          hashedString: getUserResult.val.data.safeUnwrap().password,
           plainString: password,
         });
 
@@ -118,8 +108,9 @@ function loginUserHandler<
         );
 
         response.status(200).json(
-          // for security
           createHttpResponseSuccess({
+            accessToken: None,
+            data: None,
             message: "Invalid credentials",
           }),
         );
@@ -127,12 +118,13 @@ function loginUserHandler<
       }
 
       const { ACCESS_TOKEN_SEED } = CONFIG;
+      const userDocument = getUserResult.val.data.safeUnwrap();
 
       // create auth session without token
       const authSessionSchema: AuthSchema = {
         addressIP: request.ip ?? "unknown",
         currentlyActiveToken: "notAToken",
-        // expireAt: new Date(AUTH_SESSION_EXPIRY), // 9 hours
+        expireAt: new Date(AUTH_SESSION_EXPIRY), // 24 hours
         userAgent: request.get("User-Agent") ?? "unknown",
         userId: userDocument._id,
         username: userDocument.username,
@@ -154,25 +146,24 @@ function loginUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to create session. Please try again!",
+            error: createAuthSessionResult.val.message,
+            request,
+            status: 401,
           }),
         );
         return;
       }
 
-      const createAuthSessionUnwrapped = createAuthSessionResult.safeUnwrap()
-        ?.data;
-
-      if (createAuthSessionUnwrapped.length === 0) {
+      if (createAuthSessionResult.val.data.none) {
         response.status(200).json(
-          createHttpResponseError({
-            message: "Unable to create session. Please try again!",
+          createHttpResponseSuccess({
+            accessToken: None,
+            data: None,
+            message: "Invalid credentials",
           }),
         );
         return;
       }
-
-      const [authSession] = createAuthSessionUnwrapped;
 
       // create a new access token and use the session ID to sign the new token
       const accessToken = jwt.sign(
@@ -180,7 +171,7 @@ function loginUserHandler<
           userId: userDocument._id,
           username: userDocument.username,
           roles: userDocument.roles,
-          sessionId: authSession._id,
+          sessionId: createAuthSessionResult.val.data.safeUnwrap()._id,
         },
         ACCESS_TOKEN_SEED,
         { expiresIn: ACCESS_TOKEN_EXPIRY },
@@ -194,7 +185,8 @@ function loginUserHandler<
           userAgent: request.headers["user-agent"] ?? "unknown",
         },
         model,
-        resourceId: authSession._id.toString(),
+        resourceId: createAuthSessionResult.val.data.safeUnwrap()._id
+          .toString(),
         updateOperator: "$set",
       });
 
@@ -209,8 +201,9 @@ function loginUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            message:
-              "Unable to update session's access token. Please try again!",
+            error: updateSessionResult.val.message,
+            request,
+            status: 401,
           }),
         );
         return;
@@ -244,7 +237,9 @@ function loginUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to get financial metrics document",
+            error: financialMetricsDocumentResult.val.message,
+            request,
+            status: 401,
           }),
         );
         return;

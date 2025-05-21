@@ -82,7 +82,10 @@ async function createNewResourceService<
     const resource = await model.create(schema) as Doc;
 
     if (resource === null || resource === undefined) {
-      return new Ok({ data: None, message: Some("Resource not found") });
+      return new Ok({
+        data: None,
+        message: Some("Created resource not found"),
+      });
     }
 
     return new Ok({ data: Some(resource) });

@@ -82,7 +82,7 @@ async function verifyJWTMiddleware(
   const tokenCreationResult = await createTokenService({
     accessToken,
     decodedOldToken: decodedAccessTokenResult.val.data.val,
-    expiresIn: ACCESS_TOKEN_EXPIRY,
+    expiresIn: ACCESS_TOKEN_EXPIRY, // 5 seconds
     request,
     seed: ACCESS_TOKEN_SEED,
   });
@@ -99,36 +99,23 @@ async function verifyJWTMiddleware(
     return;
   }
 
-  if (tokenCreationResult.safeUnwrap().kind === "notFound") {
+  if (tokenCreationResult.val.data.none) {
     response.status(200).json(
       createHttpResponseError({
-        message: "Session expired",
-        // user needs to log in again
+        error: tokenCreationResult.val.message ??
+          Some("Created token is empty"),
+        request,
+        status: 400,
         triggerLogout: true,
       }),
     );
-
     return;
   }
 
-  const tokenCreationResultUnwrapped = tokenCreationResult.safeUnwrap().data;
-
-  if (tokenCreationResultUnwrapped.length === 0) {
-    response.status(200).json(
-      createHttpResponseError({
-        message: "Token created not found",
-        triggerLogout: true,
-      }),
-    );
-
-    return;
-  }
-
-  const [newAccessToken] = tokenCreationResultUnwrapped;
-
+  const decodedAccessToken = decodedAccessTokenResult.val.data.safeUnwrap();
   // newly created access token is accessed by handlers and returned with httpServerResponse
   Object.defineProperty(request.body, "accessToken", {
-    value: newAccessToken,
+    value: tokenCreationResult.val.data.safeUnwrap(),
     ...PROPERTY_DESCRIPTOR,
   });
 

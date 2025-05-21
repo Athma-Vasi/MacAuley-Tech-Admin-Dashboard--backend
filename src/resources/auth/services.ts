@@ -3,7 +3,7 @@ import type { SignOptions } from "jsonwebtoken";
 import { Err, None, Ok, Some } from "ts-results";
 import {
   createNewResourceService,
-  deleteManyResourcesService,
+  deleteResourceByIdService,
   getResourceByIdService,
   updateResourceByIdService,
 } from "../../services";
@@ -40,68 +40,52 @@ async function createTokenService(
     );
 
     // if unable to get auth session document
-    if (getSessionResult.err || getSessionResult.val.data.none) {
-      // delete all currently active sessions for this user
-      const deleteManyResult = await deleteManyResourcesService({
-        filter: { userId },
-        model: AuthModel,
+    if (getSessionResult.err) {
+      return getSessionResult;
+    }
+
+    // session has maybe expired ( > 24 hours)
+    // user will be required to log in again
+    if (getSessionResult.val.data.none) {
+      return new Ok({
+        data: None,
+        message: Some("Session expired"),
       });
-
-      if (deleteManyResult.err) {
-        await createNewResourceService(
-          createErrorLogSchema(
-            deleteManyResult.val,
-            request.body,
-          ),
-          ErrorLogModel,
-        );
-
-        return deleteManyResult;
-      }
-
-      return deleteManyResult.val.data.none
-        ? new Err({
-          data: None,
-          message: deleteManyResult.val.message ??
-            Some("Some sessions not found"),
-        })
-        : new Err({
-          data: None,
-          message: Some("Deleted all sessions"),
-        });
     }
 
     // auth session document found
     const authSessionDocument = getSessionResult.val.data.val;
 
     // if the incoming access token is not the same as the one in the database
-    if (authSessionDocument.currentlyActiveToken !== accessToken) {
-      // delete all currently active sessions for this user
-      const deleteManyResult = await deleteManyResourcesService({
-        filter: { userId },
-        model: AuthModel,
-      });
-      if (deleteManyResult.err) {
+    if (
+      authSessionDocument.currentlyActiveToken.trim() !== accessToken.trim()
+    ) {
+      // invalidate currently active session
+      const deleteSessionResult = await deleteResourceByIdService(
+        sessionId.toString(),
+        AuthModel,
+      );
+      if (deleteSessionResult.err) {
         await createNewResourceService(
           createErrorLogSchema(
-            deleteManyResult.val,
+            deleteSessionResult.val,
             request.body,
           ),
           ErrorLogModel,
         );
 
-        return deleteManyResult;
+        return deleteSessionResult;
       }
 
-      return deleteManyResult.val.data.none
+      return deleteSessionResult.val.data.none
         ? new Err({
           data: None,
-          message: deleteManyResult.val.message ??
-            Some("Some sessions not found"),
+          message: deleteSessionResult.val.message ??
+            Some("Session not found"),
         })
         : new Err({
           data: None,
-          message: Some("Deleted all sessions"),
+          message: Some("Session deleted"),
         });
     }
 
@@ -159,10 +143,10 @@ async function createTokenService(
     }
 
     if (updateSessionResult.val.data.none) {
-      return new Err({
+      return new Ok({
         data: None,
         message: updateSessionResult.val.message ??
-          Some("Unable to update session"),
+          Some("Session not found"),
       });
     }
 
