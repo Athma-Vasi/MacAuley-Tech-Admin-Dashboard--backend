@@ -1,33 +1,38 @@
 import bcrypt from "bcryptjs";
+import type { Request } from "express";
 import jwt from "jsonwebtoken";
 import { Err, None, Ok, type Option, Some } from "ts-results";
 import type { ErrorLogSchema } from "../resources/errorLog";
 import type {
   DecodedToken,
-  HttpServerResponse,
   RequestAfterJWTVerification,
+  ResponsePayloadResult,
+  SafeBoxError,
   SafeBoxResult,
 } from "../types";
 
-function createHttpResponseError<Data = unknown>({
-  accessToken = None,
+function createHttpResponseError<
+  ModifiedRequest extends Request = Request,
+  Data = unknown,
+>({
   data = None,
+  error,
   kind = "error",
-  message = "Unexpected error occurred",
   pages = 0,
+  request,
   status = 500,
   totalDocuments = 0,
   triggerLogout = false,
 }: {
-  accessToken?: Option<string>;
   data?: Option<Data>;
+  error: Option<unknown>;
   kind?: "error" | "success";
-  message?: string;
+  request: ModifiedRequest;
   pages?: number;
   status?: number;
   totalDocuments?: number;
   triggerLogout?: boolean;
-}): HttpServerResponse<Data> {
+}): ResponsePayloadResult<Data> {
   const statusDescriptionTable: Record<number, string> = {
     400: "Bad Request",
     401: "Unauthorized",
@@ -65,21 +70,31 @@ function createHttpResponseError<Data = unknown>({
     505: "HTTP Version Not Supported",
   };
 
-  return {
+  const accessToken = request.body.accessToken
+    ? Some(request.body.accessToken)
+    : None;
+
+  const message = error.none
+    ? statusDescriptionTable[status] ?? "Unknown error"
+    : error.val instanceof Error
+    ? error.val.message
+    : typeof error === "string"
+    ? error
+    : JSON.stringify(error);
+
+  return new Err({
     accessToken,
     data,
     kind,
-    message: message ?? statusDescriptionTable[status] ?? "Unknown error",
+    message,
     pages,
     status,
     totalDocuments,
     triggerLogout,
-  };
+  });
 }
 
-function createHttpResponseSuccess<
-  Data = unknown,
->({
+function createHttpResponseSuccess<Data = unknown>({
   accessToken = None,
   data = None,
   kind = "success",
@@ -89,16 +104,16 @@ function createHttpResponseSuccess<
   totalDocuments = 0,
   triggerLogout = false,
 }: {
-  accessToken?: Option<string>;
-  data?: Option<Data>;
+  accessToken: Option<string>;
+  data: Option<Data>;
   kind?: "error" | "success";
   message?: string;
   pages?: number;
   status?: number;
   totalDocuments?: number;
   triggerLogout?: boolean;
-}): HttpServerResponse<Data> {
-  return {
+}): ResponsePayloadResult<Data> {
+  return new Ok({
     accessToken,
     data,
     kind,
@@ -107,27 +122,41 @@ function createHttpResponseSuccess<
     status,
     totalDocuments,
     triggerLogout,
-  };
+  });
 }
 
 function createErrorLogSchema(
-  error: unknown,
+  error: SafeBoxError<unknown>,
   requestBody: RequestAfterJWTVerification["body"],
 ): ErrorLogSchema {
-  const userInfo = requestBody.userInfo ?? {};
+  if (error.data.none) {
+    return {
+      expireAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 hours
+      message: "Error data is empty",
+      name: "Error data is empty",
+      stack: "Error data is empty",
+      requestBody: JSON.stringify(requestBody),
+      sessionId: "",
+      timestamp: new Date(),
+      userId: "",
+      username: "",
+    };
+  }
 
+  const userInfo = requestBody.userInfo ?? {};
   const sessionId = requestBody.sessionId;
   const userId = userInfo?.userId ?? "";
   const username = userInfo?.username ?? "";
-
   const unknownError = ".·°՞(¯□¯)՞°·. An unknown error occurred";
-
-  const message = error instanceof Error ? error.message : unknownError;
-
-  const name = error instanceof Error ? error.name : unknownError;
-
-  let stack = error instanceof Error ? error.stack : unknownError;
-  stack = stack ?? unknownError;
+  const message = error.data.val instanceof Error
+    ? error.data.val.message
+    : unknownError;
+  const name = error.data.val instanceof Error
+    ? error.data.val.name
+    : unknownError;
+  const stack = error.data.val instanceof Error && error.data.val.stack
+    ? error.data.val.stack
+    : unknownError;
 
   return {
     expireAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 hours

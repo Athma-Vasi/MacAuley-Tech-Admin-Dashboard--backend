@@ -72,8 +72,8 @@ async function getResourceByFieldService<
 }
 
 async function createNewResourceService<
-  Schema extends Record<string, unknown> = Record<string, unknown>,
   Doc extends Record<string, unknown> = RecordDB,
+  Schema extends Record<string, unknown> = Record<string, unknown>,
 >(
   schema: Schema,
   model: Model<Doc>,
@@ -128,7 +128,7 @@ async function getQueriedTotalResourcesService<
   { filter, model, options }: {
     filter: RootFilterQuery<Doc> | undefined;
     model: Model<Doc>;
-    options: Pick<
+    options?: Pick<
       QueryOptions<Doc>,
       MongooseBaseQueryOptionKeys
     >;
@@ -140,7 +140,7 @@ async function getQueriedTotalResourcesService<
       options,
     )
       .lean()
-      .exec() as number;
+      .exec();
 
     if (totalQueriedResources === 0) {
       return new Ok({ data: None, message: Some("Resource not found") });

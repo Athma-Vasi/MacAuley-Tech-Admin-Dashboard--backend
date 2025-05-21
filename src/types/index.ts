@@ -161,19 +161,19 @@ type SafeBoxSuccess<Data = unknown> = {
   data: Option<Data>;
   message?: Option<string>;
 };
-type SafeBoxError<Error_ = any> = {
-  data?: Option<Error_>;
-  message?: Option<string>;
+type SafeBoxError<Error_ = unknown> = {
+  data: Option<Error_>;
+  message: Option<string>;
 };
 
-type SafeBoxResult<Data = unknown, Error_ = any> = Result<
+type SafeBoxResult<Data = unknown, Error_ = unknown> = Result<
   SafeBoxSuccess<Data>,
   SafeBoxError<Error_>
 >;
 
 // non options fields are guaranteed to be present
 // as all responses are sent from a creator function with default values
-type HttpServerResponse<Data = unknown> = {
+type ResponsePayload<Data = unknown> = {
   accessToken: Option<string>;
   data: Option<Data>;
   kind: "error" | "success";
@@ -184,8 +184,15 @@ type HttpServerResponse<Data = unknown> = {
   triggerLogout: boolean;
 };
 
-type HttpServerResponseResult<Data = unknown> = Response<
-  Awaited<SafeBoxResult<HttpServerResponse<Data>>>
+type ResponsePayloadResult<Data = unknown, Error_ = unknown> = Prettify<
+  Result<
+    ResponsePayload<Data>,
+    ResponsePayload<Error_>
+  >
+>;
+
+type HttpServerResponseResult<Data = unknown> = Prettify<
+  Response<ResponsePayloadResult<Data>>
 >;
 
 // gives the final flattened type after mapping, intersecting, or conditional logic
@@ -298,7 +305,6 @@ export type {
   GetQueriedResourceRequest,
   GetResourceByFieldRequest,
   GetResourceByIdRequest,
-  HttpServerResponse,
   HttpServerResponseResult,
   LoginUserRequest,
   Prettify,
@@ -310,6 +316,8 @@ export type {
   RequestAfterFilesExtracting,
   RequestAfterJWTVerification,
   RequestAfterQueryParsing,
+  ResponsePayload,
+  ResponsePayloadResult,
   SafeBoxError,
   SafeBoxResult,
   SafeBoxSuccess,
