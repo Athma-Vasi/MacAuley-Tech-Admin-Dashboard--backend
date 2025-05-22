@@ -16,6 +16,7 @@ import {
 import type {
   HttpServerResponse,
   LoginUserRequest,
+  Prettify,
   RecordDB,
   RequestAfterFilesExtracting,
   RequestAfterJWTVerification,

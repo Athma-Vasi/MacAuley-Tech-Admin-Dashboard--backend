@@ -1,26 +1,27 @@
-import type { Response } from "express";
 import type { Model } from "mongoose";
+import { Some } from "ts-results";
 import { createNewResourceService } from "../../../services";
-import type { CreateNewResourceRequest, DBRecord } from "../../../types";
+import type {
+  CreateNewResourceRequest,
+  HttpServerResponse,
+} from "../../../types";
 import {
   createErrorLogSchema,
   createHttpResponseError,
   createHttpResponseSuccess,
 } from "../../../utils";
 import { ErrorLogModel } from "../../errorLog";
-import type { CustomerMetricsSchema } from "./model";
+import type { CustomerMetricsDocument, CustomerMetricsSchema } from "./model";
 
 // @desc   Create new Customer Metric
 // @route  POST /api/v1/metrics/customer
 // @access Private/Admin/Manager
-function createNewCustomerMetricHandler<
-  Doc extends DBRecord = DBRecord,
->(
-  model: Model<Doc>,
+function createNewCustomerMetricHandler(
+  model: Model<CustomerMetricsDocument>,
 ) {
   return async (
     request: CreateNewResourceRequest<CustomerMetricsSchema>,
-    response: Response,
+    response: HttpServerResponse<CustomerMetricsDocument>,
   ) => {
     try {
       const { accessToken, schema } = request.body;
@@ -41,21 +42,18 @@ function createNewCustomerMetricHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            accessToken,
-            message: "Unable to create customer metric. Please try again.",
+            error: createCustomerMetricResult.val.data,
+            request,
           }),
         );
         return;
       }
 
-      const customerMetricUnwrapped =
-        createCustomerMetricResult.safeUnwrap().data;
-
-      if (customerMetricUnwrapped.length === 0) {
+      if (createCustomerMetricResult.val.data.none) {
         response.status(200).json(
           createHttpResponseError({
-            accessToken,
-            message: "Unable to create customer metric. Please try again.",
+            error: Some("Customer Metric not created"),
+            request,
           }),
         );
         return;
@@ -63,21 +61,28 @@ function createNewCustomerMetricHandler<
 
       response.status(200).json(
         createHttpResponseSuccess({
-          accessToken,
-          data: customerMetricUnwrapped,
-          message: "Customer Metric created successfully",
+          accessToken: Some(accessToken),
+          data: createCustomerMetricResult.val.data,
         }),
       );
     } catch (error: unknown) {
       await createNewResourceService(
         createErrorLogSchema(
-          error,
+          {
+            data: Some(error),
+            message: Some("Error creating customer metric"),
+          },
           request.body,
         ),
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResponseError({}));
+      response.status(200).json(
+        createHttpResponseError({
+          error: Some(error),
+          request,
+        }),
+      );
     }
   };
 }

@@ -54,7 +54,7 @@ function createHttpResponseError<
 
 function createHttpResponseSuccess<Data = unknown>({
   accessToken,
-  data = None,
+  data,
   kind = "success",
   message = "Successful operation",
   pages = 0,
@@ -71,9 +71,11 @@ function createHttpResponseSuccess<Data = unknown>({
   totalDocuments?: number;
   triggerLogout?: boolean;
 }): ResponsePayload<Data> {
+  const newData = data.none ? [] : data.safeUnwrap();
+
   return {
     accessToken: accessToken.none ? "" : accessToken.safeUnwrap(),
-    data: data.none ? [] : [data.safeUnwrap()],
+    data: Array.isArray(newData) ? newData : [newData],
     kind,
     message,
     pages,

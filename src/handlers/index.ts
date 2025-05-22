@@ -146,6 +146,8 @@ function getQueriedResourcesHandler<
         projection,
       });
 
+      console.log("getResourcesResult", getResourcesResult);
+
       if (getResourcesResult.err) {
         await createNewResourceService(
           createErrorLogSchema(

@@ -1,26 +1,27 @@
-import type { Response } from "express";
 import type { Model } from "mongoose";
+import { Some } from "ts-results";
 import { createNewResourceService } from "../../../services";
-import type { CreateNewResourceRequest, DBRecord } from "../../../types";
+import type {
+  CreateNewResourceRequest,
+  HttpServerResponse,
+} from "../../../types";
 import {
   createErrorLogSchema,
   createHttpResponseError,
   createHttpResponseSuccess,
 } from "../../../utils";
 import { ErrorLogModel } from "../../errorLog";
-import type { FinancialMetricsSchema } from "./model";
+import type { FinancialMetricsDocument, FinancialMetricsSchema } from "./model";
 
 // @desc   Create new Financial Metric
 // @route  POST /api/v1/metrics/financial
 // @access Private/Admin/Manager
-function createNewFinancialMetricHandler<
-  Doc extends DBRecord = DBRecord,
->(
-  model: Model<Doc>,
+function createNewFinancialMetricHandler(
+  model: Model<FinancialMetricsDocument>,
 ) {
   return async (
     request: CreateNewResourceRequest<FinancialMetricsSchema>,
-    response: Response,
+    response: HttpServerResponse<FinancialMetricsDocument>,
   ) => {
     try {
       const { accessToken, schema } = request.body;
@@ -41,21 +42,18 @@ function createNewFinancialMetricHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            accessToken,
-            message: "Unable to create financial metric. Please try again.",
+            error: createFinancialMetricResult.val.data,
+            request,
           }),
         );
         return;
       }
 
-      const financialMetricUnwrapped =
-        createFinancialMetricResult.safeUnwrap().data;
-
-      if (financialMetricUnwrapped.length === 0) {
+      if (createFinancialMetricResult.val.data.none) {
         response.status(200).json(
           createHttpResponseError({
-            accessToken,
-            message: "Unable to create financial metric. Please try again.",
+            error: Some("Financial Metric not created"),
+            request,
           }),
         );
         return;
@@ -63,21 +61,28 @@ function createNewFinancialMetricHandler<
 
       response.status(200).json(
         createHttpResponseSuccess({
-          accessToken,
-          data: financialMetricUnwrapped,
-          message: "Financial Metric created successfully",
+          accessToken: Some(accessToken),
+          data: createFinancialMetricResult.val.data,
         }),
       );
     } catch (error: unknown) {
       await createNewResourceService(
         createErrorLogSchema(
-          error,
+          {
+            data: Some(error),
+            message: Some("Error creating financial metric"),
+          },
           request.body,
         ),
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResponseError({}));
+      response.status(200).json(
+        createHttpResponseError({
+          error: Some(error),
+          request,
+        }),
+      );
     }
   };
 }

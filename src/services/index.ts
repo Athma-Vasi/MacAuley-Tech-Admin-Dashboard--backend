@@ -72,8 +72,8 @@ async function getResourceByFieldService<
 }
 
 async function createNewResourceService<
-  Doc extends Record<string, unknown> = RecordDB,
   Schema extends Record<string, unknown> = Record<string, unknown>,
+  Doc extends Record<string, unknown> = RecordDB,
 >(
   schema: Schema,
   model: Model<Doc>,

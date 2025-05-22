@@ -1,26 +1,27 @@
-import type { Response } from "express";
 import type { Model } from "mongoose";
+import { Some } from "ts-results";
 import { createNewResourceService } from "../../../services";
-import type { CreateNewResourceRequest, DBRecord } from "../../../types";
+import type {
+  CreateNewResourceRequest,
+  HttpServerResponse,
+} from "../../../types";
 import {
   createErrorLogSchema,
   createHttpResponseError,
   createHttpResponseSuccess,
 } from "../../../utils";
 import { ErrorLogModel } from "../../errorLog";
-import type { RepairMetricsSchema } from "./model";
+import type { RepairMetricsDocument, RepairMetricsSchema } from "./model";
 
 // @desc   Create new Repair Metric
 // @route  POST /api/v1/metrics/repair
 // @access Private/Admin/Manager
-function createNewRepairMetricHandler<
-  Doc extends DBRecord = DBRecord,
->(
-  model: Model<Doc>,
+function createNewRepairMetricHandler(
+  model: Model<RepairMetricsDocument>,
 ) {
   return async (
     request: CreateNewResourceRequest<RepairMetricsSchema>,
-    response: Response,
+    response: HttpServerResponse<RepairMetricsDocument>,
   ) => {
     try {
       const { accessToken, schema } = request.body;
@@ -41,20 +42,18 @@ function createNewRepairMetricHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            accessToken,
-            message: "Unable to create repair metric. Please try again.",
+            error: createRepairMetricResult.val.data,
+            request,
           }),
         );
         return;
       }
 
-      const repairMetricUnwrapped = createRepairMetricResult.safeUnwrap().data;
-
-      if (repairMetricUnwrapped.length === 0) {
+      if (createRepairMetricResult.val.data.none) {
         response.status(200).json(
           createHttpResponseError({
-            accessToken,
-            message: "Unable to create repair metric. Please try again.",
+            error: Some("Repair Metric not created"),
+            request,
           }),
         );
         return;
@@ -62,21 +61,28 @@ function createNewRepairMetricHandler<
 
       response.status(200).json(
         createHttpResponseSuccess({
-          accessToken,
-          data: repairMetricUnwrapped,
-          message: "Repair Metric created successfully",
+          accessToken: Some(accessToken),
+          data: createRepairMetricResult.val.data,
         }),
       );
     } catch (error: unknown) {
       await createNewResourceService(
         createErrorLogSchema(
-          error,
+          {
+            data: Some(error),
+            message: Some("Error creating repair metric"),
+          },
           request.body,
         ),
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResponseError({}));
+      response.status(200).json(
+        createHttpResponseError({
+          error: Some(error),
+          request,
+        }),
+      );
     }
   };
 }

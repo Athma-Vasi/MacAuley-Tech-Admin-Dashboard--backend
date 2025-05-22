@@ -98,7 +98,6 @@ async function verifyJWTMiddleware(
 
     return;
   }
-
   if (tokenCreationResult.val.data.none) {
     response.status(200).json(
       createHttpResponseError({
@@ -109,6 +108,7 @@ async function verifyJWTMiddleware(
         triggerLogout: true,
       }),
     );
+
     return;
   }
 

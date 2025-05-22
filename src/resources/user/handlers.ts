@@ -1,5 +1,3 @@
-import type { Response } from "express";
-
 import { type UserDocument, UserModel, type UserSchema } from "./model";
 
 import type { Model } from "mongoose";
@@ -10,11 +8,10 @@ import {
 import type {
   CreateNewResourceRequest,
   CreateNewResourcesBulkRequest,
-  DBRecord,
-  HttpResult,
+  HttpServerResponse,
 } from "../../types";
 
-import { Err, Ok } from "ts-results";
+import { None, Some } from "ts-results";
 import { HASH_SALT_ROUNDS } from "../../constants";
 import {
   createErrorLogSchema,
@@ -27,12 +24,10 @@ import { ErrorLogModel } from "../errorLog";
 // @desc   Create new user
 // @route  POST /api/v1/user
 // @access Public
-function createNewUserHandler<
-  Doc extends DBRecord = DBRecord,
->(model: Model<Doc>) {
+function createNewUserHandler(model: Model<UserDocument>) {
   return async (
-    request: CreateNewResourceRequest<Doc>,
-    response: Response<HttpResult<UserDocument>>,
+    request: CreateNewResourceRequest<UserSchema>,
+    response: HttpServerResponse<UserDocument>,
   ) => {
     try {
       const { schema } = request.body;
@@ -51,15 +46,21 @@ function createNewUserHandler<
           ErrorLogModel,
         );
 
-        response.status(200).json(createHttpResponseError({ status: 500 }));
+        response.status(200).json(
+          createHttpResponseError({
+            error: usernameExistsResult.val.data,
+            request,
+          }),
+        );
         return;
       }
 
-      if (usernameExistsResult.val.kind === "success") {
+      if (usernameExistsResult.val.data.some) {
         response.status(200).json(
           createHttpResponseError({
+            error: Some("Username already exists"),
+            request,
             status: 400,
-            message: "Username already exists",
           }),
         );
         return;
@@ -79,15 +80,19 @@ function createNewUserHandler<
           ErrorLogModel,
         );
 
-        response.status(200).json(createHttpResponseError({}));
+        response.status(200).json(createHttpResponseError({
+          error: emailExistsResult.val.data,
+          request,
+        }));
         return;
       }
 
-      if (emailExistsResult.val.kind === "success") {
+      if (emailExistsResult.val.data.some) {
         response.status(200).json(
           createHttpResponseError({
+            error: Some("Email already exists"),
+            request,
             status: 400,
-            message: "Email already exists",
           }),
         );
         return;
@@ -106,27 +111,27 @@ function createNewUserHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to hash password. Please try again.",
+            error: hashPasswordResult.val.data,
+            request,
           }),
         );
         return;
       }
 
-      const hashedPasswordUnwrapped = hashPasswordResult.safeUnwrap().data;
-
-      if (hashedPasswordUnwrapped.length === 0) {
+      if (hashPasswordResult.val.data.none) {
         response.status(200).json(
           createHttpResponseError({
-            message: "Unable to retrieve hashed password. Please try again.",
+            error: Some(
+              "Unable to retrieve hashed password. Please try again.",
+            ),
+            request,
           }),
         );
         return;
       }
 
-      const [hashedPassword] = hashedPasswordUnwrapped;
-
       const userCreationResult = await createNewResourceService(
-        { ...schema, password: hashedPassword },
+        { ...schema, password: hashPasswordResult.val.data.safeUnwrap() },
         UserModel,
       );
 
@@ -139,26 +144,32 @@ function createNewUserHandler<
           ErrorLogModel,
         );
 
-        response.status(200).json(createHttpResponseError({ status: 500 }));
+        response.status(200).json(createHttpResponseError({
+          error: userCreationResult.val.data,
+          request,
+        }));
         return;
       }
 
       response.status(200).json(
         createHttpResponseSuccess({
-          data: userCreationResult.safeUnwrap().data,
-          accessToken: "",
+          accessToken: None,
+          data: userCreationResult.val.data,
         }),
       );
     } catch (error: unknown) {
       await createNewResourceService(
         createErrorLogSchema(
-          error,
+          { data: Some(error), message: Some("Error creating user") },
           request.body,
         ),
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResponseError({}));
+      response.status(200).json(createHttpResponseError({
+        error: Some(error),
+        request,
+      }));
     }
   };
 }
@@ -167,12 +178,10 @@ function createNewUserHandler<
 // @desc  Create new users in bulk
 // @route POST /api/v1/user/bulk
 // @access Public
-function createNewUsersBulkHandler<
-  Doc extends DBRecord = DBRecord,
->(model: Model<Doc>) {
+function createNewUsersBulkHandler(model: Model<UserDocument>) {
   return async (
-    request: CreateNewResourcesBulkRequest<Doc>,
-    response: Response<HttpResult<Doc>>,
+    request: CreateNewResourcesBulkRequest<UserSchema>,
+    response: HttpServerResponse<string | boolean>,
   ) => {
     try {
       const schemas = request.body.schemas as Array<UserSchema>;
@@ -183,64 +192,52 @@ function createNewUsersBulkHandler<
             stringToHash: schema.password,
           });
 
-          if (hashPasswordResult.err) {
-            return new Err("Unable to hash password. Please try again.");
+          if (hashPasswordResult.err || hashPasswordResult.val.data.none) {
+            return hashPasswordResult;
           }
-
-          const hashedPasswordUnwrapped = hashPasswordResult.safeUnwrap().data;
-
-          if (hashedPasswordUnwrapped.length === 0) {
-            return new Err(
-              "Unable to retrieve hashed password. Please try again.",
-            );
-          }
-
-          const [hashedPassword] = hashedPasswordUnwrapped;
 
           const userCreationResult = await createNewResourceService(
-            { ...schema, password: hashedPassword },
+            { ...schema, password: hashPasswordResult.val.data.safeUnwrap() },
             model,
           );
 
-          if (userCreationResult.err) {
-            return new Err("Error creating user");
+          if (userCreationResult.err || userCreationResult.val.data.none) {
+            return userCreationResult;
           }
 
-          const [userCreationResultUnwrapped] =
-            userCreationResult.safeUnwrap().data;
-
-          if (userCreationResultUnwrapped === undefined) {
-            return new Err("Could not create user");
-          }
-
-          return new Ok(userCreationResultUnwrapped);
+          return userCreationResult;
         }),
       );
 
-      const errors = userCreationResults.filter((result) => result.err);
-      if (errors.length > 0) {
-        errors.forEach((error) => {
-        });
-        response.status(200).json(
-          createHttpResponseError({ message: "Error creating users" }),
-        );
-        return;
-      }
+      const isError = userCreationResults.reduce(
+        (acc, result) => {
+          if (result.err || result.val.data.none) {
+            return true;
+          }
 
-      const successes = userCreationResults.filter((result) => result.ok);
-      const successesUnwrapped = successes.flatMap((result) =>
-        result.safeUnwrap()
+          return acc;
+        },
+        false,
       );
 
       response.status(200).json(
-        createHttpResponseSuccess({
-          data: successesUnwrapped as any,
-          accessToken: "",
-        }),
+        isError
+          ? createHttpResponseError({
+            error: Some("Error creating users"),
+            request,
+            status: 400,
+          })
+          : createHttpResponseSuccess({
+            data: Some(true),
+            accessToken: Some(request.body.accessToken ?? ""),
+          }),
       );
     } catch (error: unknown) {
       response.status(200).json(
-        createHttpResponseError({ message: "Erorr in handler" }),
+        createHttpResponseError({
+          error: Some(error),
+          request,
+        }),
       );
     }
   };

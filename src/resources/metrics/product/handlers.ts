@@ -1,26 +1,27 @@
-import type { Response } from "express";
 import type { Model } from "mongoose";
+import { Some } from "ts-results";
 import { createNewResourceService } from "../../../services";
-import type { CreateNewResourceRequest, DBRecord } from "../../../types";
+import type {
+  CreateNewResourceRequest,
+  HttpServerResponse,
+} from "../../../types";
 import {
   createErrorLogSchema,
   createHttpResponseError,
   createHttpResponseSuccess,
 } from "../../../utils";
 import { ErrorLogModel } from "../../errorLog";
-import type { ProductMetricsSchema } from "./model";
+import type { ProductMetricsDocument, ProductMetricsSchema } from "./model";
 
 // @desc   Create new Product Metric
 // @route  POST /api/v1/metrics/product
 // @access Private/Admin/Manager
-function createNewProductMetricHandler<
-  Doc extends DBRecord = DBRecord,
->(
-  model: Model<Doc>,
+function createNewProductMetricHandler(
+  model: Model<ProductMetricsDocument>,
 ) {
   return async (
     request: CreateNewResourceRequest<ProductMetricsSchema>,
-    response: Response,
+    response: HttpServerResponse<ProductMetricsDocument>,
   ) => {
     try {
       const { accessToken, schema } = request.body;
@@ -41,21 +42,18 @@ function createNewProductMetricHandler<
 
         response.status(200).json(
           createHttpResponseError({
-            accessToken,
-            message: "Unable to create product metric. Please try again.",
+            error: createProductMetricResult.val.data,
+            request,
           }),
         );
         return;
       }
 
-      const productMetricUnwrapped =
-        createProductMetricResult.safeUnwrap().data;
-
-      if (productMetricUnwrapped.length === 0) {
+      if (createProductMetricResult.val.data.none) {
         response.status(200).json(
           createHttpResponseError({
-            accessToken,
-            message: "Unable to create product metric. Please try again.",
+            error: Some("Product Metric not created"),
+            request,
           }),
         );
         return;
@@ -63,21 +61,28 @@ function createNewProductMetricHandler<
 
       response.status(200).json(
         createHttpResponseSuccess({
-          accessToken,
-          data: productMetricUnwrapped,
-          message: "Product Metric created successfully",
+          accessToken: Some(accessToken),
+          data: createProductMetricResult.val.data,
         }),
       );
     } catch (error: unknown) {
       await createNewResourceService(
         createErrorLogSchema(
-          error,
+          {
+            data: Some(error),
+            message: Some("Error creating product metric"),
+          },
           request.body,
         ),
         ErrorLogModel,
       );
 
-      response.status(200).json(createHttpResponseError({}));
+      response.status(200).json(
+        createHttpResponseError({
+          error: Some(error),
+          request,
+        }),
+      );
     }
   };
 }
