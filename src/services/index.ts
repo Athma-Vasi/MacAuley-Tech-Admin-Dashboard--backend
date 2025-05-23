@@ -12,26 +12,21 @@ import type {
   Prettify,
   QueryObjectParsedWithDefaults,
   RecordDB,
-  SafeBoxResult,
+  SafeResult,
 } from "../types";
-import mongodb = require("mongodb");
 
 async function getResourceByIdService<
   Doc extends Record<string, unknown> = RecordDB,
 >(
   resourceId: string,
   model: Prettify<Model<Doc>>,
-): Promise<SafeBoxResult<Doc, unknown>> {
+): Promise<SafeResult<Doc>> {
   try {
     const resource = await model.findById(resourceId)
       .lean()
       .exec() as Doc;
 
-    if (resource === null || resource === undefined) {
-      return new Ok({ data: None, message: Some("Resource not found") });
-    }
-
-    return new Ok({ data: Some(resource) });
+    return;
   } catch (error: unknown) {
     return new Err({
       data: Some(error),

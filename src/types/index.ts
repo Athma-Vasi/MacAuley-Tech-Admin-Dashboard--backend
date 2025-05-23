@@ -139,39 +139,29 @@ type RecordDB<
   __v: number;
 };
 
-// type Success<Data = unknown> = {
-//   data: [Data];
-//   kind: "success";
-// } | {
-//   data: [];
-//   kind: "notFound";
-// } | {
-//   data: [];
-//   kind: "mildError";
+// type SafeBoxSuccess<Data = unknown> = {
+//   data: Option<Data>;
+//   message?: Option<string>;
+// };
+// type SafeBoxError<Error_ = unknown> = {
+//   data: Option<Error_>;
+//   message: Option<string>;
 // };
 
-// type NotSuccess = {
-//   message: string;
-// };
-
-// type ServiceResult<Data = unknown> = Promise<
-//   Result<Success<Data>, NotSuccess>
+// type SafeBoxResult<Data = unknown, Error_ = unknown> = Result<
+//   SafeBoxSuccess<Data>,
+//   SafeBoxError<Error_>
 // >;
-type SafeBoxSuccess<Data = unknown> = {
-  data: Option<Data>;
-  message?: Option<string>;
-};
-type SafeBoxError<Error_ = unknown> = {
-  data: Option<Error_>;
-  message: Option<string>;
-};
 
-type SafeBoxResult<Data = unknown, Error_ = unknown> = Result<
-  SafeBoxSuccess<Data>,
-  SafeBoxError<Error_>
->;
+type SafeError = {
+  name: string;
+  message: string;
+  stack: Option<string>;
+  original: Option<string>;
+};
+type SafeResult<Data = unknown> = Result<Option<Data>, SafeError>;
 
-// non options fields are guaranteed to be present
+// all fields are guaranteed to be present
 // as all responses are sent from a creator function with default values
 type ResponsePayload<Data = unknown> = {
   accessToken: string;
@@ -310,8 +300,7 @@ export type {
   RequestAfterJWTVerification,
   RequestAfterQueryParsing,
   ResponsePayload,
-  SafeBoxError,
-  SafeBoxResult,
-  SafeBoxSuccess,
+  SafeError,
+  SafeResult,
   UpdateResourceByIdRequest,
 };

@@ -51,7 +51,6 @@ async function verifyJWTMiddleware(
   }
 
   // token is valid and maybe expired
-  // always create new token
 
   const decodedAccessTokenResult = await decodeJWTSafe(accessToken);
   if (decodedAccessTokenResult.err) {
@@ -79,6 +78,7 @@ async function verifyJWTMiddleware(
     return;
   }
 
+  // always create new token
   const tokenCreationResult = await createTokenService({
     accessToken,
     decodedOldToken: decodedAccessTokenResult.val.data.val,
