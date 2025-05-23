@@ -8,8 +8,6 @@ import type {
   DecodedToken,
   RequestAfterJWTVerification,
   ResponsePayload,
-  SafeBoxError,
-  SafeBoxResult,
   SafeError,
 } from "../types";
 
@@ -87,48 +85,31 @@ function createHttpResponseSuccess<Data = unknown>({
 }
 
 function createErrorLogSchema(
-  error: SafeBoxError<unknown>,
-  requestBody: RequestAfterJWTVerification["body"],
+  error: unknown,
+  request: RequestAfterJWTVerification,
 ): ErrorLogSchema {
-  if (error.data.none) {
-    return {
-      expireAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 hours
-      message: "Error data is empty",
-      name: "Error data is empty",
-      stack: "Error data is empty",
-      requestBody: JSON.stringify(requestBody),
-      sessionId: "",
-      timestamp: new Date(),
-      userId: "",
-      username: "",
-    };
-  }
-
-  const userInfo = requestBody.userInfo ?? {};
-  const sessionId = requestBody.sessionId;
-  const userId = userInfo?.userId ?? "";
-  const username = userInfo?.username ?? "";
-  const unknownError = ".·°՞(¯□¯)՞°·. An unknown error occurred";
-  const message = error.data.val instanceof Error
-    ? error.data.val.message
-    : unknownError;
-  const name = error.data.val instanceof Error
-    ? error.data.val.name
-    : unknownError;
-  const stack = error.data.val instanceof Error && error.data.val.stack
-    ? error.data.val.stack
-    : unknownError;
+  const safeErrorResult = createSafeErrorResult(error);
 
   return {
     expireAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 hours
-    message,
-    name,
-    stack,
-    requestBody: JSON.stringify(requestBody),
-    sessionId: sessionId?.toString() ?? "",
+    message: safeErrorResult.val.message,
+    name: safeErrorResult.val.name,
+    stack: safeErrorResult.val.stack.none
+      ? "ｶ ｷ ｸ ｹ ｺ ｻ ｼ ｽ"
+      : safeErrorResult.val.stack.val,
+    body: JSON.stringify(request.body),
+    sessionId: request.body.sessionId?.toString() ?? "unknown",
     timestamp: new Date(),
-    userId: userId?.toString() ?? "",
-    username: username ?? "",
+    userId: request.body.userId?.toString() ?? "unknown",
+    username: request.body.username ?? "unknown",
+    ip: request.ip,
+    userAgent: request.headers["user-agent"],
+    original: safeErrorResult.val.original.none
+      ? "ｾ ｿ ﾀ ﾁ ﾂ ﾃ ﾄ ﾅ"
+      : safeErrorResult.val.original.val,
+    method: request.method,
+    headers: JSON.stringify(request.headers),
+    path: request.path,
   };
 }
 

@@ -1,15 +1,21 @@
 import { model, Schema, type Types } from "mongoose";
 
 type ErrorLogSchema = {
-  expireAt: Date;
-  message: string;
-  name: string;
-  requestBody: string;
-  sessionId: string;
-  stack: string;
-  timestamp: Date;
+  method?: string;
+  path?: string;
+  headers?: string;
+  body?: string;
+  ip?: string;
+  userAgent?: string;
+  original: string;
+  expireAt?: Date;
   userId: string;
   username: string;
+  sessionId: string;
+  message: string;
+  name: string;
+  stack: string;
+  timestamp?: Date;
 };
 
 type ErrorLogDocument = ErrorLogSchema & {
@@ -21,6 +27,34 @@ type ErrorLogDocument = ErrorLogSchema & {
 
 const errorLogSchema = new Schema(
   {
+    method: {
+      type: String,
+      required: false,
+    },
+    path: {
+      type: String,
+      required: false,
+    },
+    headers: {
+      type: String,
+      required: false,
+    },
+    body: {
+      type: String,
+      required: false,
+    },
+    ip: {
+      type: String,
+      required: false,
+    },
+    userAgent: {
+      type: String,
+      required: false,
+    },
+    original: {
+      type: String,
+      required: [true, "Original error is required"],
+    },
     expireAt: {
       type: Date,
       required: false,
@@ -35,34 +69,24 @@ const errorLogSchema = new Schema(
     },
     username: {
       type: String,
-      required: false,
-      default: "Username was not provided",
+      required: [true, "Username is required"],
     },
     sessionId: {
       type: String,
-      required: false,
-      default: "Session ID was not provided",
+      required: [true, "Session ID is required"],
       index: true,
     },
     message: {
       type: String,
-      required: false,
-      default: "Message was not provided",
+      required: [true, "Message is required"],
     },
     name: {
       type: String,
-      required: false,
-      default: "Error name was not provided",
+      required: [true, "Name is required"],
     },
     stack: {
       type: String,
-      required: false,
-      default: "Stack trace was not provided",
-    },
-    requestBody: {
-      type: String,
-      required: false,
-      default: "Request body was not provided",
+      required: [true, "Stack is required"],
     },
     timestamp: {
       type: Date,
@@ -74,11 +98,16 @@ const errorLogSchema = new Schema(
 );
 
 errorLogSchema.index({
-  username: "text",
-  sessionId: "text",
+  body: "text",
+  headers: "text",
+  ip: "text",
   message: "text",
+  method: "text",
+  path: "text",
+  sessionId: "text",
   stack: "text",
-  requestBody: "text",
+  userAgent: "text",
+  username: "text",
 });
 
 const ErrorLogModel = model<ErrorLogDocument>("ErrorLog", errorLogSchema);
