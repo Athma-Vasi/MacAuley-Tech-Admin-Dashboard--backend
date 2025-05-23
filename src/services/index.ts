@@ -5,7 +5,7 @@ import type {
   QueryOptions,
   RootFilterQuery,
 } from "mongoose";
-import { Err, None, Ok, Some } from "ts-results";
+import { None, Ok } from "ts-results";
 import type {
   ArrayOperators,
   FieldOperators,
@@ -14,6 +14,7 @@ import type {
   RecordDB,
   SafeResult,
 } from "../types";
+import { createSafeErrorResult, createSafeSuccessResult } from "../utils";
 
 async function getResourceByIdService<
   Doc extends Record<string, unknown> = RecordDB,
@@ -25,13 +26,9 @@ async function getResourceByIdService<
     const resource = await model.findById(resourceId)
       .lean()
       .exec() as Doc;
-
-    return;
+    return createSafeSuccessResult(resource);
   } catch (error: unknown) {
-    return new Err({
-      data: Some(error),
-      message: Some("Error getting resource by ID"),
-    });
+    return createSafeErrorResult(error);
   }
 }
 
@@ -47,22 +44,14 @@ async function getResourceByFieldService<
   model: Model<Doc>;
   projection?: Record<string, unknown>;
   options?: QueryOptions<Doc>;
-}): Promise<SafeBoxResult<Doc, unknown>> {
+}): Promise<SafeResult<Doc[]>> {
   try {
     const resourceBox = await model.find(filter, projection, options)
       .lean()
       .exec() as Doc[];
-
-    if (resourceBox.length === 0 || resourceBox.length > 1) {
-      return new Ok({ data: None, message: Some("Resource not found") });
-    }
-
-    return new Ok({ data: Some(resourceBox[0]) });
+    return createSafeSuccessResult(resourceBox);
   } catch (error: unknown) {
-    return new Err({
-      data: Some(error),
-      message: Some("Error getting resource by field"),
-    });
+    return createSafeErrorResult(error);
   }
 }
 
@@ -72,23 +61,12 @@ async function createNewResourceService<
 >(
   schema: Schema,
   model: Model<Doc>,
-): Promise<SafeBoxResult<Doc, unknown>> {
+): Promise<SafeResult<Doc>> {
   try {
     const resource = await model.create(schema) as Doc;
-
-    if (resource === null || resource === undefined) {
-      return new Ok({
-        data: None,
-        message: Some("Created resource not found"),
-      });
-    }
-
-    return new Ok({ data: Some(resource) });
+    return createSafeSuccessResult(resource);
   } catch (error: unknown) {
-    return new Err({
-      data: Some(error),
-      message: Some("Error creating resource"),
-    });
+    return createSafeErrorResult(error);
   }
 }
 
@@ -101,22 +79,14 @@ async function getQueriedResourcesService<
   projection,
 }: QueryObjectParsedWithDefaults & {
   model: Model<Doc>;
-}): Promise<SafeBoxResult<Doc[], unknown>> {
+}): Promise<SafeResult<Doc[]>> {
   try {
     const resources = await model.find(filter, projection, options)
       .lean()
       .exec() as Doc[];
-
-    if (resources.length === 0) {
-      return new Ok({ data: None, message: Some("Resource not found") });
-    }
-
-    return new Ok({ data: Some(resources) });
+    return createSafeSuccessResult(resources);
   } catch (error: unknown) {
-    return new Err({
-      data: Some(error),
-      message: Some("Error getting resources"),
-    });
+    return createSafeErrorResult(error);
   }
 }
 
@@ -131,7 +101,7 @@ async function getQueriedTotalResourcesService<
       MongooseBaseQueryOptionKeys
     >;
   },
-): Promise<SafeBoxResult<number, unknown>> {
+): Promise<SafeResult<number>> {
   try {
     const totalQueriedResources = await model.countDocuments(
       filter,
@@ -139,17 +109,9 @@ async function getQueriedTotalResourcesService<
     )
       .lean()
       .exec();
-
-    if (totalQueriedResources === 0) {
-      return new Ok({ data: None, message: Some("Resource not found") });
-    }
-
-    return new Ok({ data: Some(totalQueriedResources) });
+    return createSafeSuccessResult(totalQueriedResources);
   } catch (error: unknown) {
-    return new Err({
-      data: Some(error),
-      message: Some("Error getting total resources"),
-    });
+    return createSafeErrorResult(error);
   }
 }
 
@@ -162,22 +124,14 @@ async function getQueriedResourcesByUserService<
   projection,
 }: QueryObjectParsedWithDefaults & {
   model: Model<Doc>;
-}): Promise<SafeBoxResult<Doc[], unknown>> {
+}): Promise<SafeResult<Doc[]>> {
   try {
     const resources = await model.find(filter, projection, options)
       .lean()
       .exec() as Doc[];
-
-    if (resources.length === 0) {
-      return new Ok({ data: None, message: Some("Resource not found") });
-    }
-
-    return new Ok({ data: Some(resources) });
+    return createSafeSuccessResult(resources);
   } catch (error: unknown) {
-    return new Err({
-      data: Some(error),
-      message: Some("Error getting resources"),
-    });
+    return createSafeErrorResult(error);
   }
 }
 
@@ -193,33 +147,25 @@ async function updateResourceByIdService<
   fields: Record<string, unknown>;
   model: Model<Doc>;
   updateOperator: FieldOperators | ArrayOperators;
-}): Promise<SafeBoxResult<Doc, unknown>> {
+}): Promise<SafeResult<Doc>> {
   try {
     const updateObject = {
       [updateOperator]: fields,
-    };
+    } as Pick<
+      QueryOptions<Doc>,
+      MongooseBaseQueryOptionKeys
+    >;
 
     const resource = await model.findByIdAndUpdate(
       resourceId,
-      updateObject as Pick<
-        QueryOptions<Doc>,
-        MongooseBaseQueryOptionKeys
-      >,
+      updateObject,
       { new: true },
     )
       .lean()
       .exec() as Doc;
-
-    if (resource === null || resource === undefined) {
-      return new Ok({ data: None, message: Some("Resource not found") });
-    }
-
-    return new Ok({ data: Some(resource) });
+    return createSafeSuccessResult(resource);
   } catch (error: unknown) {
-    return new Err({
-      data: Some(error),
-      message: Some("Error updating resource"),
-    });
+    return createSafeErrorResult(error);
   }
 }
 
@@ -228,7 +174,7 @@ async function deleteResourceByIdService<
 >(
   resourceId: string,
   model: Model<Doc>,
-): Promise<SafeBoxResult<boolean, unknown>> {
+): Promise<SafeResult<boolean>> {
   try {
     const { acknowledged, deletedCount } = await model.deleteOne({
       _id: resourceId,
@@ -237,13 +183,10 @@ async function deleteResourceByIdService<
       .exec();
 
     return acknowledged && deletedCount === 1
-      ? new Ok({ data: Some(true) })
-      : new Ok({ data: None, message: Some("Resource not found") });
+      ? createSafeSuccessResult(true)
+      : new Ok(None);
   } catch (error: unknown) {
-    return new Err({
-      data: Some(error),
-      message: Some("Error deleting resource"),
-    });
+    return createSafeErrorResult(error);
   }
 }
 
@@ -255,7 +198,7 @@ async function deleteManyResourcesService<
     options?: QueryOptions<Doc>;
     model: Model<Doc>;
   },
-): Promise<SafeBoxResult<boolean, unknown>> {
+): Promise<SafeResult<boolean>> {
   try {
     const totalResources = await model.countDocuments(
       filter,
@@ -278,13 +221,10 @@ async function deleteManyResourcesService<
       .exec();
 
     return acknowledged && deletedCount === totalResources
-      ? new Ok({ data: Some(true) })
-      : new Ok({ data: None, message: Some("Some resources not found") });
+      ? createSafeSuccessResult(true)
+      : new Ok(None);
   } catch (error: unknown) {
-    return new Err({
-      data: Some(error),
-      message: Some("Error deleting resources"),
-    });
+    return createSafeErrorResult(error);
   }
 }
 
