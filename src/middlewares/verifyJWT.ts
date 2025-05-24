@@ -1,11 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { Some } from "ts-results";
 import { CONFIG } from "../config";
 import { ACCESS_TOKEN_EXPIRY, PROPERTY_DESCRIPTOR } from "../constants";
 import { createTokenService } from "../resources/auth/services";
 import {
   createHttpResponseError,
+  createSafeErrorResult,
   decodeJWTSafe,
   verifyJWTSafe,
 } from "../utils";
@@ -21,8 +21,8 @@ async function verifyJWTMiddleware(
   if (!accessToken) {
     response.status(200).json(
       createHttpResponseError({
-        error: Some("Access token not found"),
         request,
+        safeErrorResult: createSafeErrorResult("Access token is missing"),
         status: 401,
         triggerLogout: true,
       }),
@@ -35,13 +35,12 @@ async function verifyJWTMiddleware(
     seed: ACCESS_TOKEN_SEED,
     token: accessToken,
   });
-
   // token is invalid (except for expired)
   if (verifiedAccessTokenResult.err) {
     response.status(200).json(
       createHttpResponseError({
-        error: verifiedAccessTokenResult.val.message,
         request,
+        safeErrorResult: verifiedAccessTokenResult,
         status: 401,
         triggerLogout: true,
       }),
@@ -56,8 +55,8 @@ async function verifyJWTMiddleware(
   if (decodedAccessTokenResult.err) {
     response.status(200).json(
       createHttpResponseError({
-        error: decodedAccessTokenResult.val.message,
         request,
+        safeErrorResult: decodedAccessTokenResult,
         status: 401,
         triggerLogout: true,
       }),
@@ -65,11 +64,11 @@ async function verifyJWTMiddleware(
 
     return;
   }
-  if (decodedAccessTokenResult.val.data.none) {
+  if (decodedAccessTokenResult.val.none) {
     response.status(200).json(
       createHttpResponseError({
-        error: Some("Decoded access token is empty"),
         request,
+        safeErrorResult: createSafeErrorResult("Decoded token is empty"),
         status: 401,
         triggerLogout: true,
       }),
@@ -81,7 +80,7 @@ async function verifyJWTMiddleware(
   // always create new token
   const tokenCreationResult = await createTokenService({
     accessToken,
-    decodedOldToken: decodedAccessTokenResult.val.data.val,
+    decodedOldToken: decodedAccessTokenResult.val.val,
     expiresIn: ACCESS_TOKEN_EXPIRY, // 5 seconds
     request,
     seed: ACCESS_TOKEN_SEED,
@@ -89,8 +88,8 @@ async function verifyJWTMiddleware(
   if (tokenCreationResult.err) {
     response.status(200).json(
       createHttpResponseError({
-        error: tokenCreationResult.val.message,
         request,
+        safeErrorResult: tokenCreationResult,
         status: 400,
         triggerLogout: true,
       }),
@@ -101,8 +100,7 @@ async function verifyJWTMiddleware(
   if (tokenCreationResult.val.data.none) {
     response.status(200).json(
       createHttpResponseError({
-        error: tokenCreationResult.val.message ??
-          Some("Created token is empty"),
+        safeErrorResult: createSafeErrorResult("Token creation failed"),
         request,
         status: 400,
         triggerLogout: true,
@@ -112,10 +110,10 @@ async function verifyJWTMiddleware(
     return;
   }
 
-  const decodedAccessToken = decodedAccessTokenResult.val.data.safeUnwrap();
+  const decodedAccessToken = decodedAccessTokenResult.val.val;
   // newly created access token is accessed by handlers and returned with httpServerResponse
   Object.defineProperty(request.body, "accessToken", {
-    value: tokenCreationResult.val.data.safeUnwrap(),
+    value: tokenCreationResult.val.val,
     ...PROPERTY_DESCRIPTOR,
   });
 

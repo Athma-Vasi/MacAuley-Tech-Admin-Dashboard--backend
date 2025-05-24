@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import type { Model } from "mongoose";
-import type { Err } from "ts-results";
+import type { Err, OkImpl, Option } from "ts-results";
 import { ErrorLogModel } from "../resources/errorLog";
 import {
   createNewResourceService,
@@ -28,11 +28,14 @@ import {
   createSafeErrorResult,
 } from "../utils";
 
-async function catchHandlerError(
+async function catchHandlerError<
+  Req extends Request = Request,
+  Res extends Response = Response,
+>(
   { error, request, response, status = 500 }: {
     error: unknown;
-    request: CreateNewResourceRequest;
-    response: Response;
+    request: Req;
+    response: Res;
     status?: number;
   },
 ): Promise<void> {
@@ -62,11 +65,35 @@ async function catchHandlerError(
   }
 }
 
-async function handleServiceError(
+function handleServiceSuccessResult<
+  Data = unknown,
+  Req extends Request = Request,
+  Res extends Response = Response,
+>(
+  { request, response, safeSuccessResult, status }: {
+    safeSuccessResult: OkImpl<Option<NonNullable<Data>>>;
+    request: Req;
+    response: Res;
+    status?: number;
+  },
+): void {
+  response.status(200).json(
+    createHttpResponseSuccess({
+      request,
+      safeSuccessResult: safeSuccessResult,
+      status,
+    }),
+  );
+}
+1;
+async function handleServiceErrorResult<
+  Req extends Request = Request,
+  Res extends Response = Response,
+>(
   { request, response, safeErrorResult, status = 500 }: {
     safeErrorResult: Err<SafeError>;
-    request: Request;
-    response: Response;
+    request: Req;
+    response: Res;
     status?: number;
   },
 ): Promise<void> {
@@ -110,7 +137,7 @@ function createNewResourceHandler<
         model,
       );
       if (createResourceResult.err) {
-        await handleServiceError({
+        await handleServiceErrorResult({
           request,
           response,
           safeErrorResult: createResourceResult,
@@ -119,14 +146,11 @@ function createNewResourceHandler<
         return;
       }
 
-      response
-        .status(201)
-        .json(
-          createHttpResponseSuccess({
-            safeSuccessResult: createResourceResult,
-            request,
-          }),
-        );
+      handleServiceSuccessResult({
+        request,
+        response,
+        safeSuccessResult: createResourceResult,
+      });
       return;
     } catch (error: unknown) {
       await catchHandlerError({ error, request, response });
@@ -160,7 +184,7 @@ function getQueriedResourcesHandler<
           model,
         });
         if (totalResult.err) {
-          await handleServiceError({
+          await handleServiceErrorResult({
             request,
             response,
             safeErrorResult: totalResult,
@@ -179,7 +203,7 @@ function getQueriedResourcesHandler<
         projection,
       });
       if (getResourcesResult.err) {
-        await handleServiceError({
+        await handleServiceErrorResult({
           request,
           response,
           safeErrorResult: getResourcesResult,
@@ -228,7 +252,7 @@ function getQueriedResourcesByUserHandler<
           model,
         });
         if (totalResult.err) {
-          await handleServiceError({
+          await handleServiceErrorResult({
             request,
             response,
             safeErrorResult: totalResult,
@@ -247,7 +271,7 @@ function getQueriedResourcesByUserHandler<
         projection,
       });
       if (getResourcesResult.err) {
-        await handleServiceError({
+        await handleServiceErrorResult({
           request,
           response,
           safeErrorResult: getResourcesResult,
@@ -296,7 +320,7 @@ function updateResourceByIdHandler<
         updateOperator,
       });
       if (updateResourceResult.err) {
-        await handleServiceError({
+        await handleServiceErrorResult({
           request,
           response,
           safeErrorResult: updateResourceResult,
@@ -336,7 +360,7 @@ function getResourceByIdHandler<Doc extends Record<string, unknown> = RecordDB>(
         model,
       );
       if (getResourceResult.err) {
-        await handleServiceError({
+        await handleServiceErrorResult({
           request,
           response,
           safeErrorResult: getResourceResult,
@@ -378,7 +402,7 @@ function deleteResourceByIdHandler<
         model,
       );
       if (deletedResult.err) {
-        await handleServiceError({
+        await handleServiceErrorResult({
           request,
           response,
           safeErrorResult: deletedResult,
@@ -413,7 +437,7 @@ function deleteManyResourcesHandler<
     try {
       const deletedResult = await deleteManyResourcesService({ model });
       if (deletedResult.err) {
-        await handleServiceError({
+        await handleServiceErrorResult({
           request,
           response,
           safeErrorResult: deletedResult,
@@ -444,5 +468,7 @@ export {
   getQueriedResourcesByUserHandler,
   getQueriedResourcesHandler,
   getResourceByIdHandler,
+  handleServiceErrorResult,
+  handleServiceSuccessResult,
   updateResourceByIdHandler,
 };

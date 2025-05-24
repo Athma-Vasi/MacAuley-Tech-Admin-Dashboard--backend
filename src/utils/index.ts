@@ -32,6 +32,44 @@ function createHttpResponseError<
   totalDocuments?: number;
   triggerLogout?: boolean;
 }): ResponsePayload<Data> {
+  const responsePayload: ResponsePayload<Data> = {
+    accessToken: request.body.accessToken ?? "",
+    data: [],
+    kind,
+  };
+
+  const { message, name } = safeErrorResult.val;
+  if (message) {
+    Object.defineProperty(responsePayload, "message", {
+      value: `${name}: ${message}`,
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+  if (pages) {
+    Object.defineProperty(responsePayload, "pages", {
+      value: pages,
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+  if (status) {
+    Object.defineProperty(responsePayload, "status", {
+      value: status,
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+  if (totalDocuments) {
+    Object.defineProperty(responsePayload, "totalDocuments", {
+      value: totalDocuments,
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+  if (triggerLogout) {
+    Object.defineProperty(responsePayload, "triggerLogout", {
+      value: triggerLogout,
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+
   return {
     accessToken: request.body.accessToken ? request.body.accessToken : "",
     data: [],
@@ -64,6 +102,43 @@ function createHttpResponseSuccess<Data = unknown>({
   triggerLogout?: boolean;
 }): ResponsePayload<Data> {
   const newData = safeSuccessResult.val.none ? [] : safeSuccessResult.val.val;
+
+  const responsePayload: ResponsePayload<Data> = {
+    accessToken: request.body.accessToken ?? "",
+    data: Array.isArray(newData) ? newData : [newData],
+    kind,
+  };
+
+  if (message) {
+    Object.defineProperty(responsePayload, "message", {
+      value: serializeSafe(message),
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+  if (pages) {
+    Object.defineProperty(responsePayload, "pages", {
+      value: pages,
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+  if (status) {
+    Object.defineProperty(responsePayload, "status", {
+      value: status,
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+  if (totalDocuments) {
+    Object.defineProperty(responsePayload, "totalDocuments", {
+      value: totalDocuments,
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+  if (triggerLogout) {
+    Object.defineProperty(responsePayload, "triggerLogout", {
+      value: triggerLogout,
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
 
   return {
     accessToken: request.body.accessToken ? request.body.accessToken : "",

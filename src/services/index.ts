@@ -44,12 +44,15 @@ async function getResourceByFieldService<
   model: Model<Doc>;
   projection?: Record<string, unknown>;
   options?: QueryOptions<Doc>;
-}): Promise<SafeResult<Doc[]>> {
+}): Promise<SafeResult<Doc>> {
   try {
     const resourceBox = await model.find(filter, projection, options)
       .lean()
       .exec() as Doc[];
-    return createSafeSuccessResult(resourceBox);
+
+    return resourceBox.length === 0 || resourceBox[0] == null
+      ? new Ok(None)
+      : createSafeSuccessResult(resourceBox[0]);
   } catch (error: unknown) {
     return createSafeErrorResult(error);
   }
