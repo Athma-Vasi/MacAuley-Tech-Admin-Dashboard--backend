@@ -24,6 +24,7 @@ import type {
 import {
   createErrorLogSchema,
   createHttpResponseError,
+  createHttpResponseRejected,
   createHttpResponseSuccess,
   createSafeErrorResult,
 } from "../utils";
@@ -70,35 +71,85 @@ function handleServiceSuccessResult<
   Req extends Request = Request,
   Res extends Response = Response,
 >(
-  { request, response, safeSuccessResult, status }: {
+  {
+    pages,
+    request,
+    response,
+    safeSuccessResult,
+    status = 200,
+    totalDocuments,
+    triggerLogout,
+  }: {
+    pages?: number;
+    request: Req;
+    response: Res;
     safeSuccessResult: OkImpl<Option<NonNullable<Data>>>;
+    status?: number;
+    totalDocuments?: number;
+    triggerLogout?: boolean;
+  },
+): void {
+  response.status(200).json(
+    createHttpResponseSuccess({
+      pages,
+      request,
+      safeSuccessResult,
+      status,
+      totalDocuments,
+      triggerLogout,
+    }),
+  );
+}
+
+function createServiceRejectedResponse<
+  Req extends Request = Request,
+  Res extends Response = Response,
+>(
+  {
+    message = "Request was rejected",
+    request,
+    response,
+    status = 401,
+  }: {
+    message: string;
     request: Req;
     response: Res;
     status?: number;
   },
 ): void {
   response.status(200).json(
-    createHttpResponseSuccess({
+    createHttpResponseRejected({
       request,
-      safeSuccessResult: safeSuccessResult,
+      message,
       status,
     }),
   );
 }
-1;
+
 async function handleServiceErrorResult<
   Req extends Request = Request,
   Res extends Response = Response,
 >(
-  { request, response, safeErrorResult, status = 500 }: {
-    safeErrorResult: Err<SafeError>;
+  {
+    pages,
+    request,
+    response,
+    safeErrorResult,
+    status = 500,
+    totalDocuments,
+    triggerLogout,
+  }: {
+    pages?: number;
     request: Req;
     response: Res;
+    safeErrorResult: Err<SafeError>;
     status?: number;
+    totalDocuments?: number;
+    triggerLogout?: boolean;
   },
 ): Promise<void> {
   try {
-    const createResult = await createNewResourceService(
+    const createResourceResult = await createNewResourceService(
       createErrorLogSchema(
         safeErrorResult,
         request,
@@ -106,9 +157,14 @@ async function handleServiceErrorResult<
       ErrorLogModel,
     );
     const responsePayload = createHttpResponseError({
-      safeErrorResult: createResult.err ? createResult : safeErrorResult,
+      pages,
       request,
+      safeErrorResult: createResourceResult.err
+        ? createResourceResult
+        : safeErrorResult,
       status,
+      totalDocuments,
+      triggerLogout,
     });
 
     response.status(200).json(responsePayload);
@@ -132,8 +188,19 @@ function createNewResourceHandler<
     response: HttpServerResponse<Doc>,
   ) => {
     try {
+      const { schema } = request.body;
+      if (!schema) {
+        handleServiceErrorResult({
+          request,
+          response,
+          safeErrorResult: createSafeErrorResult("Schema is required"),
+          status: 400,
+        });
+        return;
+      }
+
       const createResourceResult = await createNewResourceService(
-        request.body.schema ?? {},
+        schema,
         model,
       );
       if (createResourceResult.err) {
@@ -212,16 +279,15 @@ function getQueriedResourcesHandler<
         return;
       }
 
-      response.status(200).json(
-        createHttpResponseSuccess({
-          request,
-          safeSuccessResult: getResourcesResult,
-          pages: Math.ceil(
-            totalDocuments / Number(options?.limit ?? 10),
-          ),
-          totalDocuments,
-        }),
-      );
+      handleServiceSuccessResult({
+        request,
+        response,
+        safeSuccessResult: getResourcesResult,
+        pages: Math.ceil(
+          totalDocuments / Number(options?.limit ?? 10),
+        ),
+        totalDocuments,
+      });
       return;
     } catch (error: unknown) {
       await catchHandlerError({ error, request, response });
@@ -280,16 +346,15 @@ function getQueriedResourcesByUserHandler<
         return;
       }
 
-      response.status(200).json(
-        createHttpResponseSuccess({
-          request,
-          safeSuccessResult: getResourcesResult,
-          pages: Math.ceil(
-            totalDocuments / Number(options?.limit ?? 10),
-          ),
-          totalDocuments,
-        }),
-      );
+      handleServiceSuccessResult({
+        request,
+        response,
+        safeSuccessResult: getResourcesResult,
+        pages: Math.ceil(
+          totalDocuments / Number(options?.limit ?? 10),
+        ),
+        totalDocuments,
+      });
       return;
     } catch (error: unknown) {
       await catchHandlerError({ error, request, response });
@@ -329,14 +394,11 @@ function updateResourceByIdHandler<
         return;
       }
 
-      response
-        .status(200)
-        .json(
-          createHttpResponseSuccess({
-            request,
-            safeSuccessResult: updateResourceResult,
-          }),
-        );
+      handleServiceSuccessResult({
+        request,
+        response,
+        safeSuccessResult: updateResourceResult,
+      });
       return;
     } catch (error: unknown) {
       await catchHandlerError({ error, request, response });
@@ -369,14 +431,11 @@ function getResourceByIdHandler<Doc extends Record<string, unknown> = RecordDB>(
         return;
       }
 
-      response
-        .status(200)
-        .json(
-          createHttpResponseSuccess({
-            request,
-            safeSuccessResult: getResourceResult,
-          }),
-        );
+      handleServiceSuccessResult({
+        request,
+        response,
+        safeSuccessResult: getResourceResult,
+      });
       return;
     } catch (error: unknown) {
       await catchHandlerError({ error, request, response });
@@ -411,12 +470,11 @@ function deleteResourceByIdHandler<
         return;
       }
 
-      response.status(200).json(
-        createHttpResponseSuccess({
-          request,
-          safeSuccessResult: deletedResult,
-        }),
-      );
+      handleServiceSuccessResult({
+        request,
+        response,
+        safeSuccessResult: deletedResult,
+      });
       return;
     } catch (error: unknown) {
       await catchHandlerError({ error, request, response });
@@ -446,12 +504,11 @@ function deleteManyResourcesHandler<
         return;
       }
 
-      response.status(200).json(
-        createHttpResponseSuccess({
-          request,
-          safeSuccessResult: deletedResult,
-        }),
-      );
+      handleServiceSuccessResult({
+        request,
+        response,
+        safeSuccessResult: deletedResult,
+      });
       return;
     } catch (error: unknown) {
       await catchHandlerError({ error, request, response });
@@ -463,6 +520,7 @@ function deleteManyResourcesHandler<
 export {
   catchHandlerError,
   createNewResourceHandler,
+  createServiceRejectedResponse,
   deleteManyResourcesHandler,
   deleteResourceByIdHandler,
   getQueriedResourcesByUserHandler,

@@ -1,16 +1,15 @@
 import type { Model } from "mongoose";
-import { Some } from "ts-results";
+import {
+  catchHandlerError,
+  handleServiceErrorResult,
+  handleServiceSuccessResult,
+} from "../../../handlers";
 import { createNewResourceService } from "../../../services";
 import type {
   CreateNewResourceRequest,
   HttpServerResponse,
 } from "../../../types";
-import {
-  createErrorLogSchema,
-  createHttpResponseError,
-  createHttpResponseSuccess,
-} from "../../../utils";
-import { ErrorLogModel } from "../../errorLog";
+import { createSafeErrorResult } from "../../../utils";
 import type { ProductMetricsDocument, ProductMetricsSchema } from "./model";
 
 // @desc   Create new Product Metric
@@ -24,65 +23,38 @@ function createNewProductMetricHandler(
     response: HttpServerResponse<ProductMetricsDocument>,
   ) => {
     try {
-      const { accessToken, schema } = request.body;
-
       const createProductMetricResult = await createNewResourceService(
-        schema,
+        request.body.schema ?? {},
         model,
       );
-
       if (createProductMetricResult.err) {
-        await createNewResourceService(
-          createErrorLogSchema(
-            createProductMetricResult.val,
-            request.body,
-          ),
-          ErrorLogModel,
-        );
-
-        response.status(200).json(
-          createHttpResponseError({
-            error: createProductMetricResult.val.data,
-            request,
-          }),
-        );
-        return;
-      }
-
-      if (createProductMetricResult.val.data.none) {
-        response.status(200).json(
-          createHttpResponseError({
-            error: Some("Product Metric not created"),
-            request,
-          }),
-        );
-        return;
-      }
-
-      response.status(200).json(
-        createHttpResponseSuccess({
-          accessToken: Some(accessToken),
-          data: createProductMetricResult.val.data,
-        }),
-      );
-    } catch (error: unknown) {
-      await createNewResourceService(
-        createErrorLogSchema(
-          {
-            data: Some(error),
-            message: Some("Error creating product metric"),
-          },
-          request.body,
-        ),
-        ErrorLogModel,
-      );
-
-      response.status(200).json(
-        createHttpResponseError({
-          error: Some(error),
+        await handleServiceErrorResult({
           request,
-        }),
-      );
+          response,
+          safeErrorResult: createProductMetricResult,
+        });
+        return;
+      }
+      if (createProductMetricResult.val.none) {
+        await handleServiceErrorResult({
+          request,
+          response,
+          safeErrorResult: createSafeErrorResult(
+            "Product Metrics creation failed",
+          ),
+        });
+        return;
+      }
+
+      handleServiceSuccessResult({
+        request,
+        response,
+        safeSuccessResult: createProductMetricResult,
+      });
+      return;
+    } catch (error: unknown) {
+      await catchHandlerError({ error, request, response });
+      return;
     }
   };
 }

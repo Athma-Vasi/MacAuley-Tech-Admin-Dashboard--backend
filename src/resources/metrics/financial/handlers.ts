@@ -1,16 +1,15 @@
 import type { Model } from "mongoose";
-import { Some } from "ts-results";
+import {
+  catchHandlerError,
+  handleServiceErrorResult,
+  handleServiceSuccessResult,
+} from "../../../handlers";
 import { createNewResourceService } from "../../../services";
 import type {
   CreateNewResourceRequest,
   HttpServerResponse,
 } from "../../../types";
-import {
-  createErrorLogSchema,
-  createHttpResponseError,
-  createHttpResponseSuccess,
-} from "../../../utils";
-import { ErrorLogModel } from "../../errorLog";
+import { createSafeErrorResult } from "../../../utils";
 import type { FinancialMetricsDocument, FinancialMetricsSchema } from "./model";
 
 // @desc   Create new Financial Metric
@@ -24,65 +23,38 @@ function createNewFinancialMetricHandler(
     response: HttpServerResponse<FinancialMetricsDocument>,
   ) => {
     try {
-      const { accessToken, schema } = request.body;
-
       const createFinancialMetricResult = await createNewResourceService(
-        schema,
+        request.body.schema ?? {},
         model,
       );
-
       if (createFinancialMetricResult.err) {
-        await createNewResourceService(
-          createErrorLogSchema(
-            createFinancialMetricResult.val,
-            request.body,
-          ),
-          ErrorLogModel,
-        );
-
-        response.status(200).json(
-          createHttpResponseError({
-            error: createFinancialMetricResult.val.data,
-            request,
-          }),
-        );
-        return;
-      }
-
-      if (createFinancialMetricResult.val.data.none) {
-        response.status(200).json(
-          createHttpResponseError({
-            error: Some("Financial Metric not created"),
-            request,
-          }),
-        );
-        return;
-      }
-
-      response.status(200).json(
-        createHttpResponseSuccess({
-          accessToken: Some(accessToken),
-          data: createFinancialMetricResult.val.data,
-        }),
-      );
-    } catch (error: unknown) {
-      await createNewResourceService(
-        createErrorLogSchema(
-          {
-            data: Some(error),
-            message: Some("Error creating financial metric"),
-          },
-          request.body,
-        ),
-        ErrorLogModel,
-      );
-
-      response.status(200).json(
-        createHttpResponseError({
-          error: Some(error),
+        await handleServiceErrorResult({
           request,
-        }),
-      );
+          response,
+          safeErrorResult: createFinancialMetricResult,
+        });
+        return;
+      }
+      if (createFinancialMetricResult.val.none) {
+        await handleServiceErrorResult({
+          request,
+          response,
+          safeErrorResult: createSafeErrorResult(
+            "Financial Metrics creation failed",
+          ),
+        });
+        return;
+      }
+
+      handleServiceSuccessResult({
+        request,
+        response,
+        safeSuccessResult: createFinancialMetricResult,
+      });
+      return;
+    } catch (error: unknown) {
+      await catchHandlerError({ error, request, response });
+      return;
     }
   };
 }

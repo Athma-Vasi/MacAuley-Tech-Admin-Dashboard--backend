@@ -4,10 +4,12 @@ import { CONFIG } from "../../config";
 import {
   ACCESS_TOKEN_EXPIRY,
   HASH_SALT_ROUNDS,
+  INVALID_CREDENTIALS,
   PROPERTY_DESCRIPTOR,
 } from "../../constants";
 import {
   catchHandlerError,
+  createServiceRejectedResponse,
   handleServiceErrorResult,
   handleServiceSuccessResult,
 } from "../../handlers";
@@ -77,10 +79,10 @@ function loginUserHandler<
         return;
       }
       if (getUserResult.val.none) {
-        handleServiceSuccessResult({
+        createServiceRejectedResponse({
+          message: INVALID_CREDENTIALS,
           request,
           response,
-          safeSuccessResult: getUserResult,
         });
         return;
       }
@@ -98,6 +100,16 @@ function loginUserHandler<
           response,
           safeErrorResult: isPasswordCorrectResult,
           status: 401,
+        });
+        return;
+      }
+      if (isPasswordCorrectResult.val.none) {
+        await handleServiceErrorResult({
+          request,
+          response,
+          safeErrorResult: createSafeErrorResult(
+            "Unable to compare password",
+          ),
         });
         return;
       }
@@ -123,15 +135,16 @@ function loginUserHandler<
           request,
           response,
           safeErrorResult: createAuthSessionResult,
-          status: 401,
         });
         return;
       }
       if (createAuthSessionResult.val.none) {
-        handleServiceSuccessResult({
+        await handleServiceErrorResult({
           request,
           response,
-          safeSuccessResult: createAuthSessionResult,
+          safeErrorResult: createSafeErrorResult(
+            "Unable to create auth session",
+          ),
         });
         return;
       }
@@ -166,7 +179,16 @@ function loginUserHandler<
           request,
           response,
           safeErrorResult: updateSessionResult,
-          status: 401,
+        });
+        return;
+      }
+      if (updateSessionResult.val.none) {
+        await handleServiceErrorResult({
+          request,
+          response,
+          safeErrorResult: createSafeErrorResult(
+            "Unable to update auth session",
+          ),
         });
         return;
       }
@@ -198,7 +220,6 @@ function loginUserHandler<
           request,
           response,
           safeErrorResult: financialMetricsDocumentResult,
-          status: 401,
         });
         return;
       }
@@ -209,7 +230,6 @@ function loginUserHandler<
           safeErrorResult: createSafeErrorResult(
             "Unable to get financial metrics",
           ),
-          status: 401,
         });
         return;
       }
@@ -260,13 +280,10 @@ function registerUserHandler<
         return;
       }
       if (getUserResult.val.some) {
-        await handleServiceErrorResult({
+        createServiceRejectedResponse({
+          message: "Username already exists",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Username already exists",
-          ),
-          status: 401,
         });
         return;
       }
@@ -284,7 +301,6 @@ function registerUserHandler<
         });
         return;
       }
-
       if (hashPasswordResult.val.none) {
         await handleServiceErrorResult({
           request,
@@ -292,7 +308,6 @@ function registerUserHandler<
           safeErrorResult: createSafeErrorResult(
             "Unable to hash password",
           ),
-          status: 401,
         });
         return;
       }
@@ -315,7 +330,6 @@ function registerUserHandler<
         });
         return;
       }
-
       if (createUserResult.val.none) {
         await handleServiceErrorResult({
           request,
@@ -323,7 +337,6 @@ function registerUserHandler<
           safeErrorResult: createSafeErrorResult(
             "Unable to create user",
           ),
-          status: 401,
         });
         return;
       }
@@ -346,11 +359,9 @@ function registerUserHandler<
           request,
           response,
           safeErrorResult: createFileUploadResult,
-          status: 401,
         });
         return;
       }
-
       if (createFileUploadResult.val.none) {
         await handleServiceErrorResult({
           request,
@@ -358,7 +369,6 @@ function registerUserHandler<
           safeErrorResult: createSafeErrorResult(
             "Unable to create file upload",
           ),
-          status: 401,
         });
         return;
       }
@@ -378,11 +388,9 @@ function registerUserHandler<
           request,
           response,
           safeErrorResult: updateUserResult,
-          status: 401,
         });
         return;
       }
-
       if (updateUserResult.val.none) {
         await handleServiceErrorResult({
           request,
@@ -390,7 +398,6 @@ function registerUserHandler<
           safeErrorResult: createSafeErrorResult(
             "Unable to update user",
           ),
-          status: 401,
         });
         return;
       }
@@ -410,11 +417,9 @@ function registerUserHandler<
           request,
           response,
           safeErrorResult: updateFileUploadResult,
-          status: 401,
         });
         return;
       }
-
       if (updateFileUploadResult.val.none) {
         await handleServiceErrorResult({
           request,
@@ -422,7 +427,6 @@ function registerUserHandler<
           safeErrorResult: createSafeErrorResult(
             "Unable to update file upload",
           ),
-          status: 401,
         });
         return;
       }
@@ -454,19 +458,6 @@ function logoutUserHandler<
   ) => {
     try {
       const { accessToken } = request.body;
-
-      if (!accessToken) {
-        await handleServiceErrorResult({
-          request,
-          response,
-          safeErrorResult: createSafeErrorResult(
-            "Access token is required",
-          ),
-          status: 401,
-        });
-        return;
-      }
-
       const { ACCESS_TOKEN_SEED } = CONFIG;
 
       const verifyAccessTokenResult = await verifyJWTSafe({
@@ -478,7 +469,16 @@ function logoutUserHandler<
           request,
           response,
           safeErrorResult: verifyAccessTokenResult,
-          status: 401,
+        });
+        return;
+      }
+      if (verifyAccessTokenResult.val.none) {
+        await handleServiceErrorResult({
+          request,
+          response,
+          safeErrorResult: createSafeErrorResult(
+            "Unable to verify access token",
+          ),
         });
         return;
       }
@@ -489,7 +489,6 @@ function logoutUserHandler<
           request,
           response,
           safeErrorResult: accessTokenDecodedResult,
-          status: 401,
         });
         return;
       }
@@ -500,7 +499,6 @@ function logoutUserHandler<
           safeErrorResult: createSafeErrorResult(
             "Unable to decode access token",
           ),
-          status: 401,
         });
         return;
       }
@@ -517,6 +515,16 @@ function logoutUserHandler<
           response,
           safeErrorResult: deleteSessionResult,
           status: 401,
+        });
+        return;
+      }
+      if (deleteSessionResult.val.none) {
+        await handleServiceErrorResult({
+          request,
+          response,
+          safeErrorResult: createSafeErrorResult(
+            "Unable to delete session",
+          ),
         });
         return;
       }
@@ -562,10 +570,10 @@ function checkUsernameOrEmailExistsHandler<
 
       // username or email exists
       if (isUsernameOrEmailExistsResult.val.some) {
-        await handleServiceErrorResult({
+        createServiceRejectedResponse({
+          message: "Username or email already exists",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(true),
         });
         return;
       }

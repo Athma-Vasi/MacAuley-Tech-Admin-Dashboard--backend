@@ -160,17 +160,50 @@ type SafeError = {
   original: Option<string>;
 };
 type SafeResult<Data = unknown> = Result<Option<NonNullable<Data>>, SafeError>;
-
-type ResponsePayload<Data = unknown> = {
-  accessToken: string;
-  data: Array<Data>;
-  kind: "error" | "success";
+type ResponseKind = "error" | "success" | "rejected";
+type OptionalPayload = {
+  accessToken?: string;
   message?: string;
   pages?: number;
   status?: number;
   totalDocuments?: number;
   triggerLogout?: boolean;
 };
+type SuccessPayload<Data = unknown> = Prettify<
+  OptionalPayload & {
+    data: Array<Data>;
+    kind: "success"; // or empty: data = []
+  }
+>;
+type ErrorPayload = Prettify<
+  OptionalPayload & {
+    data: [];
+    kind: "error";
+    message: string;
+  }
+>;
+type RejectedPayload = Prettify<
+  OptionalPayload & {
+    data: [];
+    kind: "rejected";
+    message: string;
+  }
+>;
+type ResponsePayload<Data = unknown> =
+  | SuccessPayload<Data>
+  | ErrorPayload
+  | RejectedPayload;
+
+// type ResponsePayload<Data = unknown> = {
+//   accessToken: string;
+//   data: Array<Data>;
+//   kind: "error" | "success";
+//   message?: string;
+//   pages?: number;
+//   status?: number;
+//   totalDocuments?: number;
+//   triggerLogout?: boolean;
+// };
 
 type HttpServerResponse<Data = unknown> = Prettify<
   Response<ResponsePayload<Data>>
@@ -279,6 +312,7 @@ export type {
   DeleteAllResourcesRequest,
   DeleteResourceRequest,
   DocumentUpdateOperation,
+  ErrorPayload,
   FieldOperators,
   FileInfoObject,
   FileUploadObject,
@@ -294,11 +328,14 @@ export type {
   QueryObjectParsed,
   QueryObjectParsedWithDefaults,
   RecordDB,
+  RejectedPayload,
   RequestAfterFilesExtracting,
   RequestAfterJWTVerification,
   RequestAfterQueryParsing,
+  ResponseKind,
   ResponsePayload,
   SafeError,
   SafeResult,
+  SuccessPayload,
   UpdateResourceByIdRequest,
 };

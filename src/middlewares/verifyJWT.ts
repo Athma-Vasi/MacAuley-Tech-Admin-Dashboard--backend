@@ -2,13 +2,9 @@ import type { NextFunction, Request, Response } from "express";
 
 import { CONFIG } from "../config";
 import { ACCESS_TOKEN_EXPIRY, PROPERTY_DESCRIPTOR } from "../constants";
+import { handleServiceErrorResult } from "../handlers";
 import { createTokenService } from "../resources/auth/services";
-import {
-  createHttpResponseError,
-  createSafeErrorResult,
-  decodeJWTSafe,
-  verifyJWTSafe,
-} from "../utils";
+import { createSafeErrorResult, decodeJWTSafe, verifyJWTSafe } from "../utils";
 
 async function verifyJWTMiddleware(
   request: Request,
@@ -17,17 +13,16 @@ async function verifyJWTMiddleware(
 ) {
   const { ACCESS_TOKEN_SEED } = CONFIG;
 
-  const [_, accessToken] = request.headers.authorization?.split(" ") || [];
+  const [_, accessToken] = request.headers.authorization?.split(" ") ?? [];
   if (!accessToken) {
-    response.status(200).json(
-      createHttpResponseError({
-        request,
-        safeErrorResult: createSafeErrorResult("Access token is missing"),
-        status: 401,
-        triggerLogout: true,
-      }),
-    );
-
+    handleServiceErrorResult({
+      request,
+      response,
+      safeErrorResult: createSafeErrorResult(
+        "Access token is missing",
+      ),
+      triggerLogout: true,
+    });
     return;
   }
 
@@ -35,45 +30,47 @@ async function verifyJWTMiddleware(
     seed: ACCESS_TOKEN_SEED,
     token: accessToken,
   });
-  // token is invalid (except for expired)
-  if (verifiedAccessTokenResult.err) {
-    response.status(200).json(
-      createHttpResponseError({
-        request,
-        safeErrorResult: verifiedAccessTokenResult,
-        status: 401,
-        triggerLogout: true,
-      }),
-    );
 
+  // token is invalid (except for expired)
+
+  if (verifiedAccessTokenResult.err) {
+    handleServiceErrorResult({
+      request,
+      response,
+      safeErrorResult: verifiedAccessTokenResult,
+      triggerLogout: true,
+    });
+    return;
+  }
+  if (verifiedAccessTokenResult.val.none) {
+    handleServiceErrorResult({
+      request,
+      response,
+      safeErrorResult: createSafeErrorResult("Token is empty"),
+      triggerLogout: true,
+    });
     return;
   }
 
-  // token is valid and maybe expired
-
+  // token is verified, valid and maybe expired
+  // we can (safely) decode it
   const decodedAccessTokenResult = await decodeJWTSafe(accessToken);
   if (decodedAccessTokenResult.err) {
-    response.status(200).json(
-      createHttpResponseError({
-        request,
-        safeErrorResult: decodedAccessTokenResult,
-        status: 401,
-        triggerLogout: true,
-      }),
-    );
-
+    handleServiceErrorResult({
+      request,
+      response,
+      safeErrorResult: decodedAccessTokenResult,
+      triggerLogout: true,
+    });
     return;
   }
   if (decodedAccessTokenResult.val.none) {
-    response.status(200).json(
-      createHttpResponseError({
-        request,
-        safeErrorResult: createSafeErrorResult("Decoded token is empty"),
-        status: 401,
-        triggerLogout: true,
-      }),
-    );
-
+    handleServiceErrorResult({
+      request,
+      response,
+      safeErrorResult: createSafeErrorResult("Token is empty"),
+      triggerLogout: true,
+    });
     return;
   }
 
@@ -86,27 +83,23 @@ async function verifyJWTMiddleware(
     seed: ACCESS_TOKEN_SEED,
   });
   if (tokenCreationResult.err) {
-    response.status(200).json(
-      createHttpResponseError({
-        request,
-        safeErrorResult: tokenCreationResult,
-        status: 400,
-        triggerLogout: true,
-      }),
-    );
-
+    handleServiceErrorResult({
+      request,
+      response,
+      safeErrorResult: tokenCreationResult,
+      triggerLogout: true,
+    });
     return;
   }
   if (tokenCreationResult.val.none) {
-    response.status(200).json(
-      createHttpResponseError({
-        safeErrorResult: createSafeErrorResult("Token creation failed"),
-        request,
-        status: 400,
-        triggerLogout: true,
-      }),
-    );
-
+    handleServiceErrorResult({
+      request,
+      response,
+      safeErrorResult: createSafeErrorResult(
+        "Token creation failed",
+      ),
+      triggerLogout: true,
+    });
     return;
   }
 

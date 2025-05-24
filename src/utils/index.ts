@@ -6,18 +6,126 @@ import { PROPERTY_DESCRIPTOR } from "../constants";
 import type { ErrorLogSchema } from "../resources/errorLog";
 import type {
   DecodedToken,
+  ErrorPayload,
+  RejectedPayload,
   RequestAfterJWTVerification,
   ResponsePayload,
   SafeError,
   SafeResult,
+  SuccessPayload,
 } from "../types";
 
+function createSafeSuccessResult<Data = unknown>(
+  data: Data,
+): Ok<Option<NonNullable<Data>>> {
+  return new Ok(data == null ? None : Some(data));
+}
+
+function serializeSafe(data: unknown): string {
+  try {
+    const serializedData = JSON.stringify(data, null, 2);
+    return serializedData;
+  } catch (error: unknown) {
+    return "Unserializable data";
+  }
+}
+
+function createSafeErrorResult(error: unknown): Err<SafeError> {
+  if (error instanceof Error) {
+    return new Err({
+      name: error.name ?? "Error",
+      message: error.message ?? "Unknown error",
+      stack: error.stack == null ? None : Some(error.stack),
+      original: None,
+    });
+  }
+
+  if (typeof error === "string") {
+    return new Err({
+      name: "Error",
+      message: error,
+      stack: None,
+      original: None,
+    });
+  }
+
+  if (error instanceof Event) {
+    if (error instanceof PromiseRejectionEvent) {
+      return new Err({
+        name: `PromiseRejectionEvent: ${error.type}`,
+        message: error.reason.toString() ?? "",
+        stack: None,
+        original: Some(serializeSafe(error)),
+      });
+    }
+
+    return new Err({
+      name: `EventError: ${error.type}`,
+      message: error.timeStamp.toString() ?? "",
+      stack: None,
+      original: Some(serializeSafe(error)),
+    });
+  }
+
+  return new Err({
+    name: "SimulationDysfunction",
+    message: "You've seen it before. Déjà vu. Something's off...",
+    stack: None,
+    original: Some(serializeSafe(error)),
+  });
+}
+
+function createHttpResponseRejected<
+  Req extends Request = Request,
+  Data = unknown,
+>(
+  {
+    message = "Not allowed",
+    pages,
+    request,
+    status,
+    totalDocuments,
+    triggerLogout,
+  }: {
+    message?: string;
+    request: Req;
+    pages?: number;
+    status?: number;
+    totalDocuments?: number;
+    triggerLogout?: boolean;
+  },
+): ResponsePayload<Data> {
+  const rejectedPayload: RejectedPayload = {
+    data: [],
+    kind: "rejected",
+    message,
+  };
+
+  const optionalFields = {
+    accessToken: request.body.accessToken,
+    pages,
+    status,
+    totalDocuments,
+    triggerLogout,
+  };
+
+  return Object.entries(optionalFields).reduce((acc, [key, value]) => {
+    if (value !== undefined) {
+      Object.defineProperty(acc, key, {
+        value,
+        ...PROPERTY_DESCRIPTOR,
+      });
+    }
+
+    return acc;
+  }, rejectedPayload);
+}
+
 function createHttpResponseError<
-  ModifiedRequest extends Request = Request,
+  Req extends Request = Request,
   Data = unknown,
 >({
   safeErrorResult,
-  kind = "error",
   pages,
   request,
   status,
@@ -25,66 +133,43 @@ function createHttpResponseError<
   triggerLogout,
 }: {
   safeErrorResult: Err<SafeError>;
-  kind?: "error" | "success";
-  request: ModifiedRequest;
+  request: Req;
   pages?: number;
   status?: number;
   totalDocuments?: number;
   triggerLogout?: boolean;
 }): ResponsePayload<Data> {
-  const responsePayload: ResponsePayload<Data> = {
-    accessToken: request.body.accessToken ?? "",
+  const errorPayload: ErrorPayload = {
     data: [],
-    kind,
+    kind: "error",
+    message: safeErrorResult.val.message,
   };
 
-  const { message, name } = safeErrorResult.val;
-  if (message) {
-    Object.defineProperty(responsePayload, "message", {
-      value: `${name}: ${message}`,
-      ...PROPERTY_DESCRIPTOR,
-    });
-  }
-  if (pages) {
-    Object.defineProperty(responsePayload, "pages", {
-      value: pages,
-      ...PROPERTY_DESCRIPTOR,
-    });
-  }
-  if (status) {
-    Object.defineProperty(responsePayload, "status", {
-      value: status,
-      ...PROPERTY_DESCRIPTOR,
-    });
-  }
-  if (totalDocuments) {
-    Object.defineProperty(responsePayload, "totalDocuments", {
-      value: totalDocuments,
-      ...PROPERTY_DESCRIPTOR,
-    });
-  }
-  if (triggerLogout) {
-    Object.defineProperty(responsePayload, "triggerLogout", {
-      value: triggerLogout,
-      ...PROPERTY_DESCRIPTOR,
-    });
-  }
-
-  return {
-    accessToken: request.body.accessToken ? request.body.accessToken : "",
-    data: [],
-    kind,
-    message: `${safeErrorResult.val.name}: ${safeErrorResult.val.message}`,
+  const optionalFields = {
+    accessToken: request.body.accessToken,
     pages,
     status,
     totalDocuments,
     triggerLogout,
   };
+
+  return Object.entries(optionalFields).reduce((acc, [key, value]) => {
+    if (value !== undefined) {
+      Object.defineProperty(acc, key, {
+        value,
+        ...PROPERTY_DESCRIPTOR,
+      });
+    }
+
+    return acc;
+  }, errorPayload);
 }
 
-function createHttpResponseSuccess<Data = unknown>({
+function createHttpResponseSuccess<
+  Req extends Request = Request,
+  Data = unknown,
+>({
   safeSuccessResult,
-  kind = "success",
   message,
   pages,
   request,
@@ -93,63 +178,38 @@ function createHttpResponseSuccess<Data = unknown>({
   triggerLogout,
 }: {
   safeSuccessResult: Ok<Option<NonNullable<Data>>>;
-  kind?: "error" | "success";
   message?: string;
   pages?: number;
-  request: RequestAfterJWTVerification;
+  request: Req;
   status?: number;
   totalDocuments?: number;
   triggerLogout?: boolean;
 }): ResponsePayload<Data> {
   const newData = safeSuccessResult.val.none ? [] : safeSuccessResult.val.val;
-
-  const responsePayload: ResponsePayload<Data> = {
-    accessToken: request.body.accessToken ?? "",
+  const successPayload: SuccessPayload<Data> = {
     data: Array.isArray(newData) ? newData : [newData],
-    kind,
+    kind: "success",
   };
 
-  if (message) {
-    Object.defineProperty(responsePayload, "message", {
-      value: serializeSafe(message),
-      ...PROPERTY_DESCRIPTOR,
-    });
-  }
-  if (pages) {
-    Object.defineProperty(responsePayload, "pages", {
-      value: pages,
-      ...PROPERTY_DESCRIPTOR,
-    });
-  }
-  if (status) {
-    Object.defineProperty(responsePayload, "status", {
-      value: status,
-      ...PROPERTY_DESCRIPTOR,
-    });
-  }
-  if (totalDocuments) {
-    Object.defineProperty(responsePayload, "totalDocuments", {
-      value: totalDocuments,
-      ...PROPERTY_DESCRIPTOR,
-    });
-  }
-  if (triggerLogout) {
-    Object.defineProperty(responsePayload, "triggerLogout", {
-      value: triggerLogout,
-      ...PROPERTY_DESCRIPTOR,
-    });
-  }
-
-  return {
-    accessToken: request.body.accessToken ? request.body.accessToken : "",
-    data: Array.isArray(newData) ? newData : [newData],
-    kind,
+  const optionalFields = {
+    accessToken: request.body.accessToken,
     message,
     pages,
     status,
     totalDocuments,
     triggerLogout,
   };
+
+  return Object.entries(optionalFields).reduce((acc, [key, value]) => {
+    if (value !== undefined) {
+      Object.defineProperty(acc, key, {
+        value,
+        ...PROPERTY_DESCRIPTOR,
+      });
+    }
+
+    return acc;
+  }, successPayload);
 }
 
 function createErrorLogSchema(
@@ -322,70 +382,11 @@ function toFixedFloat(num: number, precision = 4): number {
   return Number(num.toFixed(precision));
 }
 
-function createSafeSuccessResult<Data = unknown>(
-  data: Data,
-): Ok<Option<NonNullable<Data>>> {
-  return new Ok(data == null ? None : Some(data));
-}
-
-function serializeSafe(data: unknown): string {
-  try {
-    const serializedData = JSON.stringify(data, null, 2);
-    return serializedData;
-  } catch (error: unknown) {
-    return "Unserializable data";
-  }
-}
-
-function createSafeErrorResult(error: unknown): Err<SafeError> {
-  if (error instanceof Error) {
-    return new Err({
-      name: error.name == null ? "Error" : error.name,
-      message: error.message == null ? "Unknown error" : error.message,
-      stack: error.stack == null ? None : Some(error.stack),
-      original: None,
-    });
-  }
-
-  if (typeof error === "string") {
-    return new Err({
-      name: "Error",
-      message: error,
-      stack: None,
-      original: None,
-    });
-  }
-
-  if (error instanceof Event) {
-    if (error instanceof PromiseRejectionEvent) {
-      return new Err({
-        name: `PromiseRejectionEvent: ${error.type}`,
-        message: error.reason.toString() ?? "",
-        stack: None,
-        original: Some(serializeSafe(error)),
-      });
-    }
-
-    return new Err({
-      name: `EventError: ${error.type}`,
-      message: error.timeStamp.toString() ?? "",
-      stack: None,
-      original: Some(serializeSafe(error)),
-    });
-  }
-
-  return new Err({
-    name: "SimulationDysfunction",
-    message: "You've seen it before. Déjà vu. Something's off...",
-    stack: None,
-    original: Some(serializeSafe(error)),
-  });
-}
-
 export {
   compareHashedStringWithPlainStringSafe,
   createErrorLogSchema,
   createHttpResponseError,
+  createHttpResponseRejected,
   createHttpResponseSuccess,
   createSafeErrorResult,
   createSafeSuccessResult,

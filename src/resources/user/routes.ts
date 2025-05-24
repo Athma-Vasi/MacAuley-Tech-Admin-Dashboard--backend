@@ -12,13 +12,9 @@ import {
   validateSchemaMiddleware,
   verifyJWTMiddleware,
 } from "../../middlewares";
-import { createNewUserHandler, createNewUsersBulkHandler } from "./handlers";
+import { createNewUserHandler } from "./handlers";
 import { UserModel } from "./model";
-import {
-  createUserJoiSchema,
-  createUsersInBulkJoiSchema,
-  updateUserJoiSchema,
-} from "./validations";
+import { createUserJoiSchema, updateUserJoiSchema } from "./validations";
 
 const userRouter = Router();
 
@@ -44,14 +40,6 @@ userRouter
 userRouter.route("/delete-many").delete(
   verifyJWTMiddleware,
   deleteManyResourcesHandler(UserModel),
-);
-
-// @desc   Create new users in bulk
-// @route  POST api/v1/user/bulk
-// @access Private/Admin/Manager
-userRouter.route("/bulk").post(
-  validateSchemaMiddleware(createUsersInBulkJoiSchema, "schemas"),
-  createNewUsersBulkHandler(UserModel),
 );
 
 userRouter

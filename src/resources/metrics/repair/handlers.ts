@@ -1,16 +1,15 @@
 import type { Model } from "mongoose";
-import { Some } from "ts-results";
+import {
+  catchHandlerError,
+  handleServiceErrorResult,
+  handleServiceSuccessResult,
+} from "../../../handlers";
 import { createNewResourceService } from "../../../services";
 import type {
   CreateNewResourceRequest,
   HttpServerResponse,
 } from "../../../types";
-import {
-  createErrorLogSchema,
-  createHttpResponseError,
-  createHttpResponseSuccess,
-} from "../../../utils";
-import { ErrorLogModel } from "../../errorLog";
+import { createSafeErrorResult } from "../../../utils";
 import type { RepairMetricsDocument, RepairMetricsSchema } from "./model";
 
 // @desc   Create new Repair Metric
@@ -24,65 +23,38 @@ function createNewRepairMetricHandler(
     response: HttpServerResponse<RepairMetricsDocument>,
   ) => {
     try {
-      const { accessToken, schema } = request.body;
-
       const createRepairMetricResult = await createNewResourceService(
-        schema,
+        request.body.schema ?? {},
         model,
       );
-
       if (createRepairMetricResult.err) {
-        await createNewResourceService(
-          createErrorLogSchema(
-            createRepairMetricResult.val,
-            request.body,
-          ),
-          ErrorLogModel,
-        );
-
-        response.status(200).json(
-          createHttpResponseError({
-            error: createRepairMetricResult.val.data,
-            request,
-          }),
-        );
-        return;
-      }
-
-      if (createRepairMetricResult.val.data.none) {
-        response.status(200).json(
-          createHttpResponseError({
-            error: Some("Repair Metric not created"),
-            request,
-          }),
-        );
-        return;
-      }
-
-      response.status(200).json(
-        createHttpResponseSuccess({
-          accessToken: Some(accessToken),
-          data: createRepairMetricResult.val.data,
-        }),
-      );
-    } catch (error: unknown) {
-      await createNewResourceService(
-        createErrorLogSchema(
-          {
-            data: Some(error),
-            message: Some("Error creating repair metric"),
-          },
-          request.body,
-        ),
-        ErrorLogModel,
-      );
-
-      response.status(200).json(
-        createHttpResponseError({
-          error: Some(error),
+        await handleServiceErrorResult({
           request,
-        }),
-      );
+          response,
+          safeErrorResult: createRepairMetricResult,
+        });
+        return;
+      }
+      if (createRepairMetricResult.val.none) {
+        await handleServiceErrorResult({
+          request,
+          response,
+          safeErrorResult: createSafeErrorResult(
+            "Repair Metrics creation failed",
+          ),
+        });
+        return;
+      }
+
+      handleServiceSuccessResult({
+        request,
+        response,
+        safeSuccessResult: createRepairMetricResult,
+      });
+      return;
+    } catch (error: unknown) {
+      await catchHandlerError({ error, request, response });
+      return;
     }
   };
 }

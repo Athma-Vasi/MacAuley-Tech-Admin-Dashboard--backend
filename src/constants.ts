@@ -5,13 +5,14 @@ const HASH_SALT_ROUNDS = 10;
 const TRIGGER_LOGOUT_KEY = "triggerLogout";
 
 const PROPERTY_DESCRIPTOR: PropertyDescriptor = {
-  configurable: true,
+  configurable: false,
   enumerable: true,
-  writable: true,
+  writable: false,
 };
 
 const FILE_UPLOAD_EXPIRY = Date.now() + 1000 * 60 * 60 * 1; // 1 hours
 const NEW_USER_EXPIRY = Date.now() + 1000 * 60 * 60 * 1; // 1 hours
+const INVALID_CREDENTIALS = "INVALID_CREDENTIALS";
 
 const STATUS_DESCRIPTION_TABLE: Record<number, string> = {
   400: "Bad Request",
@@ -54,6 +55,7 @@ export {
   ACCESS_TOKEN_EXPIRY,
   FILE_UPLOAD_EXPIRY,
   HASH_SALT_ROUNDS,
+  INVALID_CREDENTIALS,
   NEW_USER_EXPIRY,
   PROPERTY_DESCRIPTOR,
   STATUS_DESCRIPTION_TABLE,
