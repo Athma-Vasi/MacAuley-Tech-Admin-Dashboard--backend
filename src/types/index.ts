@@ -159,19 +159,17 @@ type SafeError = {
   stack: Option<string>;
   original: Option<string>;
 };
-type SafeResult<Data = unknown> = Result<Option<Data>, SafeError>;
+type SafeResult<Data = unknown> = Result<Option<NonNullable<Data>>, SafeError>;
 
-// all fields are guaranteed to be present
-// as all responses are sent from a creator function with default values
 type ResponsePayload<Data = unknown> = {
   accessToken: string;
   data: Array<Data>;
   kind: "error" | "success";
-  message: string;
-  pages: number;
-  status: number;
-  totalDocuments: number;
-  triggerLogout: boolean;
+  message?: string;
+  pages?: number;
+  status?: number;
+  totalDocuments?: number;
+  triggerLogout?: boolean;
 };
 
 type HttpServerResponse<Data = unknown> = Prettify<

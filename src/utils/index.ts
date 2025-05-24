@@ -2,28 +2,29 @@ import bcrypt from "bcryptjs";
 import type { Request } from "express";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { Err, None, Ok, type Option, Some } from "ts-results";
-import { STATUS_DESCRIPTION_TABLE } from "../constants";
+import { PROPERTY_DESCRIPTOR } from "../constants";
 import type { ErrorLogSchema } from "../resources/errorLog";
 import type {
   DecodedToken,
   RequestAfterJWTVerification,
   ResponsePayload,
   SafeError,
+  SafeResult,
 } from "../types";
 
 function createHttpResponseError<
   ModifiedRequest extends Request = Request,
   Data = unknown,
 >({
-  error,
+  safeErrorResult,
   kind = "error",
-  pages = 0,
+  pages,
   request,
-  status = 500,
-  totalDocuments = 0,
-  triggerLogout = false,
+  status,
+  totalDocuments,
+  triggerLogout,
 }: {
-  error: Option<unknown>;
+  safeErrorResult: Err<SafeError>;
   kind?: "error" | "success";
   request: ModifiedRequest;
   pages?: number;
@@ -31,19 +32,11 @@ function createHttpResponseError<
   totalDocuments?: number;
   triggerLogout?: boolean;
 }): ResponsePayload<Data> {
-  const message = error.none
-    ? STATUS_DESCRIPTION_TABLE[status] ?? "Unknown error"
-    : error.val instanceof Error
-    ? error.val.message
-    : typeof error === "string"
-    ? error
-    : JSON.stringify(error);
-
   return {
     accessToken: request.body.accessToken ? request.body.accessToken : "",
     data: [],
     kind,
-    message,
+    message: `${safeErrorResult.val.name}: ${safeErrorResult.val.message}`,
     pages,
     status,
     totalDocuments,
@@ -52,28 +45,28 @@ function createHttpResponseError<
 }
 
 function createHttpResponseSuccess<Data = unknown>({
-  accessToken,
-  data,
+  safeSuccessResult,
   kind = "success",
-  message = "Successful operation",
-  pages = 0,
-  status = 200,
-  totalDocuments = 0,
-  triggerLogout = false,
+  message,
+  pages,
+  request,
+  status,
+  totalDocuments,
+  triggerLogout,
 }: {
-  accessToken: Option<string>;
-  data: Option<Data>;
+  safeSuccessResult: Ok<Option<NonNullable<Data>>>;
   kind?: "error" | "success";
   message?: string;
   pages?: number;
+  request: RequestAfterJWTVerification;
   status?: number;
   totalDocuments?: number;
   triggerLogout?: boolean;
 }): ResponsePayload<Data> {
-  const newData = data.none ? [] : data.safeUnwrap();
+  const newData = safeSuccessResult.val.none ? [] : safeSuccessResult.val.val;
 
   return {
-    accessToken: accessToken.none ? "" : accessToken.safeUnwrap(),
+    accessToken: request.body.accessToken ? request.body.accessToken : "",
     data: Array.isArray(newData) ? newData : [newData],
     kind,
     message,
@@ -85,32 +78,58 @@ function createHttpResponseSuccess<Data = unknown>({
 }
 
 function createErrorLogSchema(
-  error: unknown,
+  safeError: Err<SafeError>,
   request: RequestAfterJWTVerification,
 ): ErrorLogSchema {
-  const safeErrorResult = createSafeErrorResult(error);
+  const { message, name, original, stack } = safeError.val;
+  const { body = {} } = request;
+  const { username = "unknown", userId = "unknown", sessionId = "unknown" } =
+    body;
+  const { headers, ip, method, path } = request;
 
-  return {
-    expireAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 hours
-    message: safeErrorResult.val.message,
-    name: safeErrorResult.val.name,
-    stack: safeErrorResult.val.stack.none
-      ? "ｶ ｷ ｸ ｹ ｺ ｻ ｼ ｽ"
-      : safeErrorResult.val.stack.val,
-    body: JSON.stringify(request.body),
-    sessionId: request.body.sessionId?.toString() ?? "unknown",
-    timestamp: new Date(),
-    userId: request.body.userId?.toString() ?? "unknown",
-    username: request.body.username ?? "unknown",
-    ip: request.ip,
-    userAgent: request.headers["user-agent"],
-    original: safeErrorResult.val.original.none
-      ? "ｾ ｿ ﾀ ﾁ ﾂ ﾃ ﾄ ﾅ"
-      : safeErrorResult.val.original.val,
-    method: request.method,
-    headers: JSON.stringify(request.headers),
-    path: request.path,
+  const errorLog: ErrorLogSchema = {
+    message: message,
+    name: name,
+    stack: stack.none ? "ｶ ｷ ｸ ｹ ｺ ｻ ｼ ｽ" : stack.val,
+    original: original.none ? "ｾ ｿ ﾀ ﾁ ﾂ ﾃ ﾄ ﾅ" : original.val,
+    body: serializeSafe(body),
+    sessionId: sessionId.toString(),
+    userId: userId.toString(),
+    username: username,
   };
+
+  if (headers) {
+    Object.defineProperty(errorLog, "headers", {
+      value: serializeSafe(headers),
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+  if (ip) {
+    Object.defineProperty(errorLog, "ip", {
+      value: ip,
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+  if (method) {
+    Object.defineProperty(errorLog, "method", {
+      value: method,
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+  if (path) {
+    Object.defineProperty(errorLog, "path", {
+      value: path,
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+  if (request.headers["user-agent"]) {
+    Object.defineProperty(errorLog, "userAgent", {
+      value: request.headers["user-agent"],
+      ...PROPERTY_DESCRIPTOR,
+    });
+  }
+
+  return errorLog;
 }
 
 async function compareHashedStringWithPlainStringSafe({
@@ -119,45 +138,35 @@ async function compareHashedStringWithPlainStringSafe({
 }: {
   hashedString: string;
   plainString: string;
-}): Promise<SafeBoxResult<boolean, unknown>> {
+}): Promise<SafeResult<boolean>> {
   try {
     const isMatch = await bcrypt.compare(plainString, hashedString);
-    return new Ok({ data: Some(isMatch) });
+    return createSafeSuccessResult(isMatch);
   } catch (error: unknown) {
-    return new Err({
-      data: Some(error),
-      message: Some("Error comparing strings"),
-    });
+    return createSafeErrorResult(error);
   }
 }
 
 async function hashStringSafe({ saltRounds, stringToHash }: {
   saltRounds: number;
   stringToHash: string;
-}): Promise<SafeBoxResult<string, unknown>> {
+}): Promise<SafeResult<string>> {
   try {
     const hashedString = await bcrypt.hash(stringToHash, saltRounds);
-    return new Ok({ data: Some(hashedString) });
+    return createSafeSuccessResult(hashedString);
   } catch (error: unknown) {
-    return new Err({
-      data: Some(error),
-      message: Some("Error hashing string"),
-    });
+    return createSafeErrorResult(error);
   }
 }
 
 async function decodeJWTSafe(
   token: string,
-): Promise<SafeBoxResult<DecodedToken, unknown>> {
+): Promise<SafeResult<DecodedToken>> {
   try {
     const decoded = jwt.decode(token, { json: true }) as DecodedToken | null;
-    if (decoded === null) {
-      return new Ok({ data: None, message: Some("Token is invalid") });
-    }
-
-    return new Ok({ data: Some(decoded) });
+    return createSafeSuccessResult(decoded);
   } catch (error: unknown) {
-    return new Err({ data: Some(error), message: Some("Error decoding JWT") });
+    return createSafeErrorResult(error);
   }
 }
 
@@ -166,14 +175,14 @@ async function verifyJWTSafe(
     seed: string;
     token: string;
   },
-): Promise<SafeBoxResult<DecodedToken, unknown>> {
+): Promise<SafeResult<DecodedToken>> {
   try {
     const decoded = jwt.verify(token, seed) as DecodedToken;
-    return new Ok({ data: Some(decoded) });
+    return createSafeSuccessResult(decoded);
   } catch (error: unknown) {
     return error instanceof Error && error?.name === "TokenExpiredError"
-      ? new Ok({ data: None, message: Some("Token is expired") })
-      : new Err({ data: Some(error), message: Some("Error verifying JWT") });
+      ? new Ok(None)
+      : createSafeErrorResult(error);
   }
 }
 
@@ -240,8 +249,17 @@ function toFixedFloat(num: number, precision = 4): number {
 
 function createSafeSuccessResult<Data = unknown>(
   data: Data,
-): Ok<Option<Data>> {
+): Ok<Option<NonNullable<Data>>> {
   return new Ok(data == null ? None : Some(data));
+}
+
+function serializeSafe(data: unknown): string {
+  try {
+    const serializedData = JSON.stringify(data, null, 2);
+    return serializedData;
+  } catch (error: unknown) {
+    return "Unserializable data";
+  }
 }
 
 function createSafeErrorResult(error: unknown): Err<SafeError> {
@@ -263,22 +281,13 @@ function createSafeErrorResult(error: unknown): Err<SafeError> {
     });
   }
 
-  function serializeSafe(data: unknown): Option<string> {
-    try {
-      const serializedData = JSON.stringify(data, null, 2);
-      return Some(serializedData);
-    } catch (error: unknown) {
-      return Some("Unserializable data");
-    }
-  }
-
   if (error instanceof Event) {
     if (error instanceof PromiseRejectionEvent) {
       return new Err({
         name: `PromiseRejectionEvent: ${error.type}`,
         message: error.reason.toString() ?? "",
         stack: None,
-        original: serializeSafe(error),
+        original: Some(serializeSafe(error)),
       });
     }
 
@@ -286,7 +295,7 @@ function createSafeErrorResult(error: unknown): Err<SafeError> {
       name: `EventError: ${error.type}`,
       message: error.timeStamp.toString() ?? "",
       stack: None,
-      original: serializeSafe(error),
+      original: Some(serializeSafe(error)),
     });
   }
 
@@ -294,7 +303,7 @@ function createSafeErrorResult(error: unknown): Err<SafeError> {
     name: "SimulationDysfunction",
     message: "You've seen it before. Déjà vu. Something's off...",
     stack: None,
-    original: serializeSafe(error),
+    original: Some(serializeSafe(error)),
   });
 }
 
@@ -310,6 +319,7 @@ export {
   hashStringSafe,
   removeUndefinedAndNullValues,
   returnEmptyFieldsTuple,
+  serializeSafe,
   signJWTSafe,
   toFixedFloat,
   verifyJWTSafe,

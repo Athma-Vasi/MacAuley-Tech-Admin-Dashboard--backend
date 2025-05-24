@@ -1,4 +1,5 @@
 import { model, Schema, type Types } from "mongoose";
+import { ERROR_LOG_EXPIRY } from "./constants";
 
 type ErrorLogSchema = {
   method?: string;
@@ -58,8 +59,7 @@ const errorLogSchema = new Schema(
     expireAt: {
       type: Date,
       required: false,
-      default: Date.now,
-      index: { expires: "30d" }, // document will expire in 30 days
+      default: () => new Date(ERROR_LOG_EXPIRY), // 7 days
     },
     userId: {
       type: String,
