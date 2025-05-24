@@ -268,9 +268,9 @@ function signJWTSafe({ payload, secretOrPrivateKey, options }: {
 }) {
   try {
     const token = jwt.sign(payload, secretOrPrivateKey, options);
-    return new Ok({ data: Some(token) });
+    return createSafeSuccessResult(token);
   } catch (error: unknown) {
-    return new Err({ data: Some(error), message: Some("Error signing JWT") });
+    return createSafeErrorResult(error);
   }
 }
 

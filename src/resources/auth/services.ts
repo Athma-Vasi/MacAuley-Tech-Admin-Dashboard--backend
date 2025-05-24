@@ -1,14 +1,18 @@
 import type { Request } from "express";
 import type { SignOptions } from "jsonwebtoken";
-import { Err, None, Ok, Some } from "ts-results";
 import {
   createNewResourceService,
   deleteResourceByIdService,
   getResourceByIdService,
   updateResourceByIdService,
 } from "../../services";
-import type { DecodedToken, SafeBoxResult } from "../../types";
-import { createErrorLogSchema, signJWTSafe } from "../../utils";
+import type { DecodedToken, SafeResult } from "../../types";
+import {
+  createErrorLogSchema,
+  createSafeErrorResult,
+  createSafeSuccessResult,
+  signJWTSafe,
+} from "../../utils";
 import { ErrorLogModel } from "../errorLog";
 import { AuthModel } from "./model";
 
@@ -25,7 +29,7 @@ async function createTokenService(
     request: Request;
     seed: string;
   },
-): Promise<SafeBoxResult<string, unknown>> {
+): Promise<SafeResult<string>> {
   try {
     const {
       userId,
@@ -46,15 +50,14 @@ async function createTokenService(
 
     // session has maybe expired ( > 24 hours)
     // user will be required to log in again
-    if (getSessionResult.val.data.none) {
-      return new Ok({
-        data: None,
-        message: Some("Session expired"),
-      });
+    if (getSessionResult.val.none) {
+      return createSafeErrorResult(
+        "Session not found",
+      );
     }
 
     // auth session document found
-    const authSessionDocument = getSessionResult.val.data.val;
+    const authSessionDocument = getSessionResult.val.val;
 
     // if the incoming access token is not the same as the one in the database
     if (
@@ -68,7 +71,7 @@ async function createTokenService(
       if (deleteSessionResult.err) {
         await createNewResourceService(
           createErrorLogSchema(
-            deleteSessionResult.val,
+            deleteSessionResult,
             request.body,
           ),
           ErrorLogModel,
@@ -77,16 +80,11 @@ async function createTokenService(
         return deleteSessionResult;
       }
 
-      return deleteSessionResult.val.data.none
-        ? new Err({
-          data: None,
-          message: deleteSessionResult.val.message ??
-            Some("Session not found"),
-        })
-        : new Err({
-          data: None,
-          message: Some("Session deleted"),
-        });
+      if (deleteSessionResult.val.none) {
+        return createSafeErrorResult(
+          "Unable to delete session",
+        );
+      }
     }
 
     // create a new access token
@@ -107,7 +105,7 @@ async function createTokenService(
     if (newAccessTokenResult.err) {
       await createNewResourceService(
         createErrorLogSchema(
-          newAccessTokenResult.val,
+          newAccessTokenResult,
           request.body,
         ),
         ErrorLogModel,
@@ -115,12 +113,17 @@ async function createTokenService(
 
       return newAccessTokenResult;
     }
+    if (newAccessTokenResult.val.none) {
+      return createSafeErrorResult(
+        "Unable to create access token",
+      );
+    }
 
     // update the session in the database with the new access token
     const updateSessionResult = await updateResourceByIdService(
       {
         fields: {
-          currentlyActiveToken: newAccessTokenResult.val.data.val,
+          currentlyActiveToken: newAccessTokenResult.val.val,
           addressIP: request.ip ?? "unknown",
           userAgent: request.headers["user-agent"] ?? "unknown",
         },
@@ -133,7 +136,7 @@ async function createTokenService(
     if (updateSessionResult.err) {
       await createNewResourceService(
         createErrorLogSchema(
-          updateSessionResult.val,
+          updateSessionResult,
           request.body,
         ),
         ErrorLogModel,
@@ -142,32 +145,19 @@ async function createTokenService(
       return updateSessionResult;
     }
 
-    if (updateSessionResult.val.data.none) {
-      return new Ok({
-        data: None,
-        message: updateSessionResult.val.message ??
-          Some("Session not found"),
-      });
+    if (updateSessionResult.val.none) {
+      return createSafeErrorResult(
+        "Unable to update session",
+      );
     }
 
     // update session was successful
     // return the new access token
-    return new Ok({
-      data: newAccessTokenResult.val.data,
-      message: Some("Token created successfully"),
-    });
-  } catch (error: unknown) {
-    const message = Some("Error creating token");
-
-    await createNewResourceService(
-      createErrorLogSchema(
-        { data: Some(error), message },
-        request.body,
-      ),
-      ErrorLogModel,
+    return createSafeSuccessResult(
+      newAccessTokenResult.val.val,
     );
-
-    return new Err({ data: Some(error), message });
+  } catch (error: unknown) {
+    return createSafeErrorResult(error);
   }
 }
 

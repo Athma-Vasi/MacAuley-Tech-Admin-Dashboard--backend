@@ -97,7 +97,7 @@ async function verifyJWTMiddleware(
 
     return;
   }
-  if (tokenCreationResult.val.data.none) {
+  if (tokenCreationResult.val.none) {
     response.status(200).json(
       createHttpResponseError({
         safeErrorResult: createSafeErrorResult("Token creation failed"),
