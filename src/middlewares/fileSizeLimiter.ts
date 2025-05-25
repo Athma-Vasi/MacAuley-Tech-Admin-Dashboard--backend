@@ -10,10 +10,6 @@ function fileSizeLimiterMiddleware(
     const MB = 1; // 1MB
     const FILE_SIZE_LIMIT = MB * 1024 * 1024;
 
-    console.log("\n");
-    console.group("fileSizeLimiterMiddleware");
-    console.log("request.files", request.files);
-
     // this middleware only runs if filesPayloadExistsMiddleware has passed - files cannot be undefined
     const files = request.files as unknown as
         | FileUploadObject
@@ -33,10 +29,6 @@ function fileSizeLimiterMiddleware(
         },
         [],
     );
-
-    console.log({ files });
-    console.log({ filesOverLimit });
-    console.groupEnd();
 
     if (filesOverLimit.length > 0) {
         const progressiveApostrophe = filesOverLimit.length > 1 ? "'s" : " ";

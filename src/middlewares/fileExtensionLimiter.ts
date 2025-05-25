@@ -32,12 +32,6 @@ function fileExtensionLimiterMiddleware(
         return acc;
     }, []);
 
-    console.log("\n");
-    console.group("fileExtensionLimiterMiddleware");
-    console.log({ files });
-    console.log({ filesWithDisallowedExtensions });
-    console.groupEnd();
-
     if (filesWithDisallowedExtensions.length > 0) {
         const progressiveApostrophe = filesWithDisallowedExtensions.length > 1
             ? "'s"

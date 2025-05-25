@@ -42,15 +42,6 @@ async function verifyJWTMiddleware(
     });
     return;
   }
-  if (verifiedAccessTokenResult.val.none) {
-    handleServiceErrorResult({
-      request,
-      response,
-      safeErrorResult: createSafeErrorResult("Token is empty"),
-      triggerLogout: true,
-    });
-    return;
-  }
 
   // token is verified, valid and maybe expired
   // we can (safely) decode it

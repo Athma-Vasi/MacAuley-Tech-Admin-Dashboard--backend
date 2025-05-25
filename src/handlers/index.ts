@@ -24,7 +24,6 @@ import type {
 import {
   createErrorLogSchema,
   createHttpResponseError,
-  createHttpResponseRejected,
   createHttpResponseSuccess,
   createSafeErrorResult,
 } from "../utils";
@@ -97,31 +96,6 @@ function handleServiceSuccessResult<
       status,
       totalDocuments,
       triggerLogout,
-    }),
-  );
-}
-
-function createServiceRejectedResponse<
-  Req extends Request = Request,
-  Res extends Response = Response,
->(
-  {
-    message = "Request was rejected",
-    request,
-    response,
-    status = 401,
-  }: {
-    message: string;
-    request: Req;
-    response: Res;
-    status?: number;
-  },
-): void {
-  response.status(200).json(
-    createHttpResponseRejected({
-      request,
-      message,
-      status,
     }),
   );
 }
@@ -520,7 +494,6 @@ function deleteManyResourcesHandler<
 export {
   catchHandlerError,
   createNewResourceHandler,
-  createServiceRejectedResponse,
   deleteManyResourcesHandler,
   deleteResourceByIdHandler,
   getQueriedResourcesByUserHandler,

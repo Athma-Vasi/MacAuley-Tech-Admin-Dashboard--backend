@@ -10,12 +10,6 @@ function extractSchemaMiddleware(
     const reqBodyField = request.body.schema;
     const schema = JSON.parse(reqBodyField);
 
-    console.log("\n");
-    console.group("extractSchemaMiddleware");
-    console.log({ reqBodyField });
-    console.log({ schema });
-    console.groupEnd();
-
     Object.defineProperty(request.body, "schema", {
         value: schema.schema,
         ...PROPERTY_DESCRIPTOR,

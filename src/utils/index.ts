@@ -7,7 +7,6 @@ import type { ErrorLogSchema } from "../resources/errorLog";
 import type {
   DecodedToken,
   ErrorPayload,
-  RejectedPayload,
   RequestAfterJWTVerification,
   ResponsePayload,
   SafeError,
@@ -73,52 +72,6 @@ function createSafeErrorResult(error: unknown): Err<SafeError> {
     stack: None,
     original: Some(serializeSafe(error)),
   });
-}
-
-function createHttpResponseRejected<
-  Req extends Request = Request,
-  Data = unknown,
->(
-  {
-    message = "Not allowed",
-    pages,
-    request,
-    status,
-    totalDocuments,
-    triggerLogout,
-  }: {
-    message?: string;
-    request: Req;
-    pages?: number;
-    status?: number;
-    totalDocuments?: number;
-    triggerLogout?: boolean;
-  },
-): ResponsePayload<Data> {
-  const rejectedPayload: RejectedPayload = {
-    data: [],
-    kind: "rejected",
-    message,
-  };
-
-  const optionalFields = {
-    accessToken: request.body.accessToken,
-    pages,
-    status,
-    totalDocuments,
-    triggerLogout,
-  };
-
-  return Object.entries(optionalFields).reduce((acc, [key, value]) => {
-    if (value !== undefined) {
-      Object.defineProperty(acc, key, {
-        value,
-        ...PROPERTY_DESCRIPTOR,
-      });
-    }
-
-    return acc;
-  }, rejectedPayload);
 }
 
 function createHttpResponseError<
@@ -386,7 +339,6 @@ export {
   compareHashedStringWithPlainStringSafe,
   createErrorLogSchema,
   createHttpResponseError,
-  createHttpResponseRejected,
   createHttpResponseSuccess,
   createSafeErrorResult,
   createSafeSuccessResult,

@@ -18,11 +18,6 @@ function filesPayloadExistsMiddleware(
         );
     }
 
-    console.log("\n");
-    console.group("filesPayloadExistsMiddleware");
-    console.log({ files });
-    console.groupEnd();
-
     return next();
 }
 

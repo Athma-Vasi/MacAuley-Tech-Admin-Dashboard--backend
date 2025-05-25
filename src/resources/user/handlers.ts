@@ -10,7 +10,6 @@ import type { CreateNewResourceRequest, HttpServerResponse } from "../../types";
 import { HASH_SALT_ROUNDS } from "../../constants";
 import {
   catchHandlerError,
-  createServiceRejectedResponse,
   handleServiceErrorResult,
   handleServiceSuccessResult,
 } from "../../handlers";
@@ -40,10 +39,12 @@ function createNewUserHandler(model: Model<UserDocument>) {
         return;
       }
       if (usernameExistsResult.val.some) {
-        createServiceRejectedResponse({
-          message: "Username already exists",
+        await handleServiceErrorResult({
           request,
           response,
+          safeErrorResult: createSafeErrorResult(
+            "Username already exists",
+          ),
         });
         return;
       }
@@ -61,10 +62,12 @@ function createNewUserHandler(model: Model<UserDocument>) {
         return;
       }
       if (emailExistsResult.val.some) {
-        createServiceRejectedResponse({
-          message: "Email already exists",
+        await handleServiceErrorResult({
           request,
           response,
+          safeErrorResult: createSafeErrorResult(
+            "Email already exists",
+          ),
         });
         return;
       }

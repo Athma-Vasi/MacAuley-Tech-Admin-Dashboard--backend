@@ -92,12 +92,6 @@ type GetResourceByIdRequest = RequestAfterQueryParsing & {
   };
 };
 
-type GetResourceByFieldRequest = RequestAfterQueryParsing & {
-  body: {
-    fields: Record<string, unknown>;
-  };
-};
-
 type UpdateResourceByIdRequest<
   Resource extends Record<string, unknown> = Record<string, unknown>,
 > = RequestAfterQueryParsing & {
@@ -114,12 +108,6 @@ type DeleteResourceRequest = GetResourceByIdRequest;
 type DeleteAllResourcesRequest = RequestAfterQueryParsing;
 
 type GetQueriedResourceRequest = RequestAfterQueryParsing;
-
-type GetQueriedResourceByUserRequest = GetQueriedResourceRequest & {
-  body: {
-    userToBeQueriedId: Types.ObjectId;
-  };
-};
 
 type LoginUserRequest = Request & {
   body: {
@@ -139,20 +127,6 @@ type RecordDB<
   __v: number;
 };
 
-// type SafeBoxSuccess<Data = unknown> = {
-//   data: Option<Data>;
-//   message?: Option<string>;
-// };
-// type SafeBoxError<Error_ = unknown> = {
-//   data: Option<Error_>;
-//   message: Option<string>;
-// };
-
-// type SafeBoxResult<Data = unknown, Error_ = unknown> = Result<
-//   SafeBoxSuccess<Data>,
-//   SafeBoxError<Error_>
-// >;
-
 type SafeError = {
   name: string;
   message: string;
@@ -160,7 +134,7 @@ type SafeError = {
   original: Option<string>;
 };
 type SafeResult<Data = unknown> = Result<Option<NonNullable<Data>>, SafeError>;
-type ResponseKind = "error" | "success" | "rejected";
+type ResponseKind = "error" | "success";
 type OptionalPayload = {
   accessToken?: string;
   message?: string;
@@ -171,7 +145,7 @@ type OptionalPayload = {
 };
 type SuccessPayload<Data = unknown> = Prettify<
   OptionalPayload & {
-    data: Array<Data>;
+    data: Array<NonNullable<Data>>;
     kind: "success"; // or empty: data = []
   }
 >;
@@ -182,28 +156,10 @@ type ErrorPayload = Prettify<
     message: string;
   }
 >;
-type RejectedPayload = Prettify<
-  OptionalPayload & {
-    data: [];
-    kind: "rejected";
-    message: string;
-  }
->;
+
 type ResponsePayload<Data = unknown> =
   | SuccessPayload<Data>
-  | ErrorPayload
-  | RejectedPayload;
-
-// type ResponsePayload<Data = unknown> = {
-//   accessToken: string;
-//   data: Array<Data>;
-//   kind: "error" | "success";
-//   message?: string;
-//   pages?: number;
-//   status?: number;
-//   totalDocuments?: number;
-//   triggerLogout?: boolean;
-// };
+  | ErrorPayload;
 
 type HttpServerResponse<Data = unknown> = Prettify<
   Response<ResponsePayload<Data>>
@@ -316,9 +272,7 @@ export type {
   FieldOperators,
   FileInfoObject,
   FileUploadObject,
-  GetQueriedResourceByUserRequest,
   GetQueriedResourceRequest,
-  GetResourceByFieldRequest,
   GetResourceByIdRequest,
   HttpServerResponse,
   LoginUserRequest,
@@ -328,7 +282,6 @@ export type {
   QueryObjectParsed,
   QueryObjectParsedWithDefaults,
   RecordDB,
-  RejectedPayload,
   RequestAfterFilesExtracting,
   RequestAfterJWTVerification,
   RequestAfterQueryParsing,

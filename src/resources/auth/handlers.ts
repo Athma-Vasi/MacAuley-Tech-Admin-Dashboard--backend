@@ -1,5 +1,5 @@
-import jwt from "jsonwebtoken";
 import type { FilterQuery, Model } from "mongoose";
+import { Ok, Some } from "ts-results";
 import { CONFIG } from "../../config";
 import {
   ACCESS_TOKEN_EXPIRY,
@@ -9,7 +9,6 @@ import {
 } from "../../constants";
 import {
   catchHandlerError,
-  createServiceRejectedResponse,
   handleServiceErrorResult,
   handleServiceSuccessResult,
 } from "../../handlers";
@@ -33,6 +32,7 @@ import {
   createSafeSuccessResult,
   decodeJWTSafe,
   hashStringSafe,
+  signJWTSafe,
   verifyJWTSafe,
 } from "../../utils";
 import { FileUploadModel, type FileUploadSchema } from "../fileUpload/model";
@@ -79,10 +79,10 @@ function loginUserHandler<
         return;
       }
       if (getUserResult.val.none) {
-        createServiceRejectedResponse({
-          message: INVALID_CREDENTIALS,
+        await handleServiceErrorResult({
           request,
           response,
+          safeErrorResult: createSafeErrorResult(INVALID_CREDENTIALS),
         });
         return;
       }
@@ -151,21 +151,41 @@ function loginUserHandler<
 
       const authSessionDocument = createAuthSessionResult.val.val;
       // create a new access token and use the session ID to sign the new token
-      const accessToken = jwt.sign(
-        {
+      const accessTokenResult = signJWTSafe({
+        payload: {
           userId: userDocument._id.toString(),
           username: userDocument.username,
           roles: userDocument.roles,
           sessionId: authSessionDocument._id.toString(),
         },
-        ACCESS_TOKEN_SEED,
-        { expiresIn: ACCESS_TOKEN_EXPIRY },
-      );
+        secretOrPrivateKey: ACCESS_TOKEN_SEED,
+        options: {
+          expiresIn: ACCESS_TOKEN_EXPIRY,
+        },
+      });
+      if (accessTokenResult.err) {
+        await handleServiceErrorResult({
+          request,
+          response,
+          safeErrorResult: accessTokenResult,
+        });
+        return;
+      }
+      if (accessTokenResult.val.none) {
+        await handleServiceErrorResult({
+          request,
+          response,
+          safeErrorResult: createSafeErrorResult(
+            "Unable to create access token",
+          ),
+        });
+        return;
+      }
 
       // update the session with the new access token
       const updateSessionResult = await updateResourceByIdService({
         fields: {
-          currentlyActiveToken: accessToken,
+          currentlyActiveToken: accessTokenResult.val.val,
           ip: request.ip ?? "unknown",
           userAgent: request.headers["user-agent"] ?? "unknown",
         },
@@ -192,6 +212,12 @@ function loginUserHandler<
         });
         return;
       }
+
+      // add token to request body to be sent back to client
+      Object.defineProperty(request.body, "accessToken", {
+        value: accessTokenResult.val.val,
+        ...PROPERTY_DESCRIPTOR,
+      });
 
       const userDocPartial = Object.entries(userDocument).reduce<
         Omit<UserDocument, "password">
@@ -280,10 +306,10 @@ function registerUserHandler<
         return;
       }
       if (getUserResult.val.some) {
-        createServiceRejectedResponse({
-          message: "Username already exists",
+        handleServiceSuccessResult({
           request,
           response,
+          safeSuccessResult: new Ok(Some(false)),
         });
         return;
       }
@@ -568,21 +594,21 @@ function checkUsernameOrEmailExistsHandler<
         return;
       }
 
-      // username or email exists
-      if (isUsernameOrEmailExistsResult.val.some) {
-        createServiceRejectedResponse({
-          message: "Username or email already exists",
+      // username or email does not exist
+      if (isUsernameOrEmailExistsResult.val.none) {
+        handleServiceSuccessResult({
           request,
           response,
+          safeSuccessResult: createSafeSuccessResult(false),
         });
         return;
       }
 
-      // username or email does not exist
+      // username or email exists
       handleServiceSuccessResult({
         request,
         response,
-        safeSuccessResult: createSafeSuccessResult(false),
+        safeSuccessResult: createSafeSuccessResult(true),
       });
       return;
     } catch (error: unknown) {

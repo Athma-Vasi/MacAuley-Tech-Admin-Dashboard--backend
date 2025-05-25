@@ -76,7 +76,7 @@ function modifyRequestWithQuery(
   next: NextFunction,
 ) {
   const defaultQueryObject = {
-    projection: "",
+    projection: [] as string[],
     options: {
       sort: { createdAt: -1, _id: -1 },
       limit: 10,
@@ -285,10 +285,6 @@ function modifyRequestWithQuery(
     value: { ...request.body, newQueryFlag, totalDocuments },
     ...PROPERTY_DESCRIPTOR,
   });
-
-  console.group("modifyRequestWithQuery");
-  console.log({ query });
-  console.groupEnd();
 
   next();
   return;

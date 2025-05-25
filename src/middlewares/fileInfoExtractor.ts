@@ -45,12 +45,6 @@ function fileInfoExtractorMiddleware(
         ...PROPERTY_DESCRIPTOR,
     });
 
-    console.log("\n");
-    console.group("fileInfoExtractorMiddleware");
-    console.log({ files });
-    console.log({ fileUploads: request.body.fileUploads });
-    console.groupEnd();
-
     next();
     return;
 }

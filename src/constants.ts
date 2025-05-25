@@ -7,7 +7,7 @@ const TRIGGER_LOGOUT_KEY = "triggerLogout";
 const PROPERTY_DESCRIPTOR: PropertyDescriptor = {
   configurable: false,
   enumerable: true,
-  writable: false,
+  writable: true,
 };
 
 const FILE_UPLOAD_EXPIRY = Date.now() + 1000 * 60 * 60 * 1; // 1 hours
