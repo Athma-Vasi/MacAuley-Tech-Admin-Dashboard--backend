@@ -219,6 +219,7 @@ function getQueriedResourcesHandler<
       } = request.query;
 
       // only perform a countDocuments scan if a new query is being made
+      // such as a new search or filter (pagination does not count as a new query)
       if (newQueryFlag) {
         const totalResult = await getQueriedTotalResourcesService<Doc>({
           filter,

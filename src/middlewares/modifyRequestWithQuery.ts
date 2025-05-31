@@ -286,6 +286,11 @@ function modifyRequestWithQuery(
     ...PROPERTY_DESCRIPTOR,
   });
 
+  console.group("modifyRequestWithQuery");
+  console.log("request.query:", JSON.stringify(request.query, null, 2));
+  console.log("request.body:", JSON.stringify(request.body, null, 2));
+  console.groupEnd();
+
   next();
   return;
 }

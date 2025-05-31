@@ -36,10 +36,6 @@ import {
   verifyJWTSafe,
 } from "../../utils";
 import { FileUploadModel, type FileUploadSchema } from "../fileUpload/model";
-import {
-  type FinancialMetricsDocument,
-  FinancialMetricsModel,
-} from "../metrics/financial/model";
 import { type UserDocument, UserModel, type UserSchema } from "../user";
 import { AUTH_SESSION_EXPIRY } from "./constants";
 import type { AuthSchema } from "./model";
@@ -55,10 +51,7 @@ function loginUserHandler<
   return async (
     request: LoginUserRequest,
     response: HttpServerResponse<
-      {
-        userDocument: Omit<UserDocument, "password">;
-        financialMetricsDocument: FinancialMetricsDocument;
-      }
+      Omit<UserDocument, "password">
     >,
   ) => {
     try {
@@ -110,6 +103,14 @@ function loginUserHandler<
           safeErrorResult: createSafeErrorResult(
             "Unable to compare password",
           ),
+        });
+        return;
+      }
+      if (!isPasswordCorrectResult.val.val) {
+        await handleServiceErrorResult({
+          request,
+          response,
+          safeErrorResult: createSafeErrorResult(INVALID_CREDENTIALS),
         });
         return;
       }
@@ -219,7 +220,7 @@ function loginUserHandler<
         ...PROPERTY_DESCRIPTOR,
       });
 
-      const userDocPartial = Object.entries(userDocument).reduce<
+      const userDocWithoutPassword = Object.entries(userDocument).reduce<
         Omit<UserDocument, "password">
       >(
         (userDocAcc, [key, value]) => {
@@ -237,38 +238,12 @@ function loginUserHandler<
         Object.create(null),
       );
 
-      const financialMetricsDocumentResult = await getResourceByFieldService({
-        filter: { storeLocation: "All Locations" },
-        model: FinancialMetricsModel,
-      });
-      if (financialMetricsDocumentResult.err) {
-        await handleServiceErrorResult({
-          request,
-          response,
-          safeErrorResult: financialMetricsDocumentResult,
-        });
-        return;
-      }
-      if (financialMetricsDocumentResult.val.none) {
-        await handleServiceErrorResult({
-          request,
-          response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to get financial metrics",
-          ),
-        });
-        return;
-      }
-
       handleServiceSuccessResult({
         request,
         response,
-        safeSuccessResult: createSafeSuccessResult({
-          userDocument: userDocPartial,
-          financialMetricsDocument: financialMetricsDocumentResult.val
-            .val,
-        }),
+        safeSuccessResult: createSafeSuccessResult(userDocWithoutPassword),
       });
+      return;
     } catch (error: unknown) {
       await catchHandlerError({ error, request, response });
       return;

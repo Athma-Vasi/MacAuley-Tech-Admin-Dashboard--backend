@@ -44,7 +44,7 @@ async function verifyJWTMiddleware(
   }
 
   // token is verified, valid and maybe expired
-  // we can (safely) decode it
+  // can now (safely) decode it
   const decodedAccessTokenResult = await decodeJWTSafe(accessToken);
   if (decodedAccessTokenResult.err) {
     handleServiceErrorResult({
@@ -95,30 +95,29 @@ async function verifyJWTMiddleware(
   }
 
   const decodedAccessToken = decodedAccessTokenResult.val.val;
-  // newly created access token is accessed by handlers and returned with httpServerResponse
-  Object.defineProperty(request.body, "accessToken", {
-    value: tokenCreationResult.val.val,
-    ...PROPERTY_DESCRIPTOR,
-  });
 
-  Object.defineProperty(request.body, "userId", {
-    value: decodedAccessToken.userId,
-    ...PROPERTY_DESCRIPTOR,
-  });
-
-  Object.defineProperty(request.body, "roles", {
-    value: decodedAccessToken.roles,
-    ...PROPERTY_DESCRIPTOR,
-  });
-
-  Object.defineProperty(request.body, "username", {
-    value: decodedAccessToken.username,
-    ...PROPERTY_DESCRIPTOR,
-  });
-
-  Object.defineProperty(request.body, "sessionId", {
-    value: decodedAccessToken.sessionId,
-    ...PROPERTY_DESCRIPTOR,
+  Object.defineProperties(request.body, {
+    // accessToken is used by handlers to access the token and returned with httpServerResponse
+    accessToken: {
+      value: tokenCreationResult.val.val,
+      ...PROPERTY_DESCRIPTOR,
+    },
+    userId: {
+      value: decodedAccessToken.userId,
+      ...PROPERTY_DESCRIPTOR,
+    },
+    roles: {
+      value: decodedAccessToken.roles,
+      ...PROPERTY_DESCRIPTOR,
+    },
+    username: {
+      value: decodedAccessToken.username,
+      ...PROPERTY_DESCRIPTOR,
+    },
+    sessionId: {
+      value: decodedAccessToken.sessionId,
+      ...PROPERTY_DESCRIPTOR,
+    },
   });
 
   next();
