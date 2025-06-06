@@ -10,8 +10,9 @@ import type { CreateNewResourceRequest, HttpServerResponse } from "../../types";
 import { HASH_SALT_ROUNDS } from "../../constants";
 import {
   catchHandlerError,
-  handleServiceErrorResult,
-  handleServiceSuccessResult,
+  handleErrorResult,
+  handleNoneOption,
+  handleSuccessResult,
 } from "../../handlers";
 import { createSafeErrorResult, hashStringSafe } from "../../utils";
 
@@ -31,7 +32,7 @@ function createNewUserHandler(model: Model<UserDocument>) {
         model,
       });
       if (usernameExistsResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: usernameExistsResult,
@@ -39,7 +40,7 @@ function createNewUserHandler(model: Model<UserDocument>) {
         return;
       }
       if (usernameExistsResult.val.some) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: createSafeErrorResult(
@@ -54,7 +55,7 @@ function createNewUserHandler(model: Model<UserDocument>) {
         model,
       });
       if (emailExistsResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: emailExistsResult,
@@ -62,7 +63,7 @@ function createNewUserHandler(model: Model<UserDocument>) {
         return;
       }
       if (emailExistsResult.val.some) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: createSafeErrorResult(
@@ -77,7 +78,7 @@ function createNewUserHandler(model: Model<UserDocument>) {
         stringToHash: schema.password,
       });
       if (hashPasswordResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: hashPasswordResult,
@@ -85,12 +86,10 @@ function createNewUserHandler(model: Model<UserDocument>) {
         return;
       }
       if (hashPasswordResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Error hashing password",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Error hashing password",
-          ),
         });
         return;
       }
@@ -100,7 +99,7 @@ function createNewUserHandler(model: Model<UserDocument>) {
         UserModel,
       );
       if (userCreationResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: userCreationResult,
@@ -108,17 +107,15 @@ function createNewUserHandler(model: Model<UserDocument>) {
         return;
       }
       if (userCreationResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Error creating user",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Error creating user",
-          ),
         });
         return;
       }
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: userCreationResult,

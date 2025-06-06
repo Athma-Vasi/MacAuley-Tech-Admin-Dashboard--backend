@@ -333,6 +333,7 @@ const userSchema = new Schema<UserDocument>(
 
 // text index for searching
 userSchema.index({
+  city: "text",
   username: "text",
   email: "text",
   addressLine: "text",

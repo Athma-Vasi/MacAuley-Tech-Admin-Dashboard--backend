@@ -5,10 +5,9 @@
 /**
  * Imports
  */
+import type { ErrorLogDocument, ErrorLogSchema } from "./model";
 import { ErrorLogModel } from "./model";
 import { errorLogRouter } from "./routes";
-
-import type { ErrorLogDocument, ErrorLogSchema } from "./model";
 
 /**
  * Exports

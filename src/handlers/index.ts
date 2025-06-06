@@ -41,7 +41,7 @@ async function catchHandlerError<
 ): Promise<void> {
   try {
     const safeErrorResult = createSafeErrorResult(error);
-    const createResult = await createNewResourceService(
+    const createNewResourceResult = await createNewResourceService(
       createErrorLogSchema(
         safeErrorResult,
         request,
@@ -49,7 +49,9 @@ async function catchHandlerError<
       ErrorLogModel,
     );
     const responsePayload = createHttpResponseError({
-      safeErrorResult: createResult.err ? createResult : safeErrorResult,
+      safeErrorResult: createNewResourceResult.err
+        ? createNewResourceResult
+        : safeErrorResult,
       request,
       status,
     });
@@ -60,12 +62,13 @@ async function catchHandlerError<
       createHttpResponseError({
         safeErrorResult: createSafeErrorResult(error),
         request,
+        status,
       }),
     );
   }
 }
 
-function handleServiceSuccessResult<
+function handleSuccessResult<
   Data = unknown,
   Req extends Request = Request,
   Res extends Response = Response,
@@ -100,25 +103,59 @@ function handleServiceSuccessResult<
   );
 }
 
-async function handleServiceErrorResult<
+function handleNoneOption<
   Req extends Request = Request,
   Res extends Response = Response,
 >(
   {
-    pages,
+    message,
+    request,
+    response,
+    status = 404,
+    triggerLogout,
+  }: {
+    message?: string;
+    request: Req;
+    response: Res;
+    status?: number;
+    triggerLogout?: boolean;
+  },
+): void {
+  try {
+    const responsePayload = createHttpResponseError({
+      request,
+      safeErrorResult: createSafeErrorResult(
+        message ?? "No data found",
+      ),
+      status,
+      triggerLogout,
+    });
+    response.status(200).json(responsePayload);
+  } catch (error: unknown) {
+    response.status(200).json(
+      createHttpResponseError({
+        safeErrorResult: createSafeErrorResult(error),
+        request,
+      }),
+    );
+  }
+}
+
+async function handleErrorResult<
+  Req extends Request = Request,
+  Res extends Response = Response,
+>(
+  {
     request,
     response,
     safeErrorResult,
     status = 500,
-    totalDocuments,
     triggerLogout,
   }: {
-    pages?: number;
     request: Req;
     response: Res;
     safeErrorResult: Err<SafeError>;
     status?: number;
-    totalDocuments?: number;
     triggerLogout?: boolean;
   },
 ): Promise<void> {
@@ -130,14 +167,15 @@ async function handleServiceErrorResult<
       ),
       ErrorLogModel,
     );
+
+    if (createResourceResult.err || createResourceResult.val.none) {
+      throw createResourceResult.val;
+    }
+
     const responsePayload = createHttpResponseError({
-      pages,
       request,
-      safeErrorResult: createResourceResult.err
-        ? createResourceResult
-        : safeErrorResult,
+      safeErrorResult,
       status,
-      totalDocuments,
       triggerLogout,
     });
 
@@ -164,10 +202,12 @@ function createNewResourceHandler<
     try {
       const { schema } = request.body;
       if (!schema) {
-        handleServiceErrorResult({
+        handleErrorResult({
           request,
           response,
-          safeErrorResult: createSafeErrorResult("Schema is required"),
+          safeErrorResult: createSafeErrorResult(
+            "Schema is required to create a new resource",
+          ),
           status: 400,
         });
         return;
@@ -178,7 +218,7 @@ function createNewResourceHandler<
         model,
       );
       if (createResourceResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: createResourceResult,
@@ -187,7 +227,16 @@ function createNewResourceHandler<
         return;
       }
 
-      handleServiceSuccessResult({
+      if (createResourceResult.val.none) {
+        handleNoneOption({
+          message: "Resource creation failed",
+          request,
+          response,
+        });
+        return;
+      }
+
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: createResourceResult,
@@ -226,7 +275,7 @@ function getQueriedResourcesHandler<
           model,
         });
         if (totalResult.err) {
-          await handleServiceErrorResult({
+          await handleErrorResult({
             request,
             response,
             safeErrorResult: totalResult,
@@ -245,7 +294,7 @@ function getQueriedResourcesHandler<
         projection,
       });
       if (getResourcesResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: getResourcesResult,
@@ -253,8 +302,17 @@ function getQueriedResourcesHandler<
         });
         return;
       }
+      // if not an empty array
+      if (getResourcesResult.val.none) {
+        handleNoneOption({
+          message: "Unable to find resources",
+          request,
+          response,
+        });
+        return;
+      }
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: getResourcesResult,
@@ -293,7 +351,7 @@ function getQueriedResourcesByUserHandler<
           model,
         });
         if (totalResult.err) {
-          await handleServiceErrorResult({
+          await handleErrorResult({
             request,
             response,
             safeErrorResult: totalResult,
@@ -312,7 +370,7 @@ function getQueriedResourcesByUserHandler<
         projection,
       });
       if (getResourcesResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: getResourcesResult,
@@ -320,8 +378,17 @@ function getQueriedResourcesByUserHandler<
         });
         return;
       }
+      // if not an empty array
+      if (getResourcesResult.val.none) {
+        handleNoneOption({
+          message: "Unable to find resources for the user",
+          request,
+          response,
+        });
+        return;
+      }
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: getResourcesResult,
@@ -360,7 +427,7 @@ function updateResourceByIdHandler<
         updateOperator,
       });
       if (updateResourceResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: updateResourceResult,
@@ -369,7 +436,7 @@ function updateResourceByIdHandler<
         return;
       }
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: updateResourceResult,
@@ -397,7 +464,7 @@ function getResourceByIdHandler<Doc extends Record<string, unknown> = RecordDB>(
         model,
       );
       if (getResourceResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: getResourceResult,
@@ -406,7 +473,7 @@ function getResourceByIdHandler<Doc extends Record<string, unknown> = RecordDB>(
         return;
       }
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: getResourceResult,
@@ -436,7 +503,7 @@ function deleteResourceByIdHandler<
         model,
       );
       if (deletedResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: deletedResult,
@@ -444,8 +511,16 @@ function deleteResourceByIdHandler<
         });
         return;
       }
+      if (deletedResult.val.none) {
+        handleNoneOption({
+          message: "Resource not found or already deleted",
+          request,
+          response,
+        });
+        return;
+      }
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: deletedResult,
@@ -470,7 +545,7 @@ function deleteManyResourcesHandler<
     try {
       const deletedResult = await deleteManyResourcesService({ model });
       if (deletedResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: deletedResult,
@@ -478,8 +553,16 @@ function deleteManyResourcesHandler<
         });
         return;
       }
+      if (deletedResult.val.none) {
+        handleNoneOption({
+          message: "Some resources were not deleted",
+          request,
+          response,
+        });
+        return;
+      }
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: deletedResult,
@@ -500,7 +583,8 @@ export {
   getQueriedResourcesByUserHandler,
   getQueriedResourcesHandler,
   getResourceByIdHandler,
-  handleServiceErrorResult,
-  handleServiceSuccessResult,
+  handleErrorResult,
+  handleNoneOption,
+  handleSuccessResult,
   updateResourceByIdHandler,
 };

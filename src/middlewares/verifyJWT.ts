@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import { CONFIG } from "../config";
 import { ACCESS_TOKEN_EXPIRY, PROPERTY_DESCRIPTOR } from "../constants";
-import { handleServiceErrorResult } from "../handlers";
+import { handleErrorResult } from "../handlers";
 import { createTokenService } from "../resources/auth/services";
 import { createSafeErrorResult, decodeJWTSafe, verifyJWTSafe } from "../utils";
 
@@ -15,7 +15,7 @@ async function verifyJWTMiddleware(
 
   const [_, accessToken] = request.headers.authorization?.split(" ") ?? [];
   if (!accessToken) {
-    handleServiceErrorResult({
+    handleErrorResult({
       request,
       response,
       safeErrorResult: createSafeErrorResult(
@@ -34,7 +34,7 @@ async function verifyJWTMiddleware(
   // token is invalid (except for expired)
 
   if (verifiedAccessTokenResult.err) {
-    handleServiceErrorResult({
+    handleErrorResult({
       request,
       response,
       safeErrorResult: verifiedAccessTokenResult,
@@ -47,7 +47,7 @@ async function verifyJWTMiddleware(
   // can now (safely) decode it
   const decodedAccessTokenResult = await decodeJWTSafe(accessToken);
   if (decodedAccessTokenResult.err) {
-    handleServiceErrorResult({
+    handleErrorResult({
       request,
       response,
       safeErrorResult: decodedAccessTokenResult,
@@ -56,7 +56,7 @@ async function verifyJWTMiddleware(
     return;
   }
   if (decodedAccessTokenResult.val.none) {
-    handleServiceErrorResult({
+    handleErrorResult({
       request,
       response,
       safeErrorResult: createSafeErrorResult("Token is empty"),
@@ -74,7 +74,7 @@ async function verifyJWTMiddleware(
     seed: ACCESS_TOKEN_SEED,
   });
   if (tokenCreationResult.err) {
-    handleServiceErrorResult({
+    handleErrorResult({
       request,
       response,
       safeErrorResult: tokenCreationResult,
@@ -83,7 +83,7 @@ async function verifyJWTMiddleware(
     return;
   }
   if (tokenCreationResult.val.none) {
-    handleServiceErrorResult({
+    handleErrorResult({
       request,
       response,
       safeErrorResult: createSafeErrorResult(

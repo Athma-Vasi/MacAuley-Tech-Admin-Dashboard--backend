@@ -1,15 +1,15 @@
 import type { Model } from "mongoose";
 import {
   catchHandlerError,
-  handleServiceErrorResult,
-  handleServiceSuccessResult,
+  handleErrorResult,
+  handleNoneOption,
+  handleSuccessResult,
 } from "../../../handlers";
 import { createNewResourceService } from "../../../services";
 import type {
   CreateNewResourceRequest,
   HttpServerResponse,
 } from "../../../types";
-import { createSafeErrorResult } from "../../../utils";
 import type { ProductMetricsDocument, ProductMetricsSchema } from "./model";
 
 // @desc   Create new Product Metric
@@ -28,7 +28,7 @@ function createNewProductMetricHandler(
         model,
       );
       if (createProductMetricResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: createProductMetricResult,
@@ -36,17 +36,15 @@ function createNewProductMetricHandler(
         return;
       }
       if (createProductMetricResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Product Metrics not created",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Product Metrics creation failed",
-          ),
         });
         return;
       }
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: createProductMetricResult,

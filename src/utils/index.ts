@@ -3,6 +3,7 @@ import type { Request } from "express";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { Err, None, Ok, type Option, Some } from "ts-results";
 import { PROPERTY_DESCRIPTOR } from "../constants";
+
 import type { ErrorLogSchema } from "../resources/errorLog";
 import type {
   DecodedToken,
@@ -29,7 +30,9 @@ function serializeSafe(data: unknown): string {
   }
 }
 
-function createSafeErrorResult(error: unknown): Err<SafeError> {
+function createSafeErrorResult(
+  error: unknown,
+): Err<SafeError> {
   if (error instanceof Error) {
     return new Err({
       name: error.name ?? "Error",
@@ -79,41 +82,36 @@ function createHttpResponseError<
   Data = unknown,
 >({
   safeErrorResult,
-  pages,
   request,
   status,
-  totalDocuments,
   triggerLogout,
 }: {
   safeErrorResult: Err<SafeError>;
   request: Req;
-  pages?: number;
   status?: number;
-  totalDocuments?: number;
   triggerLogout?: boolean;
 }): ResponsePayload<Data> {
   const errorPayload: ErrorPayload = {
     data: [],
     kind: "error",
     message: safeErrorResult.val.message,
+    status,
   };
 
   const optionalFields = {
     accessToken: request.body.accessToken,
-    pages,
-    status,
-    totalDocuments,
     triggerLogout,
   };
 
   return Object.entries(optionalFields).reduce((acc, [key, value]) => {
-    if (value !== undefined) {
-      Object.defineProperty(acc, key, {
-        value,
-        ...PROPERTY_DESCRIPTOR,
-      });
+    if (value === undefined) {
+      return acc;
     }
 
+    Object.defineProperty(acc, key, {
+      value,
+      ...PROPERTY_DESCRIPTOR,
+    });
     return acc;
   }, errorPayload);
 }
@@ -154,13 +152,14 @@ function createHttpResponseSuccess<
   };
 
   return Object.entries(optionalFields).reduce((acc, [key, value]) => {
-    if (value !== undefined) {
-      Object.defineProperty(acc, key, {
-        value,
-        ...PROPERTY_DESCRIPTOR,
-      });
+    if (value === undefined) {
+      return acc;
     }
 
+    Object.defineProperty(acc, key, {
+      value,
+      ...PROPERTY_DESCRIPTOR,
+    });
     return acc;
   }, successPayload);
 }

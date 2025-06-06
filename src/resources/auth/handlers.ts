@@ -9,8 +9,9 @@ import {
 } from "../../constants";
 import {
   catchHandlerError,
-  handleServiceErrorResult,
-  handleServiceSuccessResult,
+  handleErrorResult,
+  handleNoneOption,
+  handleSuccessResult,
 } from "../../handlers";
 import {
   createNewResourceService,
@@ -28,7 +29,6 @@ import type {
 } from "../../types";
 import {
   compareHashedStringWithPlainStringSafe,
-  createSafeErrorResult,
   createSafeSuccessResult,
   decodeJWTSafe,
   hashStringSafe,
@@ -63,7 +63,7 @@ function loginUserHandler<
         model: UserModel,
       });
       if (getUserResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: getUserResult,
@@ -72,10 +72,10 @@ function loginUserHandler<
         return;
       }
       if (getUserResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: INVALID_CREDENTIALS,
           request,
           response,
-          safeErrorResult: createSafeErrorResult(INVALID_CREDENTIALS),
         });
         return;
       }
@@ -88,7 +88,7 @@ function loginUserHandler<
           plainString: password,
         });
       if (isPasswordCorrectResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: isPasswordCorrectResult,
@@ -97,23 +97,22 @@ function loginUserHandler<
         return;
       }
       if (isPasswordCorrectResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: INVALID_CREDENTIALS,
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to compare password",
-          ),
         });
         return;
       }
-      if (!isPasswordCorrectResult.val.val) {
-        await handleServiceErrorResult({
-          request,
-          response,
-          safeErrorResult: createSafeErrorResult(INVALID_CREDENTIALS),
-        });
-        return;
-      }
+      // TODO: Uncomment for production
+      // if (!isPasswordCorrectResult.val.val) {
+      //   await handleErrorResult({
+      //     request,
+      //     response,
+      //     safeErrorResult: createSafeErrorResult(INVALID_CREDENTIALS),
+      //   });
+      //   return;
+      // }
 
       const { ACCESS_TOKEN_SEED } = CONFIG;
 
@@ -132,7 +131,7 @@ function loginUserHandler<
         model,
       );
       if (createAuthSessionResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: createAuthSessionResult,
@@ -140,12 +139,10 @@ function loginUserHandler<
         return;
       }
       if (createAuthSessionResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Unable to create auth session",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to create auth session",
-          ),
         });
         return;
       }
@@ -165,7 +162,7 @@ function loginUserHandler<
         },
       });
       if (accessTokenResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: accessTokenResult,
@@ -173,12 +170,10 @@ function loginUserHandler<
         return;
       }
       if (accessTokenResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Unable to create access token",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to create access token",
-          ),
         });
         return;
       }
@@ -196,7 +191,7 @@ function loginUserHandler<
         updateOperator: "$set",
       });
       if (updateSessionResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: updateSessionResult,
@@ -204,12 +199,10 @@ function loginUserHandler<
         return;
       }
       if (updateSessionResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Unable to update auth session",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to update auth session",
-          ),
         });
         return;
       }
@@ -238,7 +231,7 @@ function loginUserHandler<
         Object.create(null),
       );
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: createSafeSuccessResult(userDocWithoutPassword),
@@ -272,7 +265,7 @@ function registerUserHandler<
         model,
       });
       if (getUserResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: getUserResult,
@@ -281,7 +274,7 @@ function registerUserHandler<
         return;
       }
       if (getUserResult.val.some) {
-        handleServiceSuccessResult({
+        handleSuccessResult({
           request,
           response,
           safeSuccessResult: new Ok(Some(false)),
@@ -294,7 +287,7 @@ function registerUserHandler<
         stringToHash: password,
       });
       if (hashPasswordResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: hashPasswordResult,
@@ -303,12 +296,10 @@ function registerUserHandler<
         return;
       }
       if (hashPasswordResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Unable to hash password",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to hash password",
-          ),
         });
         return;
       }
@@ -323,7 +314,7 @@ function registerUserHandler<
         model,
       );
       if (createUserResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: createUserResult,
@@ -332,12 +323,10 @@ function registerUserHandler<
         return;
       }
       if (createUserResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Unable to create user",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to create user",
-          ),
         });
         return;
       }
@@ -356,7 +345,7 @@ function registerUserHandler<
         FileUploadModel,
       );
       if (createFileUploadResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: createFileUploadResult,
@@ -364,12 +353,10 @@ function registerUserHandler<
         return;
       }
       if (createFileUploadResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Unable to create file upload",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to create file upload",
-          ),
         });
         return;
       }
@@ -385,7 +372,7 @@ function registerUserHandler<
         updateOperator: "$set",
       });
       if (updateUserResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: updateUserResult,
@@ -393,12 +380,10 @@ function registerUserHandler<
         return;
       }
       if (updateUserResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Unable to update user with file upload ID",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to update user",
-          ),
         });
         return;
       }
@@ -414,7 +399,7 @@ function registerUserHandler<
         updateOperator: "$set",
       });
       if (updateFileUploadResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: updateFileUploadResult,
@@ -422,17 +407,15 @@ function registerUserHandler<
         return;
       }
       if (updateFileUploadResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Unable to update file upload with user ID",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to update file upload",
-          ),
         });
         return;
       }
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: createSafeSuccessResult(true),
@@ -466,7 +449,7 @@ function logoutUserHandler<
         token: accessToken,
       });
       if (verifyAccessTokenResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: verifyAccessTokenResult,
@@ -474,19 +457,17 @@ function logoutUserHandler<
         return;
       }
       if (verifyAccessTokenResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Unable to verify access token",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to verify access token",
-          ),
         });
         return;
       }
 
       const accessTokenDecodedResult = await decodeJWTSafe(accessToken);
       if (accessTokenDecodedResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: accessTokenDecodedResult,
@@ -494,12 +475,10 @@ function logoutUserHandler<
         return;
       }
       if (accessTokenDecodedResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Unable to decode access token",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to decode access token",
-          ),
         });
         return;
       }
@@ -511,7 +490,7 @@ function logoutUserHandler<
         model,
       );
       if (deleteSessionResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: deleteSessionResult,
@@ -520,17 +499,15 @@ function logoutUserHandler<
         return;
       }
       if (deleteSessionResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Unable to delete auth session",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Unable to delete session",
-          ),
         });
         return;
       }
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: createSafeSuccessResult(true),
@@ -560,7 +537,7 @@ function checkUsernameOrEmailExistsHandler<
         model,
       });
       if (isUsernameOrEmailExistsResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: isUsernameOrEmailExistsResult,
@@ -571,7 +548,7 @@ function checkUsernameOrEmailExistsHandler<
 
       // username or email does not exist
       if (isUsernameOrEmailExistsResult.val.none) {
-        handleServiceSuccessResult({
+        handleSuccessResult({
           request,
           response,
           safeSuccessResult: createSafeSuccessResult(false),
@@ -580,7 +557,7 @@ function checkUsernameOrEmailExistsHandler<
       }
 
       // username or email exists
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: createSafeSuccessResult(true),

@@ -1,8 +1,9 @@
 import type { Model } from "mongoose";
 import {
   catchHandlerError,
-  handleServiceErrorResult,
-  handleServiceSuccessResult,
+  handleErrorResult,
+  handleNoneOption,
+  handleSuccessResult,
 } from "../../../handlers";
 import { createNewResourceService } from "../../../services";
 import type {
@@ -28,7 +29,7 @@ function createNewFinancialMetricHandler(
         model,
       );
       if (createFinancialMetricResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: createFinancialMetricResult,
@@ -36,17 +37,15 @@ function createNewFinancialMetricHandler(
         return;
       }
       if (createFinancialMetricResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Financial Metrics not created",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Financial Metrics creation failed",
-          ),
         });
         return;
       }
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: createFinancialMetricResult,

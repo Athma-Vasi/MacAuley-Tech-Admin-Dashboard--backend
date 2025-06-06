@@ -1,15 +1,15 @@
 import type { Model } from "mongoose";
 import {
   catchHandlerError,
-  handleServiceErrorResult,
-  handleServiceSuccessResult,
+  handleErrorResult,
+  handleNoneOption,
+  handleSuccessResult,
 } from "../../../handlers";
 import { createNewResourceService } from "../../../services";
 import type {
   CreateNewResourceRequest,
   HttpServerResponse,
 } from "../../../types";
-import { createSafeErrorResult } from "../../../utils";
 import type { RepairMetricsDocument, RepairMetricsSchema } from "./model";
 
 // @desc   Create new Repair Metric
@@ -28,7 +28,7 @@ function createNewRepairMetricHandler(
         model,
       );
       if (createRepairMetricResult.err) {
-        await handleServiceErrorResult({
+        await handleErrorResult({
           request,
           response,
           safeErrorResult: createRepairMetricResult,
@@ -36,17 +36,15 @@ function createNewRepairMetricHandler(
         return;
       }
       if (createRepairMetricResult.val.none) {
-        await handleServiceErrorResult({
+        handleNoneOption({
+          message: "Repair Metrics not created",
           request,
           response,
-          safeErrorResult: createSafeErrorResult(
-            "Repair Metrics creation failed",
-          ),
         });
         return;
       }
 
-      handleServiceSuccessResult({
+      handleSuccessResult({
         request,
         response,
         safeSuccessResult: createRepairMetricResult,
